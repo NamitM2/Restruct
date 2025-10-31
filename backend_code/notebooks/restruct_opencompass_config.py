@@ -37,14 +37,11 @@ custom_imports = dict(
     allow_failed_imports=False,
 )
 
-# 1. Use built-in GSM8K demo dataset
 with read_base():
-    # safer to import `datasets` and alias it, since some configs export `datasets` directly
-    from opencompass.configs.datasets.subjective.multiround.mtbench_single_judge import (
-        datasets as mtbench_datasets,
-    )
+    from opencompass.configs.datasets.subjective.multiround.mtbench_single_judge_diff_temp import \
+        mtbench_datasets
 
-datasets = mtbench_datasets
+datasets = [*mtbench_datasets]
 
 # 2. Define the specific routes you want to benchmark BY HAND
 models = [
