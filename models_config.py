@@ -5,7 +5,12 @@ Contains model metadata, API keys, and attributes for routing decisions
 
 import os
 from typing import Dict, Any
+from dotenv import load_dotenv
 
+# Load environment variables from .env file (override=True ensures .env takes precedence)
+load_dotenv(override=True)
+
+null = None  # Python equivalent of JavaScript null
 # Model metadata and configuration
 MODELS = {
     "openai": {
