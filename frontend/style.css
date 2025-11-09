@@ -120,6 +120,18 @@ body {
     animation: slideIn 0.3s ease-out;
 }
 
+/* Routing Info */
+.routing-info {
+    font-size: 0.85rem;
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;

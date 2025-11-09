@@ -108,6 +108,14 @@ function addMessage(role, content, metadata = null) {
     textDiv.textContent = content;
     contentDiv.appendChild(textDiv);
 
+    // Add routing info at the top for assistant messages
+    if (role === 'assistant' && metadata && metadata.model !== 'error') {
+        const routingInfo = document.createElement('div');
+        routingInfo.className = 'routing-info';
+        routingInfo.innerHTML = `📍 Routed to: <strong>${metadata.model}</strong>`;
+        contentDiv.insertBefore(routingInfo, textDiv);
+    }
+
     // Add metadata for assistant messages
     if (role === 'assistant' && metadata) {
         const metadataDiv = document.createElement('div');
@@ -117,6 +125,12 @@ function addMessage(role, content, metadata = null) {
         modelBadge.className = 'model-badge';
         modelBadge.innerHTML = `🤖 ${metadata.model}`;
         metadataDiv.appendChild(modelBadge);
+
+        if (metadata.provider) {
+            const providerSpan = document.createElement('span');
+            providerSpan.textContent = `Provider: ${metadata.provider}`;
+            metadataDiv.appendChild(providerSpan);
+        }
 
         if (metadata.score) {
             const scoreSpan = document.createElement('span');
