@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restruct - Smart Model Router</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎯 Restruct</h1>
+            <p class="subtitle">Smart Model Router</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls">
+            <label for="priority">Routing Priority:</label>
+            <select id="priority" class="priority-select">
+                <option value="balanced">⚖️ Balanced</option>
+                <option value="cost">💰 Cost-Optimized</option>
+                <option value="performance">⚡ Performance</option>
+            </select>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container" id="chatContainer">
+            <div class="welcome-message">
+                <div class="icon">💬</div>
+                <h2>Welcome to Restruct</h2>
+                <p>Send a message and let our smart router find the best model for you</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <form id="chatForm" class="input-form">
+                <textarea
+                    id="promptInput"
+                    class="prompt-input"
+                    placeholder="Type your message..."
+                    rows="1"
+                ></textarea>
+                <button type="submit" class="send-button" id="sendButton">
+                    <span class="button-text">Send</span>
+                    <span class="button-icon">→</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
