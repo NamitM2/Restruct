@@ -62,7 +62,7 @@ target/
 logs/
 
 # Environment variables
-.env
+# .env is tracked for private repo use by coworkers
 .env.local
 .env.*.local
 
