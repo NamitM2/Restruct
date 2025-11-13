@@ -34,7 +34,88 @@ body {
     box-shadow: 0 40px 120px rgba(92, 49, 30, 0.18);
     overflow: hidden;
     display: flex;
+    flex-direction: row;
+}
+
+.sidebar-nav {
+    width: 80px;
+    background: linear-gradient(180deg, var(--sand-100), var(--sand-50));
+    border-right: 1px solid rgba(92, 49, 30, 0.08);
+    display: flex;
     flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 32px;
+}
+
+.sidebar-brand {
+    padding: 0 12px;
+}
+
+.sidebar-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: block;
+    object-fit: contain;
+    background: var(--sand-50);
+    padding: 6px;
+    box-shadow: 0 10px 20px rgba(92, 49, 30, 0.2);
+}
+
+.nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    padding: 0 12px;
+}
+
+.nav-icon-button {
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 16px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-icon {
+    width: 32px;
+    height: 32px;
+    transition: transform 0.2s ease;
+    object-fit: contain;
+}
+
+.nav-icon-button:hover {
+    background: rgba(92, 49, 30, 0.08);
+}
+
+.nav-icon-button:hover .nav-icon {
+    transform: scale(1.1);
+}
+
+.nav-icon-button.active {
+    background: transparent;
+    border: 2px solid var(--clay-600);
+    box-shadow: 0 0 0 1px var(--clay-600);
+}
+
+.nav-icon-button.active .nav-icon {
+    filter: none;
+    opacity: 1;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .app-header {
@@ -247,6 +328,23 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
+}
+
+.cost-comparison-section {
+    background: #fffdfa;
+    border-radius: 24px;
+    padding: 24px;
+    border: 1px solid rgba(92, 49, 30, 0.08);
+    margin-top: 32px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.chart-container {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    margin-top: 16px;
+    border: 1px solid rgba(92, 49, 30, 0.08);
 }
 
 .router-grid {
