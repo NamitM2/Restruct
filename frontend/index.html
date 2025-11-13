@@ -19,34 +19,33 @@
         <nav class="sidebar-nav" aria-label="Primary">
             <div class="sidebar-brand">
                 <img src="assets/logo.png" alt="Restruct logo" class="sidebar-logo">
+                <span class="brand-name">Restruct</span>
             </div>
             <div class="nav-items">
-                <button class="nav-icon-button active" data-tab-target="dashboardTab" title="Insights">
-                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon">
-                </button>
-                <button class="nav-icon-button" data-tab-target="routerTab" title="Router & Chat">
+                <button class="nav-icon-button" data-tab-target="routerTab" title="Chat">
                     <img src="assets/chat-icon.png" alt="Chat" class="nav-icon">
+                    <span class="nav-label">Chat</span>
+                </button>
+                <button class="nav-icon-button" data-tab-target="routingControlsTab" title="Routing Controls">
+                    <img src="assets/routing-controls-icon.png" alt="Routing Controls" class="nav-icon">
+                    <span class="nav-label">Routing Lab</span>
+                </button>
+                <button class="nav-icon-button" data-tab-target="dashboardTab" title="Statistics">
+                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon">
+                    <span class="nav-label">Statistics</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="settingsTab" title="Settings">
                     <img src="assets/settings-icon.png" alt="Settings" class="nav-icon">
+                    <span class="nav-label">Settings</span>
                 </button>
             </div>
         </nav>
 
         <div class="main-content">
-            <header class="app-header">
-                <div class="brand">
-                    <div>
-                        <p class="eyebrow">Restruct Router</p>
-                        <h1>Intelligence control center</h1>
-                        <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
-                    </div>
-                </div>
-            </header>
 
             <main class="tab-panels">
             <!-- Dashboard Tab -->
-            <section id="dashboardTab" class="tab-panel active" aria-labelledby="Insights">
+            <section id="dashboardTab" class="tab-panel" aria-labelledby="Insights">
                 <div class="panel-header">
                     <div>
                         <h2>Spend & usage pulse</h2>
@@ -113,52 +112,68 @@
                 </div>
 
                 <div class="model-stats">
-                    <div class="panel-header tight">
+                    <div class="panel-header tight collapsible-header" onclick="toggleModelStats()">
                         <div>
                             <h3>Model performance snapshot</h3>
                             <p>Share of routed traffic, spend, and observed latency.</p>
                         </div>
-                        <span class="eyebrow">Live data</span>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="eyebrow">Live data</span>
+                            <button class="collapse-toggle" aria-expanded="false" aria-label="Toggle model stats">
+                                <span class="collapse-icon">▼</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="model-table-wrapper">
-                        <table class="model-table">
-                            <thead>
-                                <tr>
-                                    <th>Model</th>
-                                    <th>Vendor</th>
-                                    <th>Share</th>
-                                    <th>Spend</th>
-                                    <th>Tokens</th>
-                                    <th>p95 latency</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modelStatsBody">
-                                <!-- populated by script -->
-                            </tbody>
-                        </table>
+                    <div class="collapsible-content" id="modelStatsContent" style="max-height: 0;">
+                        <div class="model-table-wrapper">
+                            <table class="model-table">
+                                <thead>
+                                    <tr>
+                                        <th>Model</th>
+                                        <th>Vendor</th>
+                                        <th>Share</th>
+                                        <th>Spend</th>
+                                        <th>Tokens</th>
+                                        <th>p95 latency</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modelStatsBody">
+                                    <!-- populated by script -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <div class="cost-comparison-section">
-                    <div class="panel-header tight">
+                    <div class="panel-header tight collapsible-header" onclick="toggleCostComparison()">
                         <div>
                             <h3>Cost Savings Comparison</h3>
                             <p>Restruct Router vs individual model API costs (monthly)</p>
                         </div>
+                        <button class="collapse-toggle" aria-expanded="false" aria-label="Toggle cost comparison">
+                            <span class="collapse-icon">▼</span>
+                        </button>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="costComparisonChart"></canvas>
+                    <div class="collapsible-content" id="costComparisonContent" style="max-height: 0;">
+                        <div class="chart-container">
+                            <canvas id="costComparisonChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Router Tab -->
-            <section id="routerTab" class="tab-panel" aria-labelledby="Router & Chat">
-                <div class="router-grid">
-                    <aside class="control-panel">
-                        <h2>Routing controls</h2>
-                        <p class="muted-text">Choose how Restruct selects models for each prompt.</p>
+            <!-- Routing Controls Tab -->
+            <section id="routingControlsTab" class="tab-panel" aria-labelledby="Routing Controls">
+                <div class="controls-container">
+                    <div class="panel-header">
+                        <div>
+                            <h2>Routing controls</h2>
+                            <p>Configure how Restruct selects models for each prompt.</p>
+                        </div>
+                    </div>
 
+                    <div class="control-panel">
                         <fieldset class="router-mode">
                             <legend>Routing mode</legend>
                             <label class="mode-option">
@@ -216,38 +231,39 @@
                                 <strong>99.2%</strong>
                             </div>
                         </div>
-                    </aside>
+                    </div>
+                </div>
+            </section>
 
-                    <section class="chat-panel" aria-live="polite">
-                        <div class="chat-header">
-                            <div>
-                                <h2>Chat workspace</h2>
-                                <p>Ask a question and watch the router in action.</p>
-                            </div>
+            <!-- Chat Tab -->
+            <section id="routerTab" class="tab-panel active" aria-labelledby="Chat">
+                <div class="chat-panel" aria-live="polite">
+                    <div class="chat-header">
+                        <div>
+                            <h2>Chat workspace</h2>
                         </div>
+                    </div>
 
-                        <div class="chat-container" id="chatContainer">
-                            <div class="welcome-message">
-                                <img src="assets/logo.png" alt="" class="logo-mark ghost">
-                                <h3>Welcome to Restruct</h3>
-                                <p>Start chatting to see how prompts are routed across providers.</p>
-                            </div>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="welcome-message">
+                            <img src="assets/logo.png" alt="" class="logo-mark ghost">
+                            <h3>Welcome to Restruct</h3>
                         </div>
+                    </div>
 
-                        <div class="input-container">
-                            <form id="chatForm" class="input-form">
-                                <textarea
-                                    id="promptInput"
-                                    class="prompt-input"
-                                    placeholder="Ask something... (Press Enter to send, Shift+Enter for newline)"
-                                    rows="1"
-                                ></textarea>
-                                <button type="submit" class="send-button" id="sendButton">
-                                    <span class="button-icon">↑</span>
-                                </button>
-                            </form>
-                        </div>
-                    </section>
+                    <div class="input-container">
+                        <form id="chatForm" class="input-form">
+                            <textarea
+                                id="promptInput"
+                                class="prompt-input"
+                                placeholder="Ask something... (Press Enter to send, Shift+Enter for newline)"
+                                rows="1"
+                            ></textarea>
+                            <button type="submit" class="send-button" id="sendButton">
+                                <span class="button-icon">↑</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </section>
 

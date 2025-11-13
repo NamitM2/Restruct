@@ -92,6 +92,12 @@ function hydrateDashboard() {
 }
 
 function wireTabs() {
+    // Set the Chat button (first nav button) as active initially
+    if (tabButtons.length > 0) {
+        tabButtons[0].classList.add('active');
+    }
+
+    // Handle icon button clicks
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const target = button.dataset.tabTarget;
@@ -411,6 +417,46 @@ function initCostComparisonChart() {
             }
         }
     });
+}
+
+function toggleCostComparison() {
+    const content = document.getElementById('costComparisonContent');
+    const toggle = document.querySelector('.cost-comparison-section .collapse-toggle');
+    const icon = toggle?.querySelector('.collapse-icon');
+
+    if (!content || !toggle) return;
+
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+    if (isExpanded) {
+        content.style.maxHeight = '0';
+        toggle.setAttribute('aria-expanded', 'false');
+        if (icon) icon.textContent = '▼';
+    } else {
+        content.style.maxHeight = content.scrollHeight + 'px';
+        toggle.setAttribute('aria-expanded', 'true');
+        if (icon) icon.textContent = '▲';
+    }
+}
+
+function toggleModelStats() {
+    const content = document.getElementById('modelStatsContent');
+    const toggle = document.querySelector('.model-stats .collapse-toggle');
+    const icon = toggle?.querySelector('.collapse-icon');
+
+    if (!content || !toggle) return;
+
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+    if (isExpanded) {
+        content.style.maxHeight = '0';
+        toggle.setAttribute('aria-expanded', 'false');
+        if (icon) icon.textContent = '▼';
+    } else {
+        content.style.maxHeight = content.scrollHeight + 'px';
+        toggle.setAttribute('aria-expanded', 'true');
+        if (icon) icon.textContent = '▲';
+    }
 }
 
 function init() {
