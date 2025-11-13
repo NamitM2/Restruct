@@ -28,30 +28,20 @@ MODELS = {
                     "chain_of_thought_depth": 9.4
                 }
             },
-            "gpt-5_pro": {
-                "input_token_cost": null,   # no public exact API cost found 
-                "output_token_cost": null,
-                "max_tokens": 128000,       # assume same as flagship 
-                "capability_attributes": {
-                    "overall_complexity": 9.7,
-                    "mathematical_and_logical_reasoning": 9.9,
-                    "linguistic_and_creative_reasoning": 9.0,
-                    "factuality": 9.2,
-                    "chain_of_thought_depth": 9.8
-                }
-            },
-            "gpt-5_codex": {
-                "input_token_cost": null,
-                "output_token_cost": null,
-                "max_tokens": 128000,       # best guess
-                "capability_attributes": {
-                    "overall_complexity": 9.0,
-                    "mathematical_and_logical_reasoning": 9.7,
-                    "linguistic_and_creative_reasoning": 7.8,
-                    "factuality": 8.7,
-                    "chain_of_thought_depth": 9.3
-                }
-            },
+            
+#            "gpt-5-pro": {
+#                "input_token_cost": null,   # no public exact API cost found 
+#                "output_token_cost": null,
+#                "max_tokens": 128000,       # assume same as flagship 
+#                "capability_attributes": {
+#                    "overall_complexity": 9.7,
+#                    "mathematical_and_logical_reasoning": 9.9,
+#                    "linguistic_and_creative_reasoning": 9.0,
+#                    "factuality": 9.2,
+#                    "chain_of_thought_depth": 9.8
+#                }
+#            },
+            
             "gpt-5_mini_nano": {
                 "input_token_cost": 0.25 / 1_000_000,     # $0.25 per 1M input tokens (mini) :contentReference[oaicite:3]{index=3}
                 "output_token_cost": 2.0 / 1_000_000,     # $2 per 1M output tokens (mini) :contentReference[oaicite:4]{index=4}
@@ -176,28 +166,6 @@ MODELS = {
 
 
 
-def get_all_models() -> Dict[str, Dict[str, Any]]:
-    """
-    Get a flattened dictionary of all available models
-    Returns: {model_name: {provider, cost, performance, ...}}
-    """
-    all_models = {}
-    for provider, provider_data in MODELS.items():
-        for model_name, model_attrs in provider_data["models"].items():
-            all_models[model_name] = {
-                "provider": provider,
-                "api_key": provider_data["api_key"],
-                **model_attrs
-            }
-    return all_models
-
-
-def get_model_info(model_name: str) -> Dict[str, Any]:
-    """Get information about a specific model"""
-    all_models = get_all_models()
-    return all_models.get(model_name)
-
-
 def get_provider_key(provider: str) -> str:
-    """Get API key for a specific provider"""
+    """Get API key for a specific provider."""
     return MODELS.get(provider, {}).get("api_key")
