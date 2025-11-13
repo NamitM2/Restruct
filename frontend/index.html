@@ -1,53 +1,287 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restruct - Smart Model Router</title>
+    <title>Restruct · Intelligence Router</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🎯 Restruct</h1>
-            <p class="subtitle">Smart Model Router</p>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="brand">
+                <img src="assets/logo.png" alt="Restruct logo" class="logo-mark">
+                <div>
+                    <p class="eyebrow">Restruct Router</p>
+                    <h1>Intelligence control center</h1>
+                    <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
+                </div>
+            </div>
+            <nav class="tab-nav" aria-label="Primary">
+                <button class="tab-button active" data-tab-target="dashboardTab">Insights</button>
+                <button class="tab-button" data-tab-target="routerTab">Router & Chat</button>
+                <button class="tab-button" data-tab-target="settingsTab">Settings</button>
+            </nav>
         </header>
 
-        <!-- Controls -->
-        <div class="controls">
-            <label for="priority">Routing Priority:</label>
-            <select id="priority" class="priority-select">
-                <option value="balanced">⚖️ Balanced</option>
-                <option value="cost">💰 Cost-Optimized</option>
-                <option value="performance">⚡ Performance</option>
-            </select>
-        </div>
+        <main class="tab-panels">
+            <!-- Dashboard Tab -->
+            <section id="dashboardTab" class="tab-panel active" aria-labelledby="Insights">
+                <div class="panel-header">
+                    <div>
+                        <h2>Spend & usage pulse</h2>
+                        <p>Tracking the latest 24h window, plus rolling daily, weekly, monthly, and yearly trends.</p>
+                    </div>
+                    <button class="ghost-button">Download report</button>
+                </div>
 
-        <!-- Chat Container -->
-        <div class="chat-container" id="chatContainer">
-            <div class="welcome-message">
-                <div class="icon">💬</div>
-                <h2>Welcome to Restruct</h2>
-                <p>Send a message and let our smart router find the best model for you</p>
-            </div>
-        </div>
+                <div class="metric-grid">
+                    <article class="metric-card">
+                        <p class="label">Daily spend</p>
+                        <p class="value" id="spendDaily">$0</p>
+                        <p class="delta">vs yesterday · +4.2%</p>
+                    </article>
+                    <article class="metric-card">
+                        <p class="label">Weekly spend</p>
+                        <p class="value" id="spendWeekly">$0</p>
+                        <p class="delta muted">Rolling 7-day total</p>
+                    </article>
+                    <article class="metric-card">
+                        <p class="label">Monthly spend</p>
+                        <p class="value" id="spendMonthly">$0</p>
+                        <p class="delta muted">Projected on usage</p>
+                    </article>
+                    <article class="metric-card">
+                        <p class="label">Yearly spend</p>
+                        <p class="value" id="spendYearly">$0</p>
+                        <p class="delta muted">Forecast FY25</p>
+                    </article>
+                    <article class="metric-card highlight">
+                        <p class="label">Last 24 hours</p>
+                        <p class="value" id="spendLast24">$0</p>
+                        <p class="delta">+12% vs prior 24h</p>
+                    </article>
+                </div>
 
-        <!-- Input Area -->
-        <div class="input-container">
-            <form id="chatForm" class="input-form">
-                <textarea
-                    id="promptInput"
-                    class="prompt-input"
-                    placeholder="Type your message..."
-                    rows="1"
-                ></textarea>
-                <button type="submit" class="send-button" id="sendButton">
-                    <span class="button-text">Send</span>
-                    <span class="button-icon">→</span>
-                </button>
-            </form>
-        </div>
+                <div class="panel-header tight">
+                    <div>
+                        <h3>Tokens routed</h3>
+                        <p>Volume routed through Restruct by interval.</p>
+                    </div>
+                </div>
+                <div class="metric-grid tokens-grid">
+                    <article class="metric-card compact">
+                        <p class="label">Daily tokens</p>
+                        <p class="value" id="tokensDaily">0</p>
+                        <p class="delta muted">input + output</p>
+                    </article>
+                    <article class="metric-card compact">
+                        <p class="label">Weekly tokens</p>
+                        <p class="value" id="tokensWeekly">0</p>
+                        <p class="delta muted">rolling 7 days</p>
+                    </article>
+                    <article class="metric-card compact">
+                        <p class="label">Monthly tokens</p>
+                        <p class="value" id="tokensMonthly">0</p>
+                        <p class="delta muted">MTD</p>
+                    </article>
+                    <article class="metric-card compact">
+                        <p class="label">Yearly tokens</p>
+                        <p class="value" id="tokensYearly">0</p>
+                        <p class="delta muted">YTD</p>
+                    </article>
+                </div>
+
+                <div class="model-stats">
+                    <div class="panel-header tight">
+                        <div>
+                            <h3>Model performance snapshot</h3>
+                            <p>Share of routed traffic, spend, and observed latency.</p>
+                        </div>
+                        <span class="eyebrow">Live data</span>
+                    </div>
+                    <div class="model-table-wrapper">
+                        <table class="model-table">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Vendor</th>
+                                    <th>Share</th>
+                                    <th>Spend</th>
+                                    <th>Tokens</th>
+                                    <th>p95 latency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modelStatsBody">
+                                <!-- populated by script -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Router Tab -->
+            <section id="routerTab" class="tab-panel" aria-labelledby="Router & Chat">
+                <div class="router-grid">
+                    <aside class="control-panel">
+                        <h2>Routing controls</h2>
+                        <p class="muted-text">Choose how Restruct selects models for each prompt.</p>
+
+                        <fieldset class="router-mode">
+                            <legend>Routing mode</legend>
+                            <label class="mode-option">
+                                <input type="radio" name="routingMode" value="auto" checked>
+                                <span>
+                                    <strong>Intelligent router</strong>
+                                    <small>Restruct chooses best fit per prompt.</small>
+                                </span>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="routingMode" value="manual">
+                                <span>
+                                    <strong>Manual selection</strong>
+                                    <small>Force a specific vendor/model.</small>
+                                </span>
+                            </label>
+                        </fieldset>
+
+                        <div class="control-group">
+                            <label for="prioritySelect">Routing priority</label>
+                            <select id="prioritySelect">
+                                <option value="balanced">Balanced</option>
+                                <option value="cost">Cost optimized</option>
+                                <option value="performance">Performance first</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group model-picker" id="modelPicker">
+                            <label for="modelSelect">Choose manual model</label>
+                            <select id="modelSelect">
+                                <option value="openai:gpt-5">OpenAI · GPT-5</option>
+                                <option value="openai:gpt-5-pro">OpenAI · GPT-5 Pro</option>
+                                <option value="openai:gpt-5_mini_nano">OpenAI · GPT-5 Mini Nano</option>
+                                <option value="google:gemini-2.5_pro">Google · Gemini 2.5 Pro</option>
+                                <option value="google:gemini-2.5_flash">Google · Gemini 2.5 Flash</option>
+                                <option value="google:gemini-2.5_flash_lite">Google · Gemini 2.5 Flash Lite</option>
+                                <option value="anthropic:claude-opus_4.1">Anthropic · Claude Opus 4.1</option>
+                                <option value="anthropic:claude-sonnet_4.5">Anthropic · Claude Sonnet 4.5</option>
+                                <option value="anthropic:claude-haiku_4.5">Anthropic · Claude Haiku 4.5</option>
+                            </select>
+                            <small class="muted-text">Visible when manual mode is active.</small>
+                        </div>
+
+                        <div class="chip-row">
+                            <div class="chip">
+                                <span>Avg latency</span>
+                                <strong>482 ms</strong>
+                            </div>
+                            <div class="chip">
+                                <span>Routing confidence</span>
+                                <strong>97%</strong>
+                            </div>
+                            <div class="chip">
+                                <span>Success rate</span>
+                                <strong>99.2%</strong>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <section class="chat-panel" aria-live="polite">
+                        <div class="chat-header">
+                            <div>
+                                <h2>Chat workspace</h2>
+                                <p>Ask a question and watch the router in action.</p>
+                            </div>
+                        </div>
+
+                        <div class="chat-container" id="chatContainer">
+                            <div class="welcome-message">
+                                <img src="assets/logo.png" alt="" class="logo-mark ghost">
+                                <h3>Welcome to Restruct</h3>
+                                <p>Start chatting to see how prompts are routed across providers.</p>
+                            </div>
+                        </div>
+
+                        <div class="input-container">
+                            <form id="chatForm" class="input-form">
+                                <textarea
+                                    id="promptInput"
+                                    class="prompt-input"
+                                    placeholder="Ask something... (Press Enter to send, Shift+Enter for newline)"
+                                    rows="1"
+                                ></textarea>
+                                <button type="submit" class="send-button" id="sendButton">
+                                    <span class="button-text">Send</span>
+                                    <span class="button-icon">?</span>
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="settingsTab" class="tab-panel" aria-labelledby="Settings">
+                <div class="settings-grid">
+                    <form class="settings-card">
+                        <h2>User profile</h2>
+                        <label>
+                            Display name
+                            <input type="text" placeholder="Alex Rivera">
+                        </label>
+                        <label>
+                            Email for notifications
+                            <input type="email" placeholder="team@restruct.ai">
+                        </label>
+                        <label>
+                            Workspace timezone
+                            <select>
+                                <option>UTC</option>
+                                <option>Pacific</option>
+                                <option>Central</option>
+                                <option>Eastern</option>
+                                <option>GMT</option>
+                            </select>
+                        </label>
+                        <button type="button" class="ghost-button stretch">Save profile</button>
+                    </form>
+
+                    <div class="settings-card">
+                        <h2>Notification preferences</h2>
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span>Alert me when spend exceeds budget</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox">
+                            <span>Weekly usage emails</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span>Latency regression alerts</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" checked>
+                            <span>Security notifications</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-card">
+                        <h2>API tokens</h2>
+                        <p>Rotate keys and manage workspace credentials.</p>
+                        <button type="button" class="ghost-button stretch">View tokens</button>
+                        <button type="button" class="ghost-button neutral stretch">Rotate keys</button>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script src="script.js"></script>
