@@ -12,24 +12,37 @@
     >
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="app-shell">
-        <header class="app-header">
-            <div class="brand">
-                <img src="assets/logo.png" alt="Restruct logo" class="logo-mark">
-                <div>
-                    <p class="eyebrow">Restruct Router</p>
-                    <h1>Intelligence control center</h1>
-                    <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
-                </div>
+        <nav class="sidebar-nav" aria-label="Primary">
+            <div class="sidebar-brand">
+                <img src="assets/logo.png" alt="Restruct logo" class="sidebar-logo">
             </div>
-            <nav class="tab-nav" aria-label="Primary">
-                <button class="tab-button active" data-tab-target="dashboardTab">Insights</button>
-                <button class="tab-button" data-tab-target="routerTab">Router & Chat</button>
-                <button class="tab-button" data-tab-target="settingsTab">Settings</button>
-            </nav>
-        </header>
+            <div class="nav-items">
+                <button class="nav-icon-button active" data-tab-target="dashboardTab" title="Insights">
+                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon">
+                </button>
+                <button class="nav-icon-button" data-tab-target="routerTab" title="Router & Chat">
+                    <img src="assets/chat-icon.png" alt="Chat" class="nav-icon">
+                </button>
+                <button class="nav-icon-button" data-tab-target="settingsTab" title="Settings">
+                    <img src="assets/settings-icon.png" alt="Settings" class="nav-icon">
+                </button>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="app-header">
+                <div class="brand">
+                    <div>
+                        <p class="eyebrow">Restruct Router</p>
+                        <h1>Intelligence control center</h1>
+                        <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
+                    </div>
+                </div>
+            </header>
 
         <main class="tab-panels">
             <!-- Dashboard Tab -->
@@ -125,6 +138,18 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="cost-comparison-section">
+                    <div class="panel-header tight">
+                        <div>
+                            <h3>Cost Savings Comparison</h3>
+                            <p>Restruct Router vs individual model API costs (monthly)</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="costComparisonChart"></canvas>
+                    </div>
+                </div>
             </section>
 
             <!-- Router Tab -->
@@ -218,8 +243,7 @@
                                     rows="1"
                                 ></textarea>
                                 <button type="submit" class="send-button" id="sendButton">
-                                    <span class="button-text">Send</span>
-                                    <span class="button-icon">?</span>
+                                    <span class="button-icon">↑</span>
                                 </button>
                             </form>
                         </div>
@@ -281,7 +305,8 @@
                     </div>
                 </div>
             </section>
-        </main>
+            </main>
+        </div>
     </div>
 
     <script src="script.js"></script>

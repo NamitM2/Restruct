@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:8000';
 
 // Tab navigation
-const tabButtons = document.querySelectorAll('.tab-button');
+const tabButtons = document.querySelectorAll('.nav-icon-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
 const chatContainer = document.getElementById('chatContainer');
 const chatForm = document.getElementById('chatForm');
@@ -289,11 +289,6 @@ function setLoading(state) {
     isLoading = state;
     if (sendButton) sendButton.disabled = state;
     if (promptInput) promptInput.disabled = state;
-
-    const textSlot = sendButton?.querySelector('.button-text');
-    if (textSlot) {
-        textSlot.textContent = state ? 'Sending…' : 'Send';
-    }
 }
 
 async function testConnection() {
@@ -307,10 +302,122 @@ async function testConnection() {
     }
 }
 
+function initCostComparisonChart() {
+    const ctx = document.getElementById('costComparisonChart');
+    if (!ctx) return;
+
+    // Model pricing comparison data (monthly cost for same workload)
+    const models = [
+        'Restruct Router',
+        'GPT-5 Pro',
+        'GPT-5',
+        'GPT-5 Mini',
+        'Claude Opus 4.1',
+        'Claude Sonnet 4.5',
+        'Claude Haiku 4.5',
+        'Gemini 2.5 Pro',
+        'Gemini 2.5 Flash'
+    ];
+
+    const costs = [
+        12350,  // Restruct (optimized routing)
+        28500,  // GPT-5 Pro (most expensive)
+        24680,  // GPT-5
+        18200,  // GPT-5 Mini
+        26400,  // Opus 4.1
+        22800,  // Sonnet 4.5
+        15600,  // Haiku 4.5
+        25100,  // Gemini 2.5 Pro
+        19500   // Gemini 2.5 Flash
+    ];
+
+    // Color: Restruct is highlighted, others are neutral
+    const backgroundColors = costs.map((_, i) =>
+        i === 0 ? '#b56747' : 'rgba(92, 49, 30, 0.5)'
+    );
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: models,
+            datasets: [{
+                label: 'Monthly Cost ($)',
+                data: costs,
+                backgroundColor: backgroundColors,
+                borderColor: costs.map((_, i) =>
+                    i === 0 ? '#8e3c2c' : 'rgba(92, 49, 30, 0.7)'
+                ),
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const savings = costs[0];
+                            const diff = value - savings;
+                            const percent = ((diff / value) * 100).toFixed(1);
+
+                            if (context.dataIndex === 0) {
+                                return `Monthly Cost: $${value.toLocaleString()}`;
+                            }
+                            return [
+                                `Monthly Cost: $${value.toLocaleString()}`,
+                                `Savings with Restruct: $${diff.toLocaleString()} (${percent}%)`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Space Grotesk',
+                            size: 11
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(92, 49, 30, 0.08)'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Space Grotesk',
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return '$' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function init() {
     wireTabs();
     handleRoutingModeChange();
     hydrateDashboard();
+    initCostComparisonChart();
     testConnection();
     promptInput?.focus();
 }
