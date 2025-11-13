@@ -1,130 +1,237 @@
-// Configuration
 const API_URL = 'http://localhost:8000';
 
-// DOM Elements
+// Tab navigation
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabPanels = document.querySelectorAll('.tab-panel');
 const chatContainer = document.getElementById('chatContainer');
 const chatForm = document.getElementById('chatForm');
 const promptInput = document.getElementById('promptInput');
 const sendButton = document.getElementById('sendButton');
-const prioritySelect = document.getElementById('priority');
+const prioritySelect = document.getElementById('prioritySelect');
+const routingModeRadios = document.querySelectorAll('input[name="routingMode"]');
+const modelPicker = document.getElementById('modelPicker');
+const modelSelect = document.getElementById('modelSelect');
 
-// State
+const spendIds = {
+    daily: document.getElementById('spendDaily'),
+    weekly: document.getElementById('spendWeekly'),
+    monthly: document.getElementById('spendMonthly'),
+    yearly: document.getElementById('spendYearly'),
+    last24: document.getElementById('spendLast24')
+};
+
+const tokenIds = {
+    daily: document.getElementById('tokensDaily'),
+    weekly: document.getElementById('tokensWeekly'),
+    monthly: document.getElementById('tokensMonthly'),
+    yearly: document.getElementById('tokensYearly')
+};
+
+const dashboardData = {
+    spending: {
+        daily: 482.31,
+        weekly: 2984.12,
+        monthly: 12350.44,
+        yearly: 148233.9,
+        last24: 520.67
+    },
+    tokens: {
+        daily: 982000,
+        weekly: 6592000,
+        monthly: 26588000,
+        yearly: 312450000
+    },
+    models: [
+        { name: 'GPT-5', vendor: 'OpenAI', share: 42, spend: 4820, tokens: 12200000, latency: '610 ms' },
+        { name: 'Gemini 2.5 Pro', vendor: 'Google', share: 27, spend: 2415, tokens: 8200000, latency: '520 ms' },
+        { name: 'Claude Opus 4.1', vendor: 'Anthropic', share: 18, spend: 3200, tokens: 5600000, latency: '480 ms' },
+        { name: 'Gemini 2.5 Flash', vendor: 'Google', share: 8, spend: 860, tokens: 3900000, latency: '340 ms' },
+        { name: 'GPT-5 Mini Nano', vendor: 'OpenAI', share: 5, spend: 260, tokens: 2100000, latency: '220 ms' }
+    ]
+};
+
 let isLoading = false;
 
-// Auto-resize textarea
-promptInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-});
+function formatCurrency(value) {
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
 
-// Handle Enter key (Shift+Enter for new line)
-promptInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        chatForm.dispatchEvent(new Event('submit'));
-    }
-});
+function formatNumber(value) {
+    return value.toLocaleString();
+}
 
-// Handle form submission
-chatForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const prompt = promptInput.value.trim();
-    if (!prompt || isLoading) return;
-
-    const priority = prioritySelect.value;
-
-    // Clear input and disable
-    promptInput.value = '';
-    promptInput.style.height = 'auto';
-    setLoading(true);
-
-    // Remove welcome message if it exists
-    const welcomeMsg = chatContainer.querySelector('.welcome-message');
-    if (welcomeMsg) {
-        welcomeMsg.remove();
+function hydrateDashboard() {
+    if (spendIds.daily) {
+        spendIds.daily.textContent = formatCurrency(dashboardData.spending.daily);
+        spendIds.weekly.textContent = formatCurrency(dashboardData.spending.weekly);
+        spendIds.monthly.textContent = formatCurrency(dashboardData.spending.monthly);
+        spendIds.yearly.textContent = formatCurrency(dashboardData.spending.yearly);
+        spendIds.last24.textContent = formatCurrency(dashboardData.spending.last24);
     }
 
-    // Add user message
-    addMessage('user', prompt);
+    if (tokenIds.daily) {
+        tokenIds.daily.textContent = formatNumber(dashboardData.tokens.daily);
+        tokenIds.weekly.textContent = formatNumber(dashboardData.tokens.weekly);
+        tokenIds.monthly.textContent = formatNumber(dashboardData.tokens.monthly);
+        tokenIds.yearly.textContent = formatNumber(dashboardData.tokens.yearly);
+    }
 
-    // Show loading indicator
-    const loadingId = showLoading();
+    const modelStatsBody = document.getElementById('modelStatsBody');
+    if (modelStatsBody) {
+        modelStatsBody.innerHTML = dashboardData.models.map(model => `
+            <tr>
+                <td>${model.name}</td>
+                <td>${model.vendor}</td>
+                <td>${model.share}%</td>
+                <td>${formatCurrency(model.spend)}</td>
+                <td>${formatNumber(model.tokens)}</td>
+                <td>${model.latency}</td>
+            </tr>
+        `).join('');
+    }
+}
 
-    try {
-        // Call API
-        const response = await fetch(`${API_URL}/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                priority: priority,
-                max_tokens: 1000,
-                temperature: 0.7
-            })
+function wireTabs() {
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const target = button.dataset.tabTarget;
+            if (!target) return;
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            tabPanels.forEach(panel => {
+                panel.classList.toggle('active', panel.id === target);
+            });
         });
+    });
+}
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'API request failed');
+function handleRoutingModeChange() {
+    const selectedMode = document.querySelector('input[name="routingMode"]:checked');
+    const isManual = selectedMode && selectedMode.value === 'manual';
+
+    if (modelPicker) {
+        modelPicker.classList.toggle('is-visible', Boolean(isManual));
+    }
+
+    if (prioritySelect) {
+        prioritySelect.disabled = Boolean(isManual);
+        prioritySelect.classList.toggle('disabled', Boolean(isManual));
+    }
+}
+
+routingModeRadios.forEach(radio => {
+    radio.addEventListener('change', handleRoutingModeChange);
+});
+
+if (promptInput) {
+    promptInput.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+    });
+
+    promptInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            chatForm?.dispatchEvent(new Event('submit'));
+        }
+    });
+}
+
+if (chatForm) {
+    chatForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const prompt = promptInput?.value.trim();
+        if (!prompt || isLoading) return;
+
+        const routingMode = document.querySelector('input[name="routingMode"]:checked')?.value || 'auto';
+        const payload = {
+            prompt,
+            priority: prioritySelect?.value || 'balanced',
+            max_tokens: 1000,
+            temperature: 0.7,
+            router_mode: routingMode,
+            model_override: routingMode === 'manual' ? modelSelect?.value : null
+        };
+
+        if (promptInput) {
+            promptInput.value = '';
+            promptInput.style.height = 'auto';
+        }
+        setLoading(true);
+
+        const welcomeMsg = chatContainer?.querySelector('.welcome-message');
+        if (welcomeMsg) {
+            welcomeMsg.remove();
         }
 
-        const data = await response.json();
+        addMessage('user', prompt);
+        const loadingId = showLoading();
 
-        // Remove loading indicator
-        removeLoading(loadingId);
+        try {
+            const response = await fetch(`${API_URL}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-        // Add assistant message
-        addMessage('assistant', data.output, {
-            model: data.model,
-            provider: data.provider,
-            score: data.routing_metadata.score
-        });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'API request failed');
+            }
 
-    } catch (error) {
-        console.error('Error:', error);
-        removeLoading(loadingId);
-        addMessage('assistant', `Error: ${error.message}. Make sure the backend is running and API keys are configured.`, {
-            model: 'error',
-            provider: 'system'
-        });
-    } finally {
-        setLoading(false);
-        promptInput.focus();
-    }
-});
+            const data = await response.json();
+            removeLoading(loadingId);
+            addMessage('assistant', data.output, {
+                model: data.model,
+                provider: data.provider,
+                score: data.routing_metadata?.score
+            });
+        } catch (error) {
+            console.error('Chat error:', error);
+            removeLoading(loadingId);
+            addMessage('assistant', `Error: ${error.message}. Make sure the backend is running and API keys are configured.`, {
+                model: 'error',
+                provider: 'system'
+            });
+        } finally {
+            setLoading(false);
+            promptInput?.focus();
+        }
+    });
+}
 
-// Add message to chat
 function addMessage(role, content, metadata = null) {
+    if (!chatContainer) return;
+
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${role}`;
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
 
+    if (role === 'assistant' && metadata && metadata.model !== 'error') {
+        const routingInfo = document.createElement('div');
+        routingInfo.className = 'routing-info';
+        routingInfo.innerHTML = `Routed to <strong>${metadata.model}</strong>`;
+        contentDiv.appendChild(routingInfo);
+    }
+
     const textDiv = document.createElement('div');
     textDiv.textContent = content;
     contentDiv.appendChild(textDiv);
 
-    // Add routing info at the top for assistant messages
-    if (role === 'assistant' && metadata && metadata.model !== 'error') {
-        const routingInfo = document.createElement('div');
-        routingInfo.className = 'routing-info';
-        routingInfo.innerHTML = `📍 Routed to: <strong>${metadata.model}</strong>`;
-        contentDiv.insertBefore(routingInfo, textDiv);
-    }
-
-    // Add metadata for assistant messages
     if (role === 'assistant' && metadata) {
         const metadataDiv = document.createElement('div');
         metadataDiv.className = 'message-metadata';
 
-        const modelBadge = document.createElement('span');
-        modelBadge.className = 'model-badge';
-        modelBadge.innerHTML = `🤖 ${metadata.model}`;
-        metadataDiv.appendChild(modelBadge);
+        if (metadata.model) {
+            const modelBadge = document.createElement('span');
+            modelBadge.className = 'model-badge';
+            modelBadge.textContent = metadata.model;
+            metadataDiv.appendChild(modelBadge);
+        }
 
         if (metadata.provider) {
             const providerSpan = document.createElement('span');
@@ -143,14 +250,13 @@ function addMessage(role, content, metadata = null) {
 
     messageDiv.appendChild(contentDiv);
     chatContainer.appendChild(messageDiv);
-
-    // Scroll to bottom
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Show loading indicator
 function showLoading() {
     const loadingId = `loading-${Date.now()}`;
+    if (!chatContainer) return loadingId;
+
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message message-assistant';
     messageDiv.id = loadingId;
@@ -173,39 +279,40 @@ function showLoading() {
     return loadingId;
 }
 
-// Remove loading indicator
 function removeLoading(loadingId) {
+    if (!loadingId) return;
     const loadingElement = document.getElementById(loadingId);
-    if (loadingElement) {
-        loadingElement.remove();
+    loadingElement?.remove();
+}
+
+function setLoading(state) {
+    isLoading = state;
+    if (sendButton) sendButton.disabled = state;
+    if (promptInput) promptInput.disabled = state;
+
+    const textSlot = sendButton?.querySelector('.button-text');
+    if (textSlot) {
+        textSlot.textContent = state ? 'Sending�' : 'Send';
     }
 }
 
-// Set loading state
-function setLoading(loading) {
-    isLoading = loading;
-    sendButton.disabled = loading;
-    promptInput.disabled = loading;
-
-    if (loading) {
-        sendButton.querySelector('.button-text').textContent = 'Sending...';
-    } else {
-        sendButton.querySelector('.button-text').textContent = 'Send';
-    }
-}
-
-// Test API connection on load
 async function testConnection() {
     try {
         const response = await fetch(`${API_URL}/`);
         if (response.ok) {
-            console.log('✅ Backend connected successfully');
+            console.log('Backend connected');
         }
     } catch (error) {
-        console.warn('⚠️ Backend not connected. Make sure to run: uvicorn app:app --reload');
+        console.warn('Backend offline? Start FastAPI with: uvicorn app:app --reload', error);
     }
 }
 
-// Initialize
-testConnection();
-promptInput.focus();
+function init() {
+    wireTabs();
+    handleRoutingModeChange();
+    hydrateDashboard();
+    testConnection();
+    promptInput?.focus();
+}
+
+init();

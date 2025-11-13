@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#f6efe5"/>
+  <defs>
+    <path id="r-shape" fill-rule="evenodd" d="
+      M112 124C112 84 144 52 184 52H296C372 52 434 114 434 190C434 266 372 328 296 328H268L356 460C368 480 354 504 334 504H260C248 504 238 498 232 486L174 382H164V448C164 484 140 510 104 510H100C64 510 36 482 36 446V204C36 164 68 132 108 132H112Z
+      M168 216C168 190 188 170 214 170H328C352 170 372 150 372 126C372 102 352 82 328 82H236C198 82 168 112 168 150V216Z
+      M88 352C88 372 104 388 124 388C144 388 160 372 160 352V248C160 228 144 212 124 212C104 212 88 228 88 248V352Z
+    "/>
+    <clipPath id="left-split">
+      <path d="M0 0H320L200 360H0V512H0Z"/>
+    </clipPath>
+    <clipPath id="right-split">
+      <path d="M512 0H320L200 360H512V512H512Z"/>
+    </clipPath>
+  </defs>
+  <use href="#r-shape" fill="#a34734" clip-path="url(#right-split)"/>
+  <use href="#r-shape" fill="#d8af7c" clip-path="url(#left-split)"/>
+</svg>
