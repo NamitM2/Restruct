@@ -15,7 +15,7 @@ APP_URL = "http://localhost:8000"
 def _launch_browser():
     """Give uvicorn a head start, then open the UI in the default browser."""
     time.sleep(1.5)
-    webbrowser.open(APP_URL)
+    webbrowser.open(f"{APP_URL}/index.html")
 
 
 if __name__ == "__main__":

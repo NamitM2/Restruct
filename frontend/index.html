@@ -12,26 +12,39 @@
     >
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="app-shell">
-        <header class="app-header">
-            <div class="brand">
-                <img src="assets/logo.png" alt="Restruct logo" class="logo-mark">
-                <div>
-                    <p class="eyebrow">Restruct Router</p>
-                    <h1>Intelligence control center</h1>
-                    <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
-                </div>
+        <nav class="sidebar-nav" aria-label="Primary">
+            <div class="sidebar-brand">
+                <img src="assets/logo.png" alt="Restruct logo" class="sidebar-logo">
             </div>
-            <nav class="tab-nav" aria-label="Primary">
-                <button class="tab-button active" data-tab-target="dashboardTab">Insights</button>
-                <button class="tab-button" data-tab-target="routerTab">Router & Chat</button>
-                <button class="tab-button" data-tab-target="settingsTab">Settings</button>
-            </nav>
-        </header>
+            <div class="nav-items">
+                <button class="nav-icon-button active" data-tab-target="dashboardTab" title="Insights">
+                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon">
+                </button>
+                <button class="nav-icon-button" data-tab-target="routerTab" title="Router & Chat">
+                    <img src="assets/chat-icon.png" alt="Chat" class="nav-icon">
+                </button>
+                <button class="nav-icon-button" data-tab-target="settingsTab" title="Settings">
+                    <img src="assets/settings-icon.png" alt="Settings" class="nav-icon">
+                </button>
+            </div>
+        </nav>
 
-        <main class="tab-panels">
+        <div class="main-content">
+            <header class="app-header">
+                <div class="brand">
+                    <div>
+                        <p class="eyebrow">Restruct Router</p>
+                        <h1>Intelligence control center</h1>
+                        <p class="subtitle">Monitor spend, route to the right model, and chat with a single workspace.</p>
+                    </div>
+                </div>
+            </header>
+
+            <main class="tab-panels">
             <!-- Dashboard Tab -->
             <section id="dashboardTab" class="tab-panel active" aria-labelledby="Insights">
                 <div class="panel-header">
@@ -97,6 +110,35 @@
                         <p class="value" id="tokensYearly">0</p>
                         <p class="delta muted">YTD</p>
                     </article>
+                </div>
+
+                <div class="cost-comparison-section collapsible">
+                    <div class="panel-header tight collapsible-header" id="costComparisonHeader">
+                        <div>
+                            <h3>Cost savings analysis</h3>
+                            <p>Restruct intelligent routing vs. individual model pricing.</p>
+                        </div>
+                        <button class="collapse-toggle" aria-expanded="false" aria-controls="costComparisonContent">
+                            <span class="collapse-icon">▼</span>
+                        </button>
+                    </div>
+                    <div class="collapsible-content" id="costComparisonContent" style="display: none;">
+                        <div class="comparison-summary">
+                            <div class="summary-card">
+                                <p class="summary-label">Restruct Router</p>
+                                <p class="summary-value" id="restructCost">$12,350</p>
+                                <p class="summary-detail">Monthly spend</p>
+                            </div>
+                            <div class="summary-card savings">
+                                <p class="summary-label">You're Saving</p>
+                                <p class="summary-value" id="savingsAmount">$12,330</p>
+                                <p class="summary-detail" id="savingsPercent">50% vs most expensive</p>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="costComparisonChart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="model-stats">
@@ -218,8 +260,7 @@
                                     rows="1"
                                 ></textarea>
                                 <button type="submit" class="send-button" id="sendButton">
-                                    <span class="button-text">Send</span>
-                                    <span class="button-icon">?</span>
+                                    <span class="button-icon">↑</span>
                                 </button>
                             </form>
                         </div>
@@ -281,7 +322,8 @@
                     </div>
                 </div>
             </section>
-        </main>
+            </main>
+        </div>
     </div>
 
     <script src="script.js"></script>
