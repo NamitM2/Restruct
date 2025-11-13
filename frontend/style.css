@@ -34,7 +34,88 @@ body {
     box-shadow: 0 40px 120px rgba(92, 49, 30, 0.18);
     overflow: hidden;
     display: flex;
+    flex-direction: row;
+}
+
+.sidebar-nav {
+    width: 80px;
+    background: linear-gradient(180deg, var(--sand-100), var(--sand-50));
+    border-right: 1px solid rgba(92, 49, 30, 0.08);
+    display: flex;
     flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 32px;
+}
+
+.sidebar-brand {
+    padding: 0 12px;
+}
+
+.sidebar-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: block;
+    object-fit: contain;
+    background: var(--sand-50);
+    padding: 6px;
+    box-shadow: 0 10px 20px rgba(92, 49, 30, 0.2);
+}
+
+.nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    padding: 0 12px;
+}
+
+.nav-icon-button {
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 16px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-icon {
+    width: 32px;
+    height: 32px;
+    transition: transform 0.2s ease;
+    object-fit: contain;
+}
+
+.nav-icon-button:hover {
+    background: rgba(92, 49, 30, 0.08);
+}
+
+.nav-icon-button:hover .nav-icon {
+    transform: scale(1.1);
+}
+
+.nav-icon-button.active {
+    background: transparent;
+    border: 2px solid var(--clay-600);
+    box-shadow: 0 0 0 1px var(--clay-600);
+}
+
+.nav-icon-button.active .nav-icon {
+    filter: none;
+    opacity: 1;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .app-header {
@@ -50,17 +131,6 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
-}
-
-.logo-mark {
-    width: 72px;
-    height: 72px;
-    border-radius: 22px;
-    display: block;
-    object-fit: contain;
-    background: var(--sand-50);
-    padding: 6px;
-    box-shadow: 0 15px 30px rgba(92, 49, 30, 0.25);
 }
 
 .logo-mark.ghost {
@@ -86,27 +156,15 @@ body {
     color: var(--muted);
 }
 
-.tab-nav {
-    display: flex;
-    gap: 12px;
-}
-
-.tab-button {
-    flex: 1;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: rgba(92, 49, 30, 0.06);
-    padding: 12px 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.tab-button.active {
-    background: var(--clay-600);
-    color: #fffdf9;
-    border-color: var(--clay-600);
-    box-shadow: 0 10px 30px rgba(92, 49, 30, 0.25);
+.logo-mark {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+    display: block;
+    object-fit: contain;
+    background: var(--sand-50);
+    padding: 6px;
+    box-shadow: 0 15px 30px rgba(92, 49, 30, 0.25);
 }
 
 .tab-panels {
@@ -214,6 +272,108 @@ body {
 
 .tokens-grid .value {
     font-size: 1.4rem;
+}
+
+.cost-comparison-section {
+    background: #fffdfa;
+    border-radius: 24px;
+    padding: 24px;
+    border: 1px solid rgba(92, 49, 30, 0.08);
+    margin-bottom: 32px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.collapsible-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collapse-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    transition: transform 0.3s ease;
+}
+
+.collapse-toggle:hover {
+    background: rgba(92, 49, 30, 0.06);
+    border-radius: 8px;
+}
+
+.collapse-toggle[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.collapse-icon {
+    display: inline-block;
+    font-size: 0.9rem;
+    color: var(--clay-600);
+    transition: transform 0.3s ease;
+}
+
+.collapsible-content {
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.comparison-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.summary-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 20px;
+    border: 2px solid rgba(92, 49, 30, 0.1);
+    text-align: center;
+}
+
+.summary-card.savings {
+    border-color: var(--clay-600);
+    background: linear-gradient(135deg, var(--clay-500), var(--clay-600));
+    color: #fff;
+}
+
+.summary-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.summary-card.savings .summary-label,
+.summary-card.savings .summary-detail {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.summary-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.summary-card.savings .summary-value {
+    color: #fff;
+}
+
+.summary-detail {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.chart-container {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    margin-top: 20px;
+    border: 1px solid rgba(92, 49, 30, 0.08);
 }
 
 .model-stats {
@@ -490,18 +650,25 @@ body {
 
 .send-button {
     border: none;
-    border-radius: 18px;
-    padding: 14px 26px;
-    font-size: 1rem;
-    font-weight: 600;
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    font-size: 1.2rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
     background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
     color: #fffdf9;
     cursor: pointer;
-    box-shadow: 0 15px 40px rgba(92, 49, 30, 0.25);
+    box-shadow: 0 8px 20px rgba(92, 49, 30, 0.25);
     transition: transform 0.2s ease;
+    padding: 0;
+}
+
+.send-button .button-icon {
+    line-height: 1;
 }
 
 .send-button:hover {
@@ -510,8 +677,8 @@ body {
 
 .send-button:disabled {
     opacity: 0.6;
-    cursor: not-allowed;
     transform: none;
+    pointer-events: none;
 }
 
 .settings-grid {
@@ -552,6 +719,20 @@ body {
 
     .app-shell {
         border-radius: 0;
+        flex-direction: column;
+    }
+
+    .sidebar-nav {
+        width: 100%;
+        flex-direction: row;
+        padding: 12px 24px;
+        border-right: none;
+        border-bottom: 1px solid rgba(92, 49, 30, 0.08);
+    }
+
+    .nav-items {
+        flex-direction: row;
+        padding: 0;
     }
 
     .router-grid {
