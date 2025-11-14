@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 
-from backend_code.router import route, route_specific
+from backend_code.router import route, route_specific, route_with_llm
 from backend_code.inference import inference
 
 app = FastAPI(title="Restruct API", version="0.1.0")
@@ -57,12 +57,9 @@ def chat(request: ChatRequest):
         "routing_metadata": {"score": float}
     }
     """
-    try:
-        model_choice = resolve_model_choice(request)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # Run inference
+    model_choice = resolve_model_choice(request)
+
     response_text = inference(model_choice, request.prompt)
 
     # Format response for frontend
@@ -89,8 +86,8 @@ def resolve_model_choice(request: ChatRequest):
 
         provider, model_name = request.model_override.split(":", 1)
         return route_specific(provider, model_name)
-
-    return route(request.prompt)
+    model, model_scores = route_with_llm(request.prompt)
+    return model
 
 
 # Mount frontend static files (go up one directory)
