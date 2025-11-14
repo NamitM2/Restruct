@@ -111,15 +111,15 @@
                     </article>
                 </div>
 
-                <div class="model-stats">
-                    <div class="panel-header tight collapsible-header" onclick="toggleModelStats()">
+                <div class="model-stats" onclick="toggleModelStats(event)">
+                    <div class="panel-header tight collapsible-header">
                         <div>
                             <h3>Model performance snapshot</h3>
                             <p>Share of routed traffic, spend, and observed latency.</p>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span class="eyebrow">Live data</span>
-                            <button class="collapse-toggle" aria-expanded="false" aria-label="Toggle model stats">
+                            <button class="collapse-toggle" type="button" aria-expanded="false" aria-label="Toggle model stats">
                                 <span class="collapse-icon">▼</span>
                             </button>
                         </div>
@@ -145,13 +145,13 @@
                     </div>
                 </div>
 
-                <div class="cost-comparison-section">
-                    <div class="panel-header tight collapsible-header" onclick="toggleCostComparison()">
+                <div class="cost-comparison-section" onclick="toggleCostComparison(event)">
+                    <div class="panel-header tight collapsible-header">
                         <div>
                             <h3>Cost Savings Comparison</h3>
                             <p>Restruct Router vs individual model API costs (monthly)</p>
                         </div>
-                        <button class="collapse-toggle" aria-expanded="false" aria-label="Toggle cost comparison">
+                        <button class="collapse-toggle" type="button" aria-expanded="false" aria-label="Toggle cost comparison">
                             <span class="collapse-icon">▼</span>
                         </button>
                     </div>
@@ -337,3 +337,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
