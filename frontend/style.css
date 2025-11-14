@@ -271,15 +271,27 @@ textarea {
 }
 
 .tab-panels {
-    padding: 32px 40px 32px;
+    flex: 1;
+    padding: 0;
 }
 
 .tab-panel {
     display: none;
+    padding: 32px 40px 32px;
 }
 
 .tab-panel.active {
     display: block;
+}
+
+#routerTab {
+    padding: 0;
+    height: 100%;
+}
+
+#routerTab.active {
+    display: flex;
+    flex-direction: column;
 }
 
 .panel-header {
@@ -391,19 +403,32 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
 }
 
 .collapse-toggle {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(92, 49, 30, 0.25);
     cursor: pointer;
-    padding: 8px;
-    transition: transform 0.3s ease;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.3s ease, background 0.2s ease;
+}
+
+.collapse-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(201, 132, 84, 0.2);
 }
 
 .collapse-toggle:hover {
-    background: rgba(92, 49, 30, 0.06);
-    border-radius: 8px;
+    border-color: var(--clay-600);
+    box-shadow: 0 0 0 3px rgba(181, 103, 71, 0.12);
+    background: #fff;
 }
 
 .collapse-toggle[aria-expanded="true"] .collapse-icon {
@@ -412,9 +437,9 @@ textarea {
 
 .collapse-icon {
     display: inline-block;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--clay-600);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, color 0.2s ease;
 }
 
 .collapsible-content {
@@ -486,6 +511,7 @@ textarea {
     border: 1px solid rgba(92, 49, 30, 0.08);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: pointer;
 }
 
 .model-stats:hover {
@@ -527,12 +553,18 @@ textarea {
     margin-top: 32px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: pointer;
 }
 
 .cost-comparison-section:hover {
     border-color: var(--clay-600);
     box-shadow: 0 0 0 2px rgba(181, 103, 71, 0.12), 0 0 0 1px var(--clay-600);
     background: rgba(181, 103, 71, 0.04);
+}
+
+.model-stats .collapsible-content,
+.cost-comparison-section .collapsible-content {
+    cursor: default;
 }
 
 .chart-container {
@@ -651,13 +683,14 @@ textarea {
 }
 
 .chat-panel {
-    border-radius: 32px;
-    border: 1px solid rgba(92, 49, 30, 0.08);
-    background: #fff;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 64px);
     overflow: hidden;
+    flex: 1;
 }
 
 .chat-header {
@@ -930,6 +963,14 @@ textarea {
     .router-grid {
         grid-template-columns: 1fr;
     }
+
+    .tab-panel {
+        padding: 24px;
+    }
+
+    #routerTab {
+        padding: 0;
+    }
 }
 
 @media (max-width: 600px) {
@@ -937,8 +978,12 @@ textarea {
         padding: 24px;
     }
 
-    .tab-panels {
-        padding: 24px;
+    .tab-panel {
+        padding: 16px;
+    }
+
+    #routerTab {
+        padding: 0;
     }
 
     .message-content {
