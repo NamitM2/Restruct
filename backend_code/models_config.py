@@ -71,7 +71,7 @@ MODELS = {
                     "chain_of_thought_depth": 9.4
                 }
             },
-            "gemini-2.5_flash": {
+            "gemini-2.5-flash": {
                 "input_token_cost": 0.30 / 1_000_000,  # ~$0.30 per 1M input tokens :contentReference[oaicite:8]{index=8}
                 "output_token_cost": 2.50 / 1_000_000, # ~$2.50 per 1M output tokens :contentReference[oaicite:9]{index=9}
                 "max_tokens": 1_000_000,               # assume same window
@@ -83,7 +83,7 @@ MODELS = {
                     "chain_of_thought_depth": 8.4
                 }
             },
-            "gemini-2.5_flash_lite": {
+            "gemini-2.5-flash-lite": {
                 "input_token_cost": 0.10 / 1_000_000,  # $0.10 per 1M input tokens :contentReference[oaicite:10]{index=10}
                 "output_token_cost": 0.40 / 1_000_000, # $0.40 per 1M output tokens :contentReference[oaicite:11]{index=11}
                 "max_tokens": 1_000_000,               # consistent assumption
@@ -95,7 +95,7 @@ MODELS = {
                     "chain_of_thought_depth": 7.0
                 }
             },
-            "gemini-2.0_flash": {
+            "gemini-2.0-flash": {
                 "input_token_cost": 0.15 / 1_000_000,   # ~$0.15 per 1M input tokens :contentReference[oaicite:12]{index=12}
                 "output_token_cost": 0.60 / 1_000_000,  # ~$0.60 per 1M output tokens :contentReference[oaicite:13]{index=13}
                 "max_tokens": 512000,                   # estimate (less than 2.5 series)
@@ -107,7 +107,7 @@ MODELS = {
                     "chain_of_thought_depth": 7.6
                 }
             },
-            "gemini-2.0_flash_lite": {
+            "gemini-2.0-flash-lite": {
                 "input_token_cost": 0.05 / 1_000_000,   # ~$0.05 per 1M input tokens (estimate) :contentReference[oaicite:14]{index=14}
                 "output_token_cost": 0.20 / 1_000_000,  # ~$0.20 per 1M output tokens (estimate) :contentReference[oaicite:15]{index=15}
                 "max_tokens": 512000,
