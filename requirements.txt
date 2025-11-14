@@ -1,23 +1,30 @@
-# Install PyTorch with CUDA support first
-# For CUDA 12.1 (RTX 4060 support):
+# Third-party packages used throughout the project (grouped by usage).
+
+# Install PyTorch with CUDA support first (adjust CUDA version to your GPU)
 --index-url https://download.pytorch.org/whl/cu121
 torch>=2.0.0
 torchvision
 torchaudio
 
-# Core dependencies
+# Core model tooling
 transformers>=4.40.0
-accelerate>=0.27.0
 numpy>=1.24.0
 huggingface-hub>=0.20.0
 pytest>=7.0.0
 
-# API
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
+# API + server
+fastapi>=0.110.0
+pydantic>=2.6.0
+uvicorn[standard]>=0.27.0
 python-dotenv>=1.0.0
 
-# LLM API Clients
+# Hosted LLM clients
 openai>=1.0.0
-google-generativeai>=0.3.0
-anthropic>=0.18.0
+google-generativeai>=0.5.0
+anthropic>=0.25.0
+
+
+openai
+google
+google.generativeai
+anthropic
