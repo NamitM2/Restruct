@@ -419,44 +419,34 @@ function initCostComparisonChart() {
     });
 }
 
-function toggleCostComparison() {
-    const content = document.getElementById('costComparisonContent');
-    const toggle = document.querySelector('.cost-comparison-section .collapse-toggle');
-    const icon = toggle?.querySelector('.collapse-icon');
+function toggleCollapsible(event, contentId, toggleSelector) {
+    const content = document.getElementById(contentId);
+    const toggle = document.querySelector(toggleSelector);
 
     if (!content || !toggle) return;
 
-    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-
-    if (isExpanded) {
-        content.style.maxHeight = '0';
-        toggle.setAttribute('aria-expanded', 'false');
-        if (icon) icon.textContent = '▼';
-    } else {
-        content.style.maxHeight = content.scrollHeight + 'px';
-        toggle.setAttribute('aria-expanded', 'true');
-        if (icon) icon.textContent = '▲';
+    if (event && content.contains(event.target) && content.offsetHeight > 0) {
+        return;
     }
+
+    event?.preventDefault();
+
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+    const nextState = !isExpanded;
+
+    content.style.maxHeight = nextState ? content.scrollHeight + 'px' : '0';
+    toggle.setAttribute('aria-expanded', String(nextState));
+
+    const icon = toggle.querySelector('.collapse-icon');
+    if (icon) icon.textContent = nextState ? '▲' : '▼';
 }
 
-function toggleModelStats() {
-    const content = document.getElementById('modelStatsContent');
-    const toggle = document.querySelector('.model-stats .collapse-toggle');
-    const icon = toggle?.querySelector('.collapse-icon');
+function toggleCostComparison(event) {
+    toggleCollapsible(event, 'costComparisonContent', '.cost-comparison-section .collapse-toggle');
+}
 
-    if (!content || !toggle) return;
-
-    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-
-    if (isExpanded) {
-        content.style.maxHeight = '0';
-        toggle.setAttribute('aria-expanded', 'false');
-        if (icon) icon.textContent = '▼';
-    } else {
-        content.style.maxHeight = content.scrollHeight + 'px';
-        toggle.setAttribute('aria-expanded', 'true');
-        if (icon) icon.textContent = '▲';
-    }
+function toggleModelStats(event) {
+    toggleCollapsible(event, 'modelStatsContent', '.model-stats .collapse-toggle');
 }
 
 function init() {
