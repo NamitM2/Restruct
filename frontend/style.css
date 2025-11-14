@@ -27,6 +27,48 @@ body {
     padding: 0;
 }
 
+/* User selection control - make headers and labels non-highlightable */
+h1, h2, h3, h4, h5, h6,
+.label,
+.delta,
+.nav-label,
+.brand-name,
+.eyebrow,
+.subtitle,
+.panel-header,
+th,
+legend,
+.muted-text,
+.routing-info,
+.message-metadata,
+.model-badge,
+.chip span,
+.summary-label,
+.summary-detail,
+.ghost-button,
+.collapse-toggle,
+.mode-option strong,
+.mode-option small,
+.welcome-message h3,
+.chat-header h2,
+button {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Keep numeric values and message content selectable */
+.value,
+.message-content > div:not(.routing-info):not(.message-metadata),
+input,
+textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
 /* Custom scrollbar styling */
 * {
     scrollbar-width: thin;
@@ -443,6 +485,13 @@ body {
     padding: 24px;
     border: 1px solid rgba(92, 49, 30, 0.08);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.model-stats:hover {
+    border-color: var(--clay-600);
+    box-shadow: 0 0 0 2px rgba(181, 103, 71, 0.12), 0 0 0 1px var(--clay-600);
+    background: rgba(181, 103, 71, 0.04);
 }
 
 .model-table-wrapper {
@@ -477,6 +526,13 @@ body {
     border: 1px solid rgba(92, 49, 30, 0.08);
     margin-top: 32px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.cost-comparison-section:hover {
+    border-color: var(--clay-600);
+    box-shadow: 0 0 0 2px rgba(181, 103, 71, 0.12), 0 0 0 1px var(--clay-600);
+    background: rgba(181, 103, 71, 0.04);
 }
 
 .chart-container {
@@ -787,13 +843,65 @@ body {
 
 .toggle {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     font-weight: 500;
+    cursor: pointer;
+    position: relative;
 }
 
-.toggle input {
-    transform: scale(1.1);
+.toggle input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    width: 0;
+    height: 0;
+}
+
+.toggle input[type="checkbox"] + span::before {
+    content: '';
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background: rgba(92, 49, 30, 0.15);
+    border-radius: 12px;
+    margin-right: 12px;
+    vertical-align: middle;
+    transition: background 0.3s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.toggle input[type="checkbox"] + span::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle input[type="checkbox"]:checked + span::before {
+    background: linear-gradient(135deg, var(--clay-500), var(--clay-600));
+}
+
+.toggle input[type="checkbox"]:checked + span::after {
+    left: 23px;
+}
+
+.toggle input[type="checkbox"]:focus + span::before {
+    box-shadow: 0 0 0 3px rgba(201, 132, 84, 0.15);
+}
+
+.toggle span {
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
 @media (max-width: 960px) {
