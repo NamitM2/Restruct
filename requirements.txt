@@ -1,15 +1,7 @@
 # Third-party packages used throughout the project (grouped by usage).
 
-# Install PyTorch with CUDA support first (adjust CUDA version to your GPU)
---index-url https://download.pytorch.org/whl/cu121
-torch>=2.0.0
-torchvision
-torchaudio
-
-# Core model tooling
-transformers>=4.40.0
+# Core utilities
 numpy>=1.24.0
-huggingface-hub>=0.20.0
 pytest>=7.0.0
 
 # API + server
@@ -20,11 +12,5 @@ python-dotenv>=1.0.0
 
 # Hosted LLM clients
 openai>=1.0.0
-google-generativeai>=0.5.0
+google-genai>=1.50.0
 anthropic>=0.25.0
-
-
-openai
-google
-google.generativeai
-anthropic
