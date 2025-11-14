@@ -5,7 +5,7 @@ No classes, just functions.
 
 from typing import Dict, Any
 from openai import OpenAI
-import google.generativeai as genai
+from google import genai
 from anthropic import Anthropic
 
 
@@ -25,16 +25,14 @@ def call_openai(model: Dict[str, Any], prompt: str) -> str:
         # For reasoning models: use v1/responses endpoint
         response = client.responses.create(
             model=model_name,
-            input=prompt
+            input=[{"role": "user", "content": prompt}]
         )
-        return response.output
+        return response.output_text
     else:
         # For chat models: use v1/chat/completions endpoint
         response = client.chat.completions.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000,
-            temperature=0.7
+            messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
 
@@ -44,10 +42,11 @@ def call_google(model: Dict[str, Any], prompt: str) -> str:
     api_key = model["api_key"]
     model_name = model["model_name"]
 
-    genai.configure(api_key=api_key)
-    gemini_model = genai.GenerativeModel(model_name)
-
-    response = gemini_model.generate_content(prompt)
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt
+    )
 
     return response.text
 
