@@ -1,0 +1,29 @@
+{
+  "name": "restruct",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:profile": "esbuild frontend/routingLabProfileBuilder.js --bundle --format=iife --target=es2018 --platform=browser --outfile=frontend/profileBuilder.bundle.js --loader:.js=jsx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NamitM2/Restruct.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NamitM2/Restruct/issues"
+  },
+  "homepage": "https://github.com/NamitM2/Restruct#readme",
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "framer-motion": "10.16.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}

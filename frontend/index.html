@@ -13,6 +13,23 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neonGold: '#FFD34F',
+                        neonPink: '#FF53A5',
+                        neonBlue: '#45E2FF'
+                    }
+                }
+            }
+        };
+    </script>
 </head>
 <body>
     <div class="app-shell">
@@ -201,15 +218,15 @@
                                 </div>
 
                                 <div class="profiles-grid" id="profilesGrid">
-                                    <div class="profile-card active" data-profile="default">
+                                    <div class="profile-card active" data-profile="default" data-profile-label="Default">
                                         <h4>Default</h4>
                                     </div>
 
-                                    <div class="profile-card" data-profile="cost-optimized">
+                                    <div class="profile-card" data-profile="cost-optimized" data-profile-label="Cost Optimized">
                                         <h4>Cost Optimized</h4>
                                     </div>
 
-                                    <div class="profile-card" data-profile="performance-first">
+                                    <div class="profile-card" data-profile="performance-first" data-profile-label="Performance First">
                                         <h4>Performance First</h4>
                                     </div>
                                 </div>
@@ -483,7 +500,12 @@
         </div>
     </div>
 
+    <div id="profileBuilderOverlay" class="profile-builder-overlay" aria-hidden="true">
+        <div id="profileBuilderReactRoot"></div>
+    </div>
+
     <script src="script.js"></script>
+    <script src="profileBuilder.bundle.js"></script>
 </body>
 </html>
 

@@ -15,10 +15,13 @@ from backend_code.database import (
     create_conversation,
     add_message,
     get_user_conversations,
-    get_conversation_messages
+    get_conversation_messages,
+    create_routing_profile,
+    get_routing_profiles
 )
 
 app = FastAPI(title="Restruct API", version="0.1.0")
+DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
 # CORS for local testing
 app.add_middleware(
@@ -59,7 +62,7 @@ def chat(body: dict):
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
     conversation_id = body.get("conversation_id")
-    user_id = body.get("user_id", "6785c292-273b-4001-9c1f-a6ff9e63979e")
+    user_id = body.get("user_id", DEFAULT_USER_ID)
     profile = body.get("profile", "default")
 
     if not conversation_id:
@@ -104,7 +107,7 @@ def chat(body: dict):
 
 
 @app.get("/conversations")
-def list_conversations(user_id: str = "6785c292-273b-4001-9c1f-a6ff9e63979e"):
+def list_conversations(user_id: str = DEFAULT_USER_ID):
     conversations = get_user_conversations(user_id)
     return {"conversations": conversations}
 
@@ -116,7 +119,7 @@ def get_messages(conversation_id: str):
 
 
 @app.post("/conversations")
-def new_conversation(user_id: str = "6785c292-273b-4001-9c1f-a6ff9e63979e", title: str = "New Chat"):
+def new_conversation(user_id: str = DEFAULT_USER_ID, title: str = "New Chat"):
     conversation = create_conversation(user_id=user_id, title=title)
     return {"conversation": conversation}
 
@@ -147,3 +150,32 @@ if os.path.exists(frontend_path):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+@app.get("/profiles")
+def list_profiles(user_id: str = DEFAULT_USER_ID):
+    profiles = get_routing_profiles(user_id)
+    return {"profiles": profiles}
+
+
+@app.post("/profiles")
+def create_profile(body: dict):
+    name = body.get("name")
+    graph_state = body.get("graph_state")
+    if not name:
+        raise HTTPException(status_code=400, detail="Profile name is required")
+    if not isinstance(graph_state, dict):
+        raise HTTPException(status_code=400, detail="Graph state is required for routing profiles")
+
+    description = body.get("description")
+    user_id = body.get("user_id", DEFAULT_USER_ID)
+
+    try:
+        profile = create_routing_profile(
+            user_id=user_id,
+            name=name,
+            description=description,
+            graph_state=graph_state
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to save routing profile") from exc
+
+    return {"profile": profile}

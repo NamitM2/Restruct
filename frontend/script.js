@@ -1,4 +1,5 @@
 const API_URL = 'http://localhost:8000';
+window.API_URL = API_URL;
 
 // Tab navigation
 const tabButtons = document.querySelectorAll('.nav-icon-button');
@@ -199,6 +200,7 @@ function closeProfileModal() {
 
 function updateProfileBadges(card, profile) {
     const badges = card.querySelector('.profile-badges');
+    if (!badges) return;
     badges.innerHTML = `
         <span class="badge">Latency: ${capitalizeFirst(profile.latency)}</span>
         <span class="badge">Cost: ${capitalizeFirst(profile.cost)}</span>
@@ -222,8 +224,20 @@ if (profilesGrid) {
             const card = editBtn.closest('.profile-card');
             if (card) {
                 const profileName = card.dataset.profile;
+                const profileData = profiles[profileName];
                 setActiveProfile(profileName);
-                openProfileModal(profileName);
+                if (profileData?.graph_state) {
+                    window.profileBuilderOverlay?.open({
+                        profile: {
+                            name: profileData.name || card.dataset.profileLabel || profileName,
+                            description: profileData.description,
+                            graph_state: profileData.graph_state,
+                            user_id: profileData.user_id
+                        }
+                    });
+                } else {
+                    openProfileModal(profileName);
+                }
             }
             return;
         }
@@ -261,33 +275,35 @@ if (qualityPriority) {
     qualityPriority.addEventListener('change', updatePriorityDisplays);
 }
 
-if (newProfileBtn) {
-    newProfileBtn.addEventListener('click', () => {
-        if (Object.keys(profiles).length >= 20) {
-            return;
-        }
+function slugifyProfileName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `custom-${Date.now()}`;
+}
 
-        let counter = 1;
-        let cleanName = `custom-profile-${counter}`;
+function derivePriorityLevels(graphState) {
+    const levels = { latency: 'medium', cost: 'medium', quality: 'medium' };
+    if (!graphState?.priorities) return levels;
 
-        while (profiles[cleanName]) {
-            counter++;
-            cleanName = `custom-profile-${counter}`;
-        }
+    const toLevel = (weight) => {
+        if (weight >= 0.67) return 'high';
+        if (weight <= 0.33) return 'low';
+        return 'medium';
+    };
 
-        const displayName = `Custom Profile ${counter}`;
+    graphState.priorities.forEach(priority => {
+        if (priority.id === 'latency') levels.latency = toLevel(priority.weight);
+        if (priority.id === 'cost') levels.cost = toLevel(priority.weight);
+        if (priority.id === 'quality') levels.quality = toLevel(priority.weight);
+    });
+    return levels;
+}
 
-        profiles[cleanName] = {
-            latency: 'medium',
-            cost: 'medium',
-            quality: 'medium',
-            description: 'Custom profile'
-        };
-
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.dataset.profile = cleanName;
-        card.innerHTML = `
+function buildProfileCard(slug, displayName, profileData) {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.dataset.profile = slug;
+    card.dataset.profileLabel = displayName;
+    card.innerHTML = `
+        <div class="profile-card-header">
             <h4>${displayName}</h4>
             <button class="profile-edit-btn" title="Edit profile">
                 <svg viewBox="0 0 24 24">
@@ -295,13 +311,45 @@ if (newProfileBtn) {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
             </button>
-        `;
-        profilesGrid.appendChild(card);
+        </div>
+        <div class="profile-badges"></div>
+    `;
+    updateProfileBadges(card, profileData);
+    return card;
+}
 
-        openProfileModal(cleanName);
-        setActiveProfile(cleanName);
+if (newProfileBtn) {
+    newProfileBtn.addEventListener('click', () => {
+        window.profileBuilderOverlay?.open();
     });
 }
+
+window.addEventListener('routing-profile:created', (event) => {
+    const profile = event.detail?.profile;
+    if (!profile || !profilesGrid) return;
+
+    const slug = profile.slug || slugifyProfileName(profile.name || 'custom-profile');
+    const displayName = profile.name || 'Custom Profile';
+    const priorityLevels = derivePriorityLevels(profile.graph_state);
+
+    profiles[slug] = {
+        ...priorityLevels,
+        description: profile.description || 'Custom profile',
+        graph_state: profile.graph_state,
+        supabase_id: profile.id,
+        user_id: profile.user_id,
+        name: displayName
+    };
+
+    const existing = document.querySelector(`[data-profile="${slug}"]`);
+    if (existing) {
+        existing.remove();
+    }
+
+    const card = buildProfileCard(slug, displayName, profiles[slug]);
+    profilesGrid.appendChild(card);
+    setActiveProfile(slug);
+});
 
 if (saveProfileBtn) {
     saveProfileBtn.addEventListener('click', () => {
