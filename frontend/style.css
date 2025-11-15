@@ -897,9 +897,11 @@ textarea {
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
-    min-height: 60px;
+    gap: 12px;
+    min-height: 80px;
     position: relative;
 }
 
@@ -919,6 +921,10 @@ textarea {
     margin: 0;
     color: var(--clay-900);
     text-align: center;
+}
+
+.profile-card-header h4 {
+    text-align: left;
 }
 
 .profile-edit-btn {
@@ -950,6 +956,13 @@ textarea {
     fill: none;
 }
 
+.profile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .profile-description {
     font-size: 0.85rem;
     color: var(--muted);
@@ -958,7 +971,7 @@ textarea {
 
 .profile-badges {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -1159,6 +1172,24 @@ textarea {
     border-top: 1px solid rgba(92, 49, 30, 0.08);
     display: flex;
     gap: 12px;
+}
+
+.profile-builder-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 29, 20, 0.75);
+    backdrop-filter: blur(16px);
+    z-index: 2000;
+    display: none;
+}
+
+.profile-builder-overlay.active {
+    display: block;
+}
+
+#profileBuilderReactRoot {
+    width: 100%;
+    height: 100%;
 }
 
 .chip-row {
