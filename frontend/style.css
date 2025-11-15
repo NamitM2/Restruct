@@ -218,7 +218,7 @@ textarea {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .app-header {
@@ -274,6 +274,7 @@ textarea {
     flex: 1;
     padding: 0;
     position: relative;
+    min-height: 0;
 }
 
 .tab-panel {
@@ -284,7 +285,22 @@ textarea {
     transform: translateY(10px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
     position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+#dashboardTab {
+    height: 100%;
+}
+
+#dashboardTab.active {
+    overflow-y: auto;
+    max-height: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 .tab-panel.active {
@@ -293,6 +309,10 @@ textarea {
     transform: translateY(0);
     transition: opacity 0.2s ease, transform 0.2s ease;
     position: relative;
+    pointer-events: auto;
+    top: auto;
+    left: auto;
+    right: auto;
 }
 
 #routerTab {
