@@ -397,6 +397,7 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     node.id === activeEdge.from ? { ...node, weight: newWeight } : node
                 )
             );
+            setActiveEdge(prev => prev ? { ...prev, weight: newWeight } : prev);
         }
     };
 
@@ -407,6 +408,7 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     f.id === activeEdge.to ? { ...f, enabled } : f
                 )
             );
+            setActiveEdge(prev => prev ? { ...prev, enabled } : prev);
         }
     };
 
@@ -454,22 +456,25 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         const payload = {
             name: profileName,
             description,
-            graph_state: graphState,
-            user_id: initialOptions.profile?.user_id || 'demo-user'
+            graph_state: graphState
         };
 
         try {
-            const response = await fetch(`${window.API_URL}/routing-profiles`, {
+            const response = await fetch(`${window.API_URL}/profiles`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error('Failed to save profile');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to save profile');
+            }
             const saved = await response.json();
             setSuccess('Profile saved successfully!');
-            window.dispatchEvent(new CustomEvent('routing-profile:created', { detail: { profile: saved } }));
+            window.dispatchEvent(new CustomEvent('routing-profile:created', { detail: { profile: saved.profile } }));
             setTimeout(() => onDismiss(), 1500);
         } catch (err) {
+            console.error('Save profile error:', err);
             setError(err.message || 'Failed to save profile');
         }
         setIsSaving(false);
@@ -619,7 +624,16 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                                     subtitle: `Weight ${node.weight.toFixed(2)}`,
                                     accent: node.accent,
                                     active: activeEdge?.from === node.id,
-                                    onClick: () => {},
+                                    onClick: () => {
+                                        const edge = edges.find(e => e.from === node.id && e.type === 'priority');
+                                        const nodePos = nodePositions[node.id];
+                                        const routerPos = nodePositions.router;
+                                        if (edge && nodePos && routerPos) {
+                                            const start = { x: nodePos.x, y: nodePos.y };
+                                            const end = { x: routerPos.left, y: routerPos.y };
+                                            handleEdgeClick(edge, start, end);
+                                        }
+                                    },
                                     nodeRef: el => leftRefs.current[node.id] = el
                                 })
                             )
