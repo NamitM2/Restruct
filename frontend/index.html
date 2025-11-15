@@ -120,7 +120,7 @@
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span class="eyebrow">Live data</span>
                             <button class="collapse-toggle" type="button" aria-expanded="false" aria-label="Toggle model stats">
-                                <span class="collapse-icon">▼</span>
+                                <span class="collapse-icon">&#9662;</span>
                             </button>
                         </div>
                     </div>
@@ -152,7 +152,7 @@
                             <p>Restruct Router vs individual model API costs (monthly)</p>
                         </div>
                         <button class="collapse-toggle" type="button" aria-expanded="false" aria-label="Toggle cost comparison">
-                            <span class="collapse-icon">▼</span>
+                            <span class="collapse-icon">&#9662;</span>
                         </button>
                     </div>
                     <div class="collapsible-content" id="costComparisonContent" style="max-height: 0;">
@@ -165,77 +165,226 @@
 
             <!-- Routing Controls Tab -->
             <section id="routingControlsTab" class="tab-panel" aria-labelledby="Routing Controls">
-                <div class="controls-container">
+                <div class="routing-lab">
                     <div class="panel-header">
                         <div>
                             <h2>Routing controls</h2>
                             <p>Configure how Restruct selects models for each prompt.</p>
                         </div>
+                        <button class="ghost-button" type="button">Export routing log</button>
                     </div>
 
-                    <div class="control-panel">
-                        <fieldset class="router-mode">
-                            <legend>Routing mode</legend>
-                            <label class="mode-option">
-                                <input type="radio" name="routingMode" value="auto" checked>
-                                <span>
-                                    <strong>Intelligent router</strong>
-                                    <small>Restruct chooses best fit per prompt.</small>
-                                </span>
-                            </label>
-                            <label class="mode-option">
-                                <input type="radio" name="routingMode" value="manual">
-                                <span>
-                                    <strong>Manual selection</strong>
-                                    <small>Force a specific vendor/model.</small>
-                                </span>
-                            </label>
-                        </fieldset>
+                    <div class="routing-lab-grid">
+                        <div class="routing-lab-primary">
+                            <div class="control-panel">
+                                <fieldset class="router-mode">
+                                    <legend>Routing mode</legend>
+                                    <label class="mode-option">
+                                        <input type="radio" name="routingMode" value="auto" checked>
+                                        <span>
+                                            <strong>Intelligent router</strong>
+                                            <small>Restruct chooses best fit per prompt.</small>
+                                        </span>
+                                    </label>
+                                    <label class="mode-option">
+                                        <input type="radio" name="routingMode" value="manual">
+                                        <span>
+                                            <strong>Manual selection</strong>
+                                            <small>Force a specific vendor/model.</small>
+                                        </span>
+                                    </label>
+                                </fieldset>
 
-                        <div class="control-group">
-                            <label for="prioritySelect">Routing priority</label>
-                            <select id="prioritySelect">
-                                <option value="balanced">Balanced</option>
-                                <option value="cost">Cost optimized</option>
-                                <option value="performance">Performance first</option>
-                            </select>
+                                <div class="profiles-header">
+                                    <h3>Routing profiles</h3>
+                                    <button class="btn-icon" id="newProfileBtn" title="Create new profile">+ New Profile</button>
+                                </div>
+
+                                <div class="profiles-grid" id="profilesGrid">
+                                    <div class="profile-card active" data-profile="default">
+                                        <h4>Default</h4>
+                                    </div>
+
+                                    <div class="profile-card" data-profile="cost-optimized">
+                                        <h4>Cost Optimized</h4>
+                                    </div>
+
+                                    <div class="profile-card" data-profile="performance-first">
+                                        <h4>Performance First</h4>
+                                    </div>
+                                </div>
+
+                                <div class="control-group model-picker" id="modelPicker">
+                                    <label for="modelSelect">Choose manual model</label>
+                                    <select id="modelSelect">
+                                        <option value="openai:gpt-5">OpenAI - GPT-5</option>
+                                        <option value="openai:gpt-5-pro">OpenAI - GPT-5 Pro</option>
+                                        <option value="openai:gpt-5_mini_nano">OpenAI - GPT-5 Mini Nano</option>
+                                        <option value="google:gemini-2.5_pro">Google - Gemini 2.5 Pro</option>
+                                        <option value="google:gemini-2.5_flash">Google - Gemini 2.5 Flash</option>
+                                        <option value="google:gemini-2.5_flash_lite">Google - Gemini 2.5 Flash Lite</option>
+                                        <option value="anthropic:claude-opus_4.1">Anthropic - Claude Opus 4.1</option>
+                                        <option value="anthropic:claude-sonnet_4.5">Anthropic - Claude Sonnet 4.5</option>
+                                        <option value="anthropic:claude-haiku_4.5">Anthropic - Claude Haiku 4.5</option>
+                                    </select>
+                                    <small class="muted-text">Visible when manual mode is active.</small>
+                                </div>
+
+                                <p class="lab-footnote">Any manual override will pause auto routing for 30 minutes to preserve guardrails.</p>
+                            </div>
                         </div>
 
-                        <div class="control-group model-picker" id="modelPicker">
-                            <label for="modelSelect">Choose manual model</label>
-                            <select id="modelSelect">
-                                <option value="openai:gpt-5">OpenAI · GPT-5</option>
-                                <option value="openai:gpt-5-pro">OpenAI · GPT-5 Pro</option>
-                                <option value="openai:gpt-5_mini_nano">OpenAI · GPT-5 Mini Nano</option>
-                                <option value="google:gemini-2.5_pro">Google · Gemini 2.5 Pro</option>
-                                <option value="google:gemini-2.5_flash">Google · Gemini 2.5 Flash</option>
-                                <option value="google:gemini-2.5_flash_lite">Google · Gemini 2.5 Flash Lite</option>
-                                <option value="anthropic:claude-opus_4.1">Anthropic · Claude Opus 4.1</option>
-                                <option value="anthropic:claude-sonnet_4.5">Anthropic · Claude Sonnet 4.5</option>
-                                <option value="anthropic:claude-haiku_4.5">Anthropic · Claude Haiku 4.5</option>
-                            </select>
-                            <small class="muted-text">Visible when manual mode is active.</small>
-                        </div>
+                        <div class="routing-lab-secondary">
+                            <article class="routing-card model-mix-card">
+                                <div class="card-header">
+                                    <h3>Model mix</h3>
+                                    <span class="badge success">Updated 5m ago</span>
+                                </div>
+                                <ul class="model-mix">
+                                    <li>
+                                        <div>
+                                            <strong>OpenAI GPT-5</strong>
+                                            <small>Complex reasoning</small>
+                                        </div>
+                                        <div class="mix-value">
+                                            <span>42%</span>
+                                            <div class="mix-bar">
+                                                <span style="width: 42%"></span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div>
+                                            <strong>Anthropic Claude Sonnet</strong>
+                                            <small>Structured responses</small>
+                                        </div>
+                                        <div class="mix-value">
+                                            <span>29%</span>
+                                            <div class="mix-bar">
+                                                <span style="width: 29%"></span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div>
+                                            <strong>Google Gemini 2.5 Flash</strong>
+                                            <small>High-volume workloads</small>
+                                        </div>
+                                        <div class="mix-value">
+                                            <span>18%</span>
+                                            <div class="mix-bar">
+                                                <span style="width: 18%"></span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div>
+                                            <strong>Specialty pool</strong>
+                                            <small>Vision + multimodal</small>
+                                        </div>
+                                        <div class="mix-value">
+                                            <span>11%</span>
+                                            <div class="mix-bar">
+                                                <span style="width: 11%"></span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </article>
 
-                        <div class="chip-row">
-                            <div class="chip">
-                                <span>Avg latency</span>
-                                <strong>482 ms</strong>
+                            <article class="routing-card timeline-card">
+                                <div class="card-header">
+                                    <h3>Routing events</h3>
+                                    <span class="badge neutral">Live</span>
+                                </div>
+                                <ul class="routing-timeline">
+                                    <li>
+                                        <span class="time">09:12</span>
+                                        <div>
+                                            <p>Latency threshold raised</p>
+                                            <small>US-East pool | -18% queue depth</small>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <span class="time">08:40</span>
+                                        <div>
+                                            <p>Fallback to Gemini 2.5 Flash</p>
+                                            <small>Cost guardrail triggered: GPT-5 Pro > $12</small>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <span class="time">07:58</span>
+                                        <div>
+                                            <p>Manual route activated</p>
+                                            <small>Security review requesting Claude Opus</small>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <span class="time">07:15</span>
+                                        <div>
+                                            <p>Profile change published</p>
+                                            <small>Performance-first preset tuned for weekend</small>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </article>
+                        </div>
+                    </div>
+
+                    <!-- Profile Configuration Modal -->
+                    <div class="modal-overlay" id="profileModal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <input type="text" id="modalProfileName" class="profile-name-input" placeholder="Profile Name">
+                                <button class="modal-close" id="closeModalBtn">&times;</button>
                             </div>
-                            <div class="chip">
-                                <span>Routing confidence</span>
-                                <strong>97%</strong>
+
+                            <div class="modal-body">
+                                <div class="priority-control">
+                                    <label for="latencyPriority">
+                                        <span>Latency</span>
+                                        <span class="priority-value" id="latencyValue">Medium</span>
+                                    </label>
+                                    <select id="latencyPriority" class="priority-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+
+                                <div class="priority-control">
+                                    <label for="costPriority">
+                                        <span>Cost</span>
+                                        <span class="priority-value" id="costValue">Medium</span>
+                                    </label>
+                                    <select id="costPriority" class="priority-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+
+                                <div class="priority-control">
+                                    <label for="qualityPriority">
+                                        <span>Quality</span>
+                                        <span class="priority-value" id="qualityValue">Medium</span>
+                                    </label>
+                                    <select id="qualityPriority" class="priority-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="chip">
-                                <span>Success rate</span>
-                                <strong>99.2%</strong>
+
+                            <div class="modal-footer">
+                                <button class="btn-secondary" id="saveProfileBtn">Save Profile</button>
+                                <button class="btn-tertiary" id="deleteProfileBtn">Delete Profile</button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- Chat Tab -->
+            </section>            <!-- Chat Tab -->
             <section id="routerTab" class="tab-panel active" aria-labelledby="Chat">
                 <div class="chat-panel" aria-live="polite">
                     <div class="chat-header">
@@ -260,7 +409,7 @@
                                 rows="1"
                             ></textarea>
                             <button type="submit" class="send-button" id="sendButton">
-                                <span class="button-icon">↑</span>
+                                <span class="button-icon">?</span>
                             </button>
                         </form>
                     </div>
@@ -337,4 +486,7 @@
     <script src="script.js"></script>
 </body>
 </html>
+
+
+
 
