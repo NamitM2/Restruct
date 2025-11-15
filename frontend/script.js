@@ -7,10 +7,28 @@ const chatContainer = document.getElementById('chatContainer');
 const chatForm = document.getElementById('chatForm');
 const promptInput = document.getElementById('promptInput');
 const sendButton = document.getElementById('sendButton');
-const prioritySelect = document.getElementById('prioritySelect');
 const routingModeRadios = document.querySelectorAll('input[name="routingMode"]');
 const modelPicker = document.getElementById('modelPicker');
 const modelSelect = document.getElementById('modelSelect');
+
+// Profile controls
+const profilesGrid = document.getElementById('profilesGrid');
+const newProfileBtn = document.getElementById('newProfileBtn');
+const saveProfileBtn = document.getElementById('saveProfileBtn');
+const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+const latencyPriority = document.getElementById('latencyPriority');
+const costPriority = document.getElementById('costPriority');
+const qualityPriority = document.getElementById('qualityPriority');
+const latencyValue = document.getElementById('latencyValue');
+const costValue = document.getElementById('costValue');
+const qualityValue = document.getElementById('qualityValue');
+
+// Modal controls
+const profileModal = document.getElementById('profileModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const modalProfileName = document.getElementById('modalProfileName');
+
+let currentProfileName = 'default';
 
 const spendIds = {
     daily: document.getElementById('spendDaily'),
@@ -121,15 +139,229 @@ function handleRoutingModeChange() {
         modelPicker.classList.toggle('is-visible', Boolean(isManual));
     }
 
-    if (prioritySelect) {
-        prioritySelect.disabled = Boolean(isManual);
-        prioritySelect.classList.toggle('disabled', Boolean(isManual));
+    if (profilesGrid) {
+        profilesGrid.style.pointerEvents = isManual ? 'none' : 'auto';
+        profilesGrid.style.opacity = isManual ? '0.5' : '1';
+    }
+    if (newProfileBtn) {
+        newProfileBtn.disabled = Boolean(isManual);
     }
 }
 
 routingModeRadios.forEach(radio => {
     radio.addEventListener('change', handleRoutingModeChange);
 });
+
+// Profile management
+const profiles = {
+    'default': { latency: 'medium', cost: 'medium', quality: 'medium', description: 'Balanced' },
+    'cost-optimized': { latency: 'low', cost: 'high', quality: 'low', description: 'Minimize costs' },
+    'performance-first': { latency: 'high', cost: 'low', quality: 'high', description: 'Best quality responses' }
+};
+
+function updatePriorityDisplays() {
+    if (latencyValue) latencyValue.textContent = capitalizeFirst(latencyPriority.value);
+    if (costValue) costValue.textContent = capitalizeFirst(costPriority.value);
+    if (qualityValue) qualityValue.textContent = capitalizeFirst(qualityPriority.value);
+}
+
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function loadProfileToModal(profileName) {
+    const profile = profiles[profileName];
+    if (!profile) return;
+
+    currentProfileName = profileName;
+    latencyPriority.value = profile.latency;
+    costPriority.value = profile.cost;
+    qualityPriority.value = profile.quality;
+    updatePriorityDisplays();
+
+    const displayName = profileName.split('-').map(capitalizeFirst).join(' ');
+    modalProfileName.value = displayName;
+
+    const isDefaultProfile = ['default', 'cost-optimized', 'performance-first'].includes(profileName);
+    if (deleteProfileBtn) {
+        deleteProfileBtn.style.display = isDefaultProfile ? 'none' : 'block';
+    }
+}
+
+function openProfileModal(profileName) {
+    loadProfileToModal(profileName);
+    profileModal.classList.add('active');
+}
+
+function closeProfileModal() {
+    profileModal.classList.remove('active');
+}
+
+function updateProfileBadges(card, profile) {
+    const badges = card.querySelector('.profile-badges');
+    badges.innerHTML = `
+        <span class="badge">Latency: ${capitalizeFirst(profile.latency)}</span>
+        <span class="badge">Cost: ${capitalizeFirst(profile.cost)}</span>
+        <span class="badge">Quality: ${capitalizeFirst(profile.quality)}</span>
+    `;
+}
+
+function setActiveProfile(profileName) {
+    document.querySelectorAll('.profile-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.profile === profileName);
+    });
+    currentProfileName = profileName;
+}
+
+// Profile card clicks
+if (profilesGrid) {
+    profilesGrid.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.profile-edit-btn');
+        if (editBtn) {
+            e.stopPropagation();
+            const card = editBtn.closest('.profile-card');
+            if (card) {
+                const profileName = card.dataset.profile;
+                setActiveProfile(profileName);
+                openProfileModal(profileName);
+            }
+            return;
+        }
+
+        const card = e.target.closest('.profile-card');
+        if (!card) return;
+
+        const profileName = card.dataset.profile;
+        setActiveProfile(profileName);
+    });
+}
+
+// Modal controls
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', closeProfileModal);
+}
+
+if (profileModal) {
+    profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) {
+            closeProfileModal();
+        }
+    });
+}
+
+if (latencyPriority) {
+    latencyPriority.addEventListener('change', updatePriorityDisplays);
+}
+
+if (costPriority) {
+    costPriority.addEventListener('change', updatePriorityDisplays);
+}
+
+if (qualityPriority) {
+    qualityPriority.addEventListener('change', updatePriorityDisplays);
+}
+
+if (newProfileBtn) {
+    newProfileBtn.addEventListener('click', () => {
+        if (Object.keys(profiles).length >= 20) {
+            return;
+        }
+
+        let counter = 1;
+        let cleanName = `custom-profile-${counter}`;
+
+        while (profiles[cleanName]) {
+            counter++;
+            cleanName = `custom-profile-${counter}`;
+        }
+
+        const displayName = `Custom Profile ${counter}`;
+
+        profiles[cleanName] = {
+            latency: 'medium',
+            cost: 'medium',
+            quality: 'medium',
+            description: 'Custom profile'
+        };
+
+        const card = document.createElement('div');
+        card.className = 'profile-card';
+        card.dataset.profile = cleanName;
+        card.innerHTML = `
+            <h4>${displayName}</h4>
+            <button class="profile-edit-btn" title="Edit profile">
+                <svg viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+        `;
+        profilesGrid.appendChild(card);
+
+        openProfileModal(cleanName);
+        setActiveProfile(cleanName);
+    });
+}
+
+if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', () => {
+        const newDisplayName = modalProfileName.value.trim();
+        if (!newDisplayName) return;
+
+        const newCleanName = newDisplayName.toLowerCase().replace(/\s+/g, '-');
+        const oldProfileName = currentProfileName;
+        const isDefaultProfile = ['default', 'cost-optimized', 'performance-first'].includes(oldProfileName);
+
+        const updatedProfile = {
+            latency: latencyPriority.value,
+            cost: costPriority.value,
+            quality: qualityPriority.value,
+            description: profiles[oldProfileName]?.description || 'Custom profile'
+        };
+
+        if (newCleanName !== oldProfileName) {
+            delete profiles[oldProfileName];
+            profiles[newCleanName] = updatedProfile;
+
+            const card = document.querySelector(`[data-profile="${oldProfileName}"]`);
+            if (card) {
+                card.dataset.profile = newCleanName;
+                const h4 = card.querySelector('h4');
+                if (h4) h4.textContent = newDisplayName;
+            }
+
+            currentProfileName = newCleanName;
+            setActiveProfile(newCleanName);
+        } else {
+            profiles[currentProfileName] = updatedProfile;
+
+            const card = document.querySelector(`[data-profile="${currentProfileName}"]`);
+            if (card) {
+                const h4 = card.querySelector('h4');
+                if (h4) h4.textContent = newDisplayName;
+            }
+        }
+
+        closeProfileModal();
+    });
+}
+
+if (deleteProfileBtn) {
+    deleteProfileBtn.addEventListener('click', () => {
+        if (currentProfileName === 'default') {
+            return;
+        }
+
+        delete profiles[currentProfileName];
+        const card = document.querySelector(`[data-profile="${currentProfileName}"]`);
+        if (card) {
+            card.remove();
+        }
+
+        closeProfileModal();
+        setActiveProfile('default');
+    });
+}
 
 if (promptInput) {
     promptInput.addEventListener('input', function () {
@@ -152,9 +384,15 @@ if (chatForm) {
         if (!prompt || isLoading) return;
 
         const routingMode = document.querySelector('input[name="routingMode"]:checked')?.value || 'auto';
+        const currentProfile = profiles[currentProfileName] || profiles['default'];
         const payload = {
             prompt,
-            priority: prioritySelect?.value || 'balanced',
+            profile: currentProfileName,
+            priorities: {
+                latency: currentProfile.latency,
+                cost: currentProfile.cost,
+                quality: currentProfile.quality
+            },
             max_tokens: 1000,
             temperature: 0.7,
             router_mode: routingMode,
