@@ -124,32 +124,6 @@ def new_conversation(user_id: str = DEFAULT_USER_ID, title: str = "New Chat"):
     return {"conversation": conversation}
 
 
-def resolve_model_choice(router_mode: str, model_override: Optional[str], prompt: str):
-    """
-    Decide how to obtain a model: router-driven or manual override.
-    """
-    if router_mode == "manual":
-        if not model_override:
-            raise ValueError("Manual routing mode requires a model selection.")
-
-        if ":" not in model_override:
-            raise ValueError("Model override must use 'provider:model_name' format.")
-
-        provider, model_name = model_override.split(":", 1)
-        return route_specific(provider, model_name)
-    model, model_scores = route_with_llm(prompt)
-    return model
-
-
-# Mount frontend static files (go up one directory)
-frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
 @app.get("/profiles")
 def list_profiles(user_id: str = DEFAULT_USER_ID):
     profiles = get_routing_profiles(user_id)
@@ -176,6 +150,35 @@ def create_profile(body: dict):
             graph_state=graph_state
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="Failed to save routing profile") from exc
+        print(f"Error creating routing profile: {exc}")
+        raise HTTPException(status_code=500, detail=f"Failed to save routing profile: {str(exc)}") from exc
 
     return {"profile": profile}
+
+
+def resolve_model_choice(router_mode: str, model_override: Optional[str], prompt: str):
+    """
+    Decide how to obtain a model: router-driven or manual override.
+    """
+    if router_mode == "manual":
+        if not model_override:
+            raise ValueError("Manual routing mode requires a model selection.")
+
+        if ":" not in model_override:
+            raise ValueError("Model override must use 'provider:model_name' format.")
+
+        provider, model_name = model_override.split(":", 1)
+        return route_specific(provider, model_name)
+    model, model_scores = route_with_llm(prompt)
+    return model
+
+
+# Mount frontend static files (go up one directory)
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

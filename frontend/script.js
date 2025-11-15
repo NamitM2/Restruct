@@ -201,11 +201,7 @@ function closeProfileModal() {
 function updateProfileBadges(card, profile) {
     const badges = card.querySelector('.profile-badges');
     if (!badges) return;
-    badges.innerHTML = `
-        <span class="badge">Latency: ${capitalizeFirst(profile.latency)}</span>
-        <span class="badge">Cost: ${capitalizeFirst(profile.cost)}</span>
-        <span class="badge">Quality: ${capitalizeFirst(profile.quality)}</span>
-    `;
+    badges.innerHTML = '';
 }
 
 function setActiveProfile(profileName) {
@@ -303,18 +299,14 @@ function buildProfileCard(slug, displayName, profileData) {
     card.dataset.profile = slug;
     card.dataset.profileLabel = displayName;
     card.innerHTML = `
-        <div class="profile-card-header">
-            <h4>${displayName}</h4>
-            <button class="profile-edit-btn" title="Edit profile">
-                <svg viewBox="0 0 24 24">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="profile-badges"></div>
+        <h4>${displayName}</h4>
+        <button class="profile-edit-btn" title="Edit profile">
+            <svg viewBox="0 0 24 24">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        </button>
     `;
-    updateProfileBadges(card, profileData);
     return card;
 }
 
