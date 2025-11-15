@@ -273,15 +273,26 @@ textarea {
 .tab-panels {
     flex: 1;
     padding: 0;
+    position: relative;
 }
 
 .tab-panel {
-    display: none;
+    display: block;
     padding: 32px 40px 32px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+    position: absolute;
+    width: 100%;
 }
 
 .tab-panel.active {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    position: relative;
 }
 
 #routerTab {
@@ -292,6 +303,9 @@ textarea {
 #routerTab.active {
     display: flex;
     flex-direction: column;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .panel-header {
