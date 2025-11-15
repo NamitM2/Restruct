@@ -1,13 +1,25 @@
+import atexit
 import os
-from supabase import create_client, Client
+import re
+from uuid import uuid4
+from typing import List, Optional
+
+import httpx
 from dotenv import load_dotenv
+from supabase import Client, ClientOptions, create_client
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+_httpx_client = httpx.Client()
+atexit.register(_httpx_client.close)
+supabase: Client = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    ClientOptions(httpx_client=_httpx_client),
+)
 
 
 def create_conversation(user_id: str, title: str = "New Conversation") -> dict:
@@ -59,3 +71,32 @@ def delete_conversation(conversation_id: str) -> None:
 
 def delete_message(message_id: str) -> None:
     supabase.table("messages").delete().eq("id", message_id).execute()
+
+
+def slugify_profile_name(name: str) -> str:
+    base = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'profile'
+    suffix = uuid4().hex[:6]
+    return f"{base}-{suffix}"
+
+
+def create_routing_profile(user_id: str, name: str, description: Optional[str], graph_state: dict) -> dict:
+    payload = {
+        "user_id": user_id,
+        "name": name,
+        "description": description,
+        "graph_state": graph_state,
+        "slug": slugify_profile_name(name)
+    }
+    result = supabase.table("routing_profiles").insert(payload).execute()
+    return result.data[0]
+
+
+def get_routing_profiles(user_id: str) -> List[dict]:
+    result = (
+        supabase.table("routing_profiles")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data
