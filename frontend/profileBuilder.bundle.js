@@ -110,6 +110,174 @@
           ])
         ]);
       };
+      var MeshLensBackground = () => {
+        const canvasRef = useRef(null);
+        const containerRef = useRef(null);
+        const rafRef = useRef(null);
+        const pointsRef = useRef([]);
+        const originalPointsRef = useRef([]);
+        const mouseRef = useRef({ x: -1e3, y: -1e3, isActive: false });
+        const gridDimensionsRef = useRef({ cols: 0, rows: 0 });
+        const config = useMemo(() => ({
+          gridSize: 35,
+          gravityStrength: 25,
+          influenceRadius: 120,
+          dampening: 0.95,
+          returnSpeed: 0.05,
+          lineColor: "rgba(142, 60, 44, 0.15)",
+          maxDisplacement: 30
+        }), []);
+        useEffect(() => {
+          const canvas = canvasRef.current;
+          const container = containerRef.current;
+          if (!canvas || !container) return;
+          const ctx = canvas.getContext("2d");
+          const resizeCanvas = () => {
+            const rect = container.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            initializeGrid();
+          };
+          const initializeGrid = () => {
+            pointsRef.current = [];
+            originalPointsRef.current = [];
+            const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+            const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+            gridDimensionsRef.current = { cols, rows };
+            for (let i = 0; i < cols; i++) {
+              for (let j = 0; j < rows; j++) {
+                const x = i * config.gridSize;
+                const y = j * config.gridSize;
+                pointsRef.current.push({
+                  x,
+                  y,
+                  vx: 0,
+                  vy: 0,
+                  originalX: x,
+                  originalY: y
+                });
+                originalPointsRef.current.push({ x, y });
+              }
+            }
+          };
+          const updatePoints = () => {
+            pointsRef.current.forEach((point, index) => {
+              const original = originalPointsRef.current[index];
+              const dx = mouseRef.current.x - point.x;
+              const dy = mouseRef.current.y - point.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              if (mouseRef.current.isActive && distance < config.influenceRadius) {
+                const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                const angle = Math.atan2(dy, dx);
+                point.vx += Math.cos(angle) * force * 0.01;
+                point.vy += Math.sin(angle) * force * 0.01;
+              } else {
+                const returnX = (original.x - point.x) * config.returnSpeed;
+                const returnY = (original.y - point.y) * config.returnSpeed;
+                point.vx += returnX;
+                point.vy += returnY;
+              }
+              point.vx *= config.dampening;
+              point.vy *= config.dampening;
+              point.x += point.vx;
+              point.y += point.vy;
+              const dispX = point.x - original.x;
+              const dispY = point.y - original.y;
+              const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+              if (displacement > config.maxDisplacement) {
+                const scale = config.maxDisplacement / displacement;
+                point.x = original.x + dispX * scale;
+                point.y = original.y + dispY * scale;
+              }
+            });
+          };
+          const drawMesh = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const { cols, rows } = gridDimensionsRef.current;
+            if (!cols || !rows || pointsRef.current.length === 0) return;
+            ctx.strokeStyle = config.lineColor;
+            ctx.lineWidth = 1;
+            for (let j = 0; j < rows; j++) {
+              ctx.beginPath();
+              for (let i = 0; i < cols; i++) {
+                const index = i * rows + j;
+                const point = pointsRef.current[index];
+                if (!point) continue;
+                if (i === 0) {
+                  ctx.moveTo(point.x, point.y);
+                } else {
+                  ctx.lineTo(point.x, point.y);
+                }
+              }
+              ctx.stroke();
+            }
+            for (let i = 0; i < cols; i++) {
+              ctx.beginPath();
+              for (let j = 0; j < rows; j++) {
+                const index = i * rows + j;
+                const point = pointsRef.current[index];
+                if (!point) continue;
+                if (j === 0) {
+                  ctx.moveTo(point.x, point.y);
+                } else {
+                  ctx.lineTo(point.x, point.y);
+                }
+              }
+              ctx.stroke();
+            }
+          };
+          const animate = () => {
+            updatePoints();
+            drawMesh();
+            rafRef.current = requestAnimationFrame(animate);
+          };
+          const handleMouseMove = (e) => {
+            const rect = container.getBoundingClientRect();
+            mouseRef.current = {
+              x: e.clientX - rect.left,
+              y: e.clientY - rect.top,
+              isActive: true
+            };
+          };
+          const handleMouseLeave = () => {
+            mouseRef.current.isActive = false;
+          };
+          const parentElement = container.parentElement;
+          const initTimeout = setTimeout(() => {
+            resizeCanvas();
+            rafRef.current = requestAnimationFrame(animate);
+          }, 50);
+          window.addEventListener("resize", resizeCanvas);
+          if (parentElement) {
+            parentElement.addEventListener("mousemove", handleMouseMove);
+            parentElement.addEventListener("mouseleave", handleMouseLeave);
+          }
+          return () => {
+            clearTimeout(initTimeout);
+            window.removeEventListener("resize", resizeCanvas);
+            if (parentElement) {
+              parentElement.removeEventListener("mousemove", handleMouseMove);
+              parentElement.removeEventListener("mouseleave", handleMouseLeave);
+            }
+            if (rafRef.current) {
+              cancelAnimationFrame(rafRef.current);
+            }
+          };
+        }, [config]);
+        return React.createElement(
+          "div",
+          {
+            ref: containerRef,
+            className: "absolute inset-0 overflow-hidden pointer-events-none",
+            style: { zIndex: 0 }
+          },
+          React.createElement("canvas", {
+            ref: canvasRef,
+            className: "absolute inset-0 w-full h-full"
+          })
+        );
+      };
       var EdgePopover = ({ edge, position, onClose, onWeightUpdate, onToggleConnection }) => {
         if (!edge) return null;
         return React.createElement("div", {
@@ -592,6 +760,7 @@
                 className: "pointer-events-none absolute inset-0",
                 style: { background: "radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)" }
               }),
+              React.createElement(MeshLensBackground, { key: "mesh" }),
               React.createElement(
                 "div",
                 {
