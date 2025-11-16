@@ -120,12 +120,12 @@
         const gridDimensionsRef = useRef({ cols: 0, rows: 0 });
         const config = useMemo(() => ({
           gridSize: 35,
-          gravityStrength: 25,
-          influenceRadius: 120,
+          gravityStrength: 18,
+          influenceRadius: 100,
           dampening: 0.95,
           returnSpeed: 0.05,
           lineColor: "rgba(142, 60, 44, 0.15)",
-          maxDisplacement: 30
+          maxDisplacement: 20
         }), []);
         useEffect(() => {
           const canvas = canvasRef.current;
