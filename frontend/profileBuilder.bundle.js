@@ -81,7 +81,7 @@
           onClick,
           onMouseEnter: () => setIsHovered(true),
           onMouseLeave: () => setIsHovered(false),
-          className: `relative w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-all ${active ? "bg-white border-[#8e3c2c] shadow-lg" : "bg-white border-[rgba(92,49,30,0.12)]"}`,
+          className: `relative w-full overflow-hidden rounded-xl border px-3 py-1.5 text-left transition-all ${active ? "bg-white border-[#8e3c2c] shadow-lg" : "bg-white border-[rgba(92,49,30,0.12)]"}`,
           style: {
             boxShadow: active ? "0 6px 16px rgba(92, 49, 30, 0.12)" : "0 3px 8px rgba(92, 49, 30, 0.06)",
             transform: isHovered ? "scale(1.02)" : "scale(1)",
@@ -97,11 +97,6 @@
             key: "content",
             className: "relative flex flex-col gap-0.5"
           }, [
-            React.createElement("p", {
-              key: "label",
-              className: "text-[10px] uppercase tracking-[0.25em]",
-              style: { color: "rgba(43, 29, 20, 0.5)" }
-            }, "Node"),
             React.createElement("p", {
               key: "title",
               className: "text-sm font-semibold",
@@ -550,92 +545,104 @@
           ]),
           React.createElement("div", {
             key: "graph",
-            ref: containerRef,
-            className: "relative flex-1 overflow-hidden",
+            className: "relative flex-1 overflow-hidden flex",
             style: { backgroundColor: "#fffefb", color: "#2b1d14" },
             onClick: (e) => e.stopPropagation()
           }, [
             React.createElement("div", {
-              key: "bg",
-              className: "pointer-events-none absolute inset-0",
-              style: { background: "radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)" }
-            }),
-            React.createElement(
-              "div",
-              {
-                key: "grid-wrapper",
-                className: "relative h-full w-full flex items-center justify-center"
-              },
+              key: "sidebar",
+              className: "w-64 border-r p-6 flex flex-col gap-4",
+              style: { borderColor: "rgba(92, 49, 30, 0.12)" }
+            }, [
+              React.createElement("h3", {
+                key: "title",
+                className: "text-sm font-semibold uppercase tracking-[0.3em]",
+                style: { color: "rgba(43, 29, 20, 0.5)" }
+              }, "Add Nodes"),
               React.createElement("div", {
-                key: "grid",
-                className: "relative grid h-full grid-cols-3 gap-12 p-8",
-                style: { width: "75%" }
+                key: "node-options",
+                className: "flex flex-col gap-3"
               }, [
                 React.createElement("div", {
-                  key: "left",
-                  className: "flex flex-col justify-around"
-                }, leftNodes.map(
-                  (node) => React.createElement(
-                    "div",
-                    {
-                      key: node.id,
-                      className: "flex justify-start"
-                    },
-                    React.createElement(
+                  key: "special-rule",
+                  className: "rounded-xl border-2 border-dashed px-4 py-3 cursor-move transition hover:border-[#8e3c2c] hover:bg-[rgba(142,60,44,0.05)]",
+                  style: { borderColor: "rgba(92, 49, 30, 0.2)" }
+                }, [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-xs uppercase tracking-[0.25em]",
+                    style: { color: "rgba(43, 29, 20, 0.5)" }
+                  }, "Drag to Add"),
+                  React.createElement("p", {
+                    key: "title",
+                    className: "text-sm font-semibold mt-1",
+                    style: { color: "#2b1d14" }
+                  }, "Special Rule")
+                ])
+              ])
+            ]),
+            React.createElement("div", {
+              key: "graph-container",
+              ref: containerRef,
+              className: "relative flex-1 overflow-hidden",
+              onClick: (e) => e.stopPropagation()
+            }, [
+              React.createElement("div", {
+                key: "bg",
+                className: "pointer-events-none absolute inset-0",
+                style: { background: "radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)" }
+              }),
+              React.createElement(
+                "div",
+                {
+                  key: "grid-wrapper",
+                  className: "relative h-full w-full flex items-center justify-end pr-8"
+                },
+                React.createElement("div", {
+                  key: "grid",
+                  className: "relative grid h-full grid-cols-3 gap-12 p-8",
+                  style: { width: "85%" }
+                }, [
+                  React.createElement("div", {
+                    key: "left",
+                    className: "flex flex-col justify-around"
+                  }, leftNodes.map(
+                    (node) => React.createElement(
                       "div",
                       {
-                        className: "w-44"
+                        key: node.id,
+                        className: "flex justify-start"
                       },
-                      React.createElement(NodeCard, {
-                        title: node.label,
-                        subtitle: `Weight ${node.weight.toFixed(2)}`,
-                        accent: node.accent,
-                        active: (activeEdge == null ? void 0 : activeEdge.from) === node.id,
-                        onClick: () => {
-                          const edge = edges.find((e) => e.from === node.id && e.type === "priority");
-                          const nodePos = nodePositions[node.id];
-                          const routerPos = nodePositions.router;
-                          if (edge && nodePos && routerPos) {
-                            const start = { x: nodePos.x, y: nodePos.y };
-                            const end = { x: routerPos.left, y: routerPos.y };
-                            handleEdgeClick(edge, start, end);
-                          }
+                      React.createElement(
+                        "div",
+                        {
+                          className: "w-44"
                         },
-                        nodeRef: (el) => leftRefs.current[node.id] = el
-                      })
+                        React.createElement(NodeCard, {
+                          title: node.label,
+                          subtitle: `Weight ${node.weight.toFixed(2)}`,
+                          accent: node.accent,
+                          active: (activeEdge == null ? void 0 : activeEdge.from) === node.id,
+                          onClick: () => {
+                            const edge = edges.find((e) => e.from === node.id && e.type === "priority");
+                            const nodePos = nodePositions[node.id];
+                            const routerPos = nodePositions.router;
+                            if (edge && nodePos && routerPos) {
+                              const start = { x: nodePos.x, y: nodePos.y };
+                              const end = { x: routerPos.left, y: routerPos.y };
+                              handleEdgeClick(edge, start, end);
+                            }
+                          },
+                          nodeRef: (el) => leftRefs.current[node.id] = el
+                        })
+                      )
                     )
-                  )
-                )),
-                React.createElement(
-                  "div",
-                  {
-                    key: "center",
-                    className: "flex items-center justify-center"
-                  },
+                  )),
                   React.createElement(
                     "div",
                     {
-                      className: "w-44"
-                    },
-                    React.createElement(NodeCard, {
-                      title: "Restruct Router",
-                      subtitle: "Weighted orchestration",
-                      accent: siteColors.router,
-                      active: !drawerFamilyId,
-                      onClick: () => setDrawerFamilyId(null),
-                      nodeRef: centerRef
-                    })
-                  )
-                ),
-                React.createElement("div", {
-                  key: "right",
-                  className: "flex flex-col justify-around"
-                }, families.map(
-                  (family) => React.createElement(
-                    "div",
-                    {
-                      key: family.id,
-                      className: "flex justify-end"
+                      key: "center",
+                      className: "flex items-center justify-center"
                     },
                     React.createElement(
                       "div",
@@ -643,85 +650,111 @@
                         className: "w-44"
                       },
                       React.createElement(NodeCard, {
-                        title: family.label,
-                        subtitle: family.enabled ? "Active" : "Disabled",
-                        accent: family.accent,
-                        active: drawerFamilyId === family.id,
-                        onClick: () => openFamilyDrawer(family.id),
-                        nodeRef: (el) => rightRefs.current[family.id] = el
+                        title: "Restruct Router",
+                        subtitle: "Weighted orchestration",
+                        accent: siteColors.router,
+                        active: !drawerFamilyId,
+                        onClick: () => setDrawerFamilyId(null),
+                        nodeRef: centerRef
                       })
                     )
-                  )
-                ))
-              ])
-            ),
-            React.createElement("svg", {
-              key: "svg",
-              className: "pointer-events-none absolute inset-0",
-              width: "100%",
-              height: "100%"
-            }, edges.map((edge) => {
-              const router = nodePositions.router;
-              if (!router || !edge.visible) return null;
-              let start, end;
-              if (edge.type === "priority") {
-                const leftNode = nodePositions[edge.from];
-                if (!leftNode) return null;
-                start = { x: leftNode.x, y: leftNode.y };
-                end = { x: router.left, y: router.y };
-              } else {
-                const rightNode = nodePositions[edge.to];
-                if (!rightNode) return null;
-                start = { x: router.right, y: router.y };
-                end = { x: rightNode.x, y: rightNode.y };
-              }
-              const curvature = edge.type === "priority" ? 70 : 120;
-              const d = `M ${start.x} ${start.y} C ${start.x + curvature} ${start.y}, ${end.x - curvature} ${end.y}, ${end.x} ${end.y}`;
-              const strokeColor = hoveredEdgeId === edge.id || (activeEdge == null ? void 0 : activeEdge.id) === edge.id ? edge.accent : siteColors.edgeIdle;
-              const opacity = edge.enabled === false ? 0.25 : 1;
-              return React.createElement("path", {
-                key: edge.id,
-                d,
-                fill: "none",
-                stroke: strokeColor,
-                strokeWidth: hoveredEdgeId === edge.id || (activeEdge == null ? void 0 : activeEdge.id) === edge.id ? 2.5 : 1.5,
-                strokeDasharray: "6 6",
-                strokeLinecap: "round",
-                className: "cursor-pointer transition-all",
-                style: { opacity, pointerEvents: "all" },
-                onClick: (e) => {
-                  e.stopPropagation();
-                  handleEdgeClick(edge, start, end);
-                },
-                onMouseEnter: () => setHoveredEdgeId(edge.id),
-                onMouseLeave: () => setHoveredEdgeId(null)
-              });
-            })),
-            React.createElement(EdgePopover, {
-              key: "popover",
-              edge: activeEdge,
-              position: edgePosition,
-              onClose: () => setActiveEdge(null),
-              onWeightUpdate: updateEdgeWeight,
-              onToggleConnection: updateEdgeEnabled
-            }),
-            React.createElement(FamilyDrawer, {
-              key: "drawer",
-              family: drawerFamily,
-              onClose: closeFamilyDrawer,
-              onToggle: updateFamilyToggle,
-              onBlacklist: updateBlacklist
-            }),
-            error && React.createElement("div", {
-              key: "error",
-              className: "absolute bottom-6 left-6 rounded-2xl border px-4 py-3",
-              style: { borderColor: "rgba(142, 60, 44, 0.3)", backgroundColor: "rgba(142, 60, 44, 0.1)", color: "#8e3c2c" }
-            }, error),
-            success && React.createElement("div", {
-              key: "success",
-              className: "absolute bottom-6 left-6 rounded-2xl border px-4 py-3",
-              style: { borderColor: "rgba(181, 103, 71, 0.3)", backgroundColor: "rgba(181, 103, 71, 0.1)", color: "#b56747" }
-            }, success)
+                  ),
+                  React.createElement("div", {
+                    key: "right",
+                    className: "flex flex-col justify-around"
+                  }, families.map(
+                    (family) => React.createElement(
+                      "div",
+                      {
+                        key: family.id,
+                        className: "flex justify-end"
+                      },
+                      React.createElement(
+                        "div",
+                        {
+                          className: "w-44"
+                        },
+                        React.createElement(NodeCard, {
+                          title: family.label,
+                          subtitle: family.enabled ? "Active" : "Disabled",
+                          accent: family.accent,
+                          active: drawerFamilyId === family.id,
+                          onClick: () => openFamilyDrawer(family.id),
+                          nodeRef: (el) => rightRefs.current[family.id] = el
+                        })
+                      )
+                    )
+                  ))
+                ])
+              ),
+              React.createElement("svg", {
+                key: "svg",
+                className: "pointer-events-none absolute inset-0",
+                width: "100%",
+                height: "100%"
+              }, edges.map((edge) => {
+                const router = nodePositions.router;
+                if (!router || !edge.visible) return null;
+                let start, end;
+                if (edge.type === "priority") {
+                  const leftNode = nodePositions[edge.from];
+                  if (!leftNode) return null;
+                  start = { x: leftNode.x, y: leftNode.y };
+                  end = { x: router.left, y: router.y };
+                } else {
+                  const rightNode = nodePositions[edge.to];
+                  if (!rightNode) return null;
+                  start = { x: router.right, y: router.y };
+                  end = { x: rightNode.x, y: rightNode.y };
+                }
+                const curvature = edge.type === "priority" ? 70 : 120;
+                const d = `M ${start.x} ${start.y} C ${start.x + curvature} ${start.y}, ${end.x - curvature} ${end.y}, ${end.x} ${end.y}`;
+                const strokeColor = hoveredEdgeId === edge.id || (activeEdge == null ? void 0 : activeEdge.id) === edge.id ? edge.accent : siteColors.edgeIdle;
+                const opacity = edge.enabled === false ? 0.25 : 1;
+                return React.createElement("path", {
+                  key: edge.id,
+                  d,
+                  fill: "none",
+                  stroke: strokeColor,
+                  strokeWidth: hoveredEdgeId === edge.id || (activeEdge == null ? void 0 : activeEdge.id) === edge.id ? 2.5 : 1.5,
+                  strokeDasharray: "6 6",
+                  strokeLinecap: "round",
+                  className: "cursor-pointer transition-all",
+                  style: { opacity, pointerEvents: "all" },
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    handleEdgeClick(edge, start, end);
+                  },
+                  onMouseEnter: () => setHoveredEdgeId(edge.id),
+                  onMouseLeave: () => setHoveredEdgeId(null)
+                });
+              })),
+              React.createElement(EdgePopover, {
+                key: "popover",
+                edge: activeEdge,
+                position: edgePosition,
+                onClose: () => setActiveEdge(null),
+                onWeightUpdate: updateEdgeWeight,
+                onToggleConnection: updateEdgeEnabled
+              }),
+              React.createElement(FamilyDrawer, {
+                key: "drawer",
+                family: drawerFamily,
+                onClose: closeFamilyDrawer,
+                onToggle: updateFamilyToggle,
+                onBlacklist: updateBlacklist
+              }),
+              error && React.createElement("div", {
+                key: "error",
+                className: "absolute bottom-6 left-6 rounded-2xl border px-4 py-3",
+                style: { borderColor: "rgba(142, 60, 44, 0.3)", backgroundColor: "rgba(142, 60, 44, 0.1)", color: "#8e3c2c" }
+              }, error),
+              success && React.createElement("div", {
+                key: "success",
+                className: "absolute bottom-6 left-6 rounded-2xl border px-4 py-3",
+                style: { borderColor: "rgba(181, 103, 71, 0.3)", backgroundColor: "rgba(181, 103, 71, 0.1)", color: "#b56747" }
+              }, success)
+            ])
           ])
         ]);
       }
