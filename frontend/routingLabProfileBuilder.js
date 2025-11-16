@@ -83,7 +83,7 @@ const NodeCard = ({ title, subtitle, accent, onClick, active, nodeRef }) => {
         onClick,
         onMouseEnter: () => setIsHovered(true),
         onMouseLeave: () => setIsHovered(false),
-        className: `relative w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-all ${
+        className: `relative w-full overflow-hidden rounded-xl border px-3 py-1.5 text-left transition-all ${
             active ? 'bg-white border-[#8e3c2c] shadow-lg' : 'bg-white border-[rgba(92,49,30,0.12)]'
         }`,
         style: {
@@ -101,11 +101,6 @@ const NodeCard = ({ title, subtitle, accent, onClick, active, nodeRef }) => {
             key: 'content',
             className: 'relative flex flex-col gap-0.5'
         }, [
-            React.createElement('p', {
-                key: 'label',
-                className: 'text-[10px] uppercase tracking-[0.25em]',
-                style: { color: 'rgba(43, 29, 20, 0.5)' }
-            }, 'Node'),
             React.createElement('p', {
                 key: 'title',
                 className: 'text-sm font-semibold',
@@ -589,25 +584,62 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         ]),
         React.createElement('div', {
             key: 'graph',
-            ref: containerRef,
-            className: 'relative flex-1 overflow-hidden',
+            className: 'relative flex-1 overflow-hidden flex',
             style: { backgroundColor: '#fffefb', color: '#2b1d14' },
             onClick: e => e.stopPropagation()
         }, [
                 React.createElement('div', {
-                    key: 'bg',
-                    className: 'pointer-events-none absolute inset-0',
-                    style: { background: 'radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)' }
-                }),
-                React.createElement('div', {
-                    key: 'grid-wrapper',
-                    className: 'relative h-full w-full flex items-center justify-center'
-                },
+                    key: 'sidebar',
+                    className: 'w-64 border-r p-6 flex flex-col gap-4',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
+                }, [
+                    React.createElement('h3', {
+                        key: 'title',
+                        className: 'text-sm font-semibold uppercase tracking-[0.3em]',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Add Nodes'),
                     React.createElement('div', {
-                        key: 'grid',
-                        className: 'relative grid h-full grid-cols-3 gap-12 p-8',
-                        style: { width: '75%' }
+                        key: 'node-options',
+                        className: 'flex flex-col gap-3'
                     }, [
+                        React.createElement('div', {
+                            key: 'special-rule',
+                            className: 'rounded-xl border-2 border-dashed px-4 py-3 cursor-move transition hover:border-[#8e3c2c] hover:bg-[rgba(142,60,44,0.05)]',
+                            style: { borderColor: 'rgba(92, 49, 30, 0.2)' }
+                        }, [
+                            React.createElement('p', {
+                                key: 'label',
+                                className: 'text-xs uppercase tracking-[0.25em]',
+                                style: { color: 'rgba(43, 29, 20, 0.5)' }
+                            }, 'Drag to Add'),
+                            React.createElement('p', {
+                                key: 'title',
+                                className: 'text-sm font-semibold mt-1',
+                                style: { color: '#2b1d14' }
+                            }, 'Special Rule')
+                        ])
+                    ])
+                ]),
+                React.createElement('div', {
+                    key: 'graph-container',
+                    ref: containerRef,
+                    className: 'relative flex-1 overflow-hidden',
+                    onClick: e => e.stopPropagation()
+                }, [
+                    React.createElement('div', {
+                        key: 'bg',
+                        className: 'pointer-events-none absolute inset-0',
+                        style: { background: 'radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)' }
+                    }),
+                    React.createElement('div', {
+                        key: 'grid-wrapper',
+                        className: 'relative h-full w-full flex items-center justify-end pr-8'
+                    },
+                        React.createElement('div', {
+                            key: 'grid',
+                            className: 'relative grid h-full grid-cols-3 gap-12 p-8',
+                            style: { width: '85%' }
+                        }, [
                     React.createElement('div', {
                         key: 'left',
                         className: 'flex flex-col justify-around'
@@ -752,6 +784,7 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     style: { borderColor: 'rgba(181, 103, 71, 0.3)', backgroundColor: 'rgba(181, 103, 71, 0.1)', color: '#b56747' }
                 }, success)
             ])
+        ])
     ]);
 }
 
