@@ -906,9 +906,8 @@ textarea {
 }
 
 .profile-card:hover {
-    border-color: var(--clay-600);
-    box-shadow: 0 4px 12px rgba(92, 49, 30, 0.12);
-    transform: translateY(-2px);
+    outline: 2px solid #8e3c2c;
+    outline-offset: -2px;
 }
 
 .profile-card.active {
@@ -1327,6 +1326,148 @@ textarea {
 @keyframes bounce {
     0%, 80%, 100% { transform: scale(0); }
     40% { transform: scale(1); }
+}
+
+/* Model Slider */
+.model-slider-container {
+    overflow: hidden;
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    background: rgba(142, 60, 44, 0.04);
+    border: 1px solid rgba(142, 60, 44, 0.15);
+    border-radius: 8px;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+}
+
+.model-slider {
+    display: flex;
+    gap: 12px;
+    animation: slide 25s linear infinite;
+    width: fit-content;
+    padding-left: 12px;
+}
+
+.model-slider:hover {
+    animation-play-state: paused;
+}
+
+.model-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+}
+
+.model-badge:hover {
+    opacity: 0.7;
+}
+
+.model-badge img {
+    height: 40px;
+    width: 120px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Individual logo scaling for text normalization */
+.model-badge img[src*="chatgpt-logo"] {
+    transform: scale(1.0);
+}
+
+.model-badge img[src*="claude-logo"] {
+    transform: scale(2.4);
+}
+
+.model-badge img[src*="qwen-logo"] {
+    transform: scale(1.0);
+}
+
+.model-badge img[src*="mistral-logo"] {
+    transform: scale(1.65);
+}
+
+.model-badge img[src*="perplexity-logo"] {
+    transform: scale(1.56);
+}
+
+.model-badge img[src*="grok-logo"] {
+    transform: scale(1.0);
+}
+
+.model-badge img[src*="deepseek-logo"] {
+    transform: scale(1.0);
+}
+
+.model-badge img[src*="llama-logo"] {
+    transform: scale(1.32);
+}
+
+@keyframes slide {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-25%);
+    }
+}
+
+/* Model Slider Info Icon */
+.model-slider-info {
+    position: relative;
+    display: inline-flex;
+    z-index: 10;
+}
+
+.info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(142, 60, 44, 0.5);
+    color: rgba(142, 60, 44, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    font-style: italic;
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.info-icon:hover {
+    border-color: #8e3c2c;
+    color: #8e3c2c;
+    background: rgba(142, 60, 44, 0.08);
+}
+
+.info-tooltip {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    background: white;
+    border: 1px solid rgba(142, 60, 44, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    width: 280px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #5b2a1a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.model-slider-info:hover .info-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .input-container {
