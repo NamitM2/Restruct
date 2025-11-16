@@ -14,6 +14,7 @@ const modelSelect = document.getElementById('modelSelect');
 // Profile controls
 const profilesGrid = document.getElementById('profilesGrid');
 const newProfileBtn = document.getElementById('newProfileBtn');
+const createNewProfileCard = document.getElementById('createNewProfileCard');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 const deleteProfileBtn = document.getElementById('deleteProfileBtn');
 const latencyPriority = document.getElementById('latencyPriority');
@@ -185,15 +186,29 @@ function updateProfileBadges(card, profile) {
 
 function setActiveProfile(profileName) {
     document.querySelectorAll('.profile-card').forEach(card => {
-        card.classList.toggle('active', card.dataset.profile === profileName);
+        const isActive = card.dataset.profile === profileName;
+        card.classList.toggle('active', isActive);
+
+        if (isActive) {
+            card.style.border = '2px solid #8e3c2c';
+        } else {
+            card.style.border = '2px solid rgba(92, 49, 30, 0.12)';
+        }
     });
     currentProfileName = profileName;
+
+    const profileIndicator = document.getElementById('currentProfileName');
+    if (profileIndicator) {
+        const activeCard = document.querySelector(`.profile-card[data-profile="${profileName}"]`);
+        const displayName = activeCard ? activeCard.dataset.profileLabel : profileName;
+        profileIndicator.textContent = displayName;
+    }
 }
 
 // Profile card clicks
 if (profilesGrid) {
     profilesGrid.addEventListener('click', (e) => {
-        const editBtn = e.target.closest('.profile-edit-btn');
+        const editBtn = e.target.closest('.profile-edit-btn, .profile-action-btn');
         if (editBtn) {
             e.stopPropagation();
             const card = editBtn.closest('.profile-card');
@@ -212,6 +227,36 @@ if (profilesGrid) {
                     });
                 } else {
                     openProfileModal(profileName);
+                }
+            }
+            return;
+        }
+
+        const statsBtn = e.target.closest('.profile-stats-btn');
+        if (statsBtn) {
+            e.stopPropagation();
+            const card = statsBtn.closest('.profile-card');
+            if (card) {
+                const profileName = card.dataset.profile;
+                console.log('Stats for profile:', profileName);
+            }
+            return;
+        }
+
+        const deleteBtn = e.target.closest('.profile-delete-btn');
+        if (deleteBtn) {
+            e.stopPropagation();
+            const card = deleteBtn.closest('.profile-card');
+            if (card) {
+                const profileName = card.dataset.profile;
+
+                if (confirm(`Are you sure you want to delete the "${card.dataset.profileLabel}" profile?`)) {
+                    delete profiles[profileName];
+                    card.remove();
+
+                    if (currentProfileName === profileName) {
+                        setActiveProfile('default');
+                    }
                 }
             }
             return;
@@ -277,20 +322,49 @@ function buildProfileCard(slug, displayName, profileData) {
     card.className = 'profile-card';
     card.dataset.profile = slug;
     card.dataset.profileLabel = displayName;
-    card.innerHTML = `
-        <h4>${displayName}</h4>
-        <button class="profile-edit-btn" title="Edit profile">
-            <svg viewBox="0 0 24 24">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    card.style.cssText = 'width: 260px; background: #fff; border-radius: 18px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 18px;';
+
+    const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
+    const deleteButtonHtml = !isDefault ? `
+        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px; background: white; color: #dc2626; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
+            Delete
         </button>
+    ` : '';
+
+    card.innerHTML = `
+        <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">${displayName}</h4>
+        <div style="display: flex; gap: 8px;">
+            <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit
+            </button>
+            <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                Stats
+            </button>
+            ${deleteButtonHtml}
+        </div>
     `;
     return card;
 }
 
 if (newProfileBtn) {
     newProfileBtn.addEventListener('click', () => {
+        window.profileBuilderOverlay?.open();
+    });
+}
+
+if (createNewProfileCard) {
+    createNewProfileCard.addEventListener('click', () => {
         window.profileBuilderOverlay?.open();
     });
 }
@@ -707,7 +781,6 @@ function toggleModelStats(event) {
 
 function init() {
     wireTabs();
-    handleRoutingModeChange();
     hydrateDashboard();
     initCostComparisonChart();
     testConnection();
