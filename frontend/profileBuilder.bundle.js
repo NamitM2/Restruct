@@ -396,7 +396,7 @@
             key: "blacklist-label",
             className: "mb-3 text-xs uppercase tracking-[0.3em]",
             style: { color: "rgba(43, 29, 20, 0.5)" }
-          }, "Blacklist Models"),
+          }, "Blacklisted Models"),
           React.createElement("div", {
             key: "models",
             className: "flex flex-col gap-3"
@@ -413,7 +413,7 @@
                 type: "button",
                 onClick: () => onBlacklist(model),
                 className: `rounded-full px-3 py-1 text-xs font-semibold transition ${blacklisted ? "bg-[rgba(142,60,44,0.15)] text-[#8e3c2c]" : "bg-[rgba(92,49,30,0.1)] text-[rgba(43,29,20,0.7)]"}`
-              }, blacklisted ? "Blacklisted" : "Allow")
+              }, blacklisted ? "Blacklisted" : "Allowed")
             ]);
           }))
         ]);
