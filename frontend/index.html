@@ -191,158 +191,81 @@
                         <button class="ghost-button" type="button">Export routing log</button>
                     </div>
 
-                    <div class="routing-lab-grid">
-                        <div class="routing-lab-primary">
-                            <div class="control-panel">
-                                <div class="profiles-header">
-                                    <h3>Routing profiles</h3>
-                                    <button class="btn-icon" id="newProfileBtn" title="Create new profile">+ New Profile</button>
-                                </div>
-
-                                <div class="profiles-grid" id="profilesGrid">
-                                    <div class="profile-card active" data-profile="default" data-profile-label="Default">
-                                        <h4>Default</h4>
-                                    </div>
-
-                                    <div class="profile-card" data-profile="cost-optimized" data-profile-label="Cost Optimized">
-                                        <h4>Cost Optimized</h4>
-                                    </div>
-
-                                    <div class="profile-card" data-profile="performance-first" data-profile-label="Performance First">
-                                        <h4>Performance First</h4>
-                                    </div>
-                                </div>
-
-                                <div class="control-group model-picker" id="modelPicker">
-                                    <label for="modelSelect">Choose manual model</label>
-                                    <select id="modelSelect">
-                                        <option value="openai:gpt-5">OpenAI - GPT-5</option>
-                                        <option value="openai:gpt-5-pro">OpenAI - GPT-5 Pro</option>
-                                        <option value="openai:gpt-5_mini_nano">OpenAI - GPT-5 Mini Nano</option>
-                                        <option value="google:gemini-2.5_pro">Google - Gemini 2.5 Pro</option>
-                                        <option value="google:gemini-2.5_flash">Google - Gemini 2.5 Flash</option>
-                                        <option value="google:gemini-2.5_flash_lite">Google - Gemini 2.5 Flash Lite</option>
-                                        <option value="anthropic:claude-opus_4.1">Anthropic - Claude Opus 4.1</option>
-                                        <option value="anthropic:claude-sonnet_4.5">Anthropic - Claude Sonnet 4.5</option>
-                                        <option value="anthropic:claude-haiku_4.5">Anthropic - Claude Haiku 4.5</option>
-                                    </select>
-                                    <small class="muted-text">Visible when manual mode is active.</small>
-                                </div>
-
-                                <p class="lab-footnote">Any manual override will pause auto routing for 30 minutes to preserve guardrails.</p>
-                            </div>
-                        </div>
-
-                        <div class="routing-lab-secondary">
-                            <article class="routing-card model-mix-card">
-                                <div class="card-header">
-                                    <h3>Model mix</h3>
-                                    <span class="badge success">Updated 5m ago</span>
-                                </div>
-                                <ul class="model-mix">
-                                    <li>
-                                        <div>
-                                            <strong>OpenAI GPT-5</strong>
-                                            <small>Complex reasoning</small>
-                                        </div>
-                                        <div class="mix-value">
-                                            <span>42%</span>
-                                            <div class="mix-bar">
-                                                <span style="width: 42%"></span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div>
-                                            <strong>Anthropic Claude Sonnet</strong>
-                                            <small>Structured responses</small>
-                                        </div>
-                                        <div class="mix-value">
-                                            <span>29%</span>
-                                            <div class="mix-bar">
-                                                <span style="width: 29%"></span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div>
-                                            <strong>Google Gemini 2.5 Flash</strong>
-                                            <small>High-volume workloads</small>
-                                        </div>
-                                        <div class="mix-value">
-                                            <span>18%</span>
-                                            <div class="mix-bar">
-                                                <span style="width: 18%"></span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div>
-                                            <strong>Specialty pool</strong>
-                                            <small>Vision + multimodal</small>
-                                        </div>
-                                        <div class="mix-value">
-                                            <span>11%</span>
-                                            <div class="mix-bar">
-                                                <span style="width: 11%"></span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </article>
-                        </div>
+                    <!-- Profile Builder CTA -->
+                    <div style="background: linear-gradient(135deg, rgba(201, 132, 84, 0.08), rgba(181, 103, 71, 0.12)); border: 2px solid rgba(142, 60, 44, 0.2); border-radius: 24px; padding: 24px 40px 20px 40px; margin-bottom: 24px; text-align: center;">
+                        <h3 style="font-size: 28px; font-weight: 700; color: #5b2a1a; margin-bottom: 12px;">Build a router profile</h3>
+                        <p style="font-size: 16px; color: rgba(43, 29, 20, 0.7); margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                            Design custom routing strategies with visual graph editing. Configure model families, priorities, and blacklists with our interactive builder.
+                        </p>
+                        <button id="newProfileBtn" style="background: #8e3c2c; color: #fffdf9; border: none; padding: 16px 48px; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 24px rgba(142, 60, 44, 0.3); transition: all 0.2s;">
+                            Open Routing Lab
+                        </button>
                     </div>
 
-                    <!-- Profile Configuration Modal -->
-                    <div class="modal-overlay" id="profileModal">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <input type="text" id="modalProfileName" class="profile-name-input" placeholder="Profile Name">
-                                <button class="modal-close" id="closeModalBtn">&times;</button>
-                            </div>
+                    <div style="max-width: 1200px; margin: 0 auto;">
+                        <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(43, 29, 20, 0.5); margin-bottom: 20px;">Your Profiles</h3>
 
-                            <div class="modal-body">
-                                <div class="priority-control">
-                                    <label for="latencyPriority">
-                                        <span>Latency</span>
-                                        <span class="priority-value" id="latencyValue">Medium</span>
-                                    </label>
-                                    <select id="latencyPriority" class="priority-select">
-                                        <option value="low">Low</option>
-                                        <option value="medium" selected>Medium</option>
-                                        <option value="high">High</option>
-                                    </select>
-                                </div>
-
-                                <div class="priority-control">
-                                    <label for="costPriority">
-                                        <span>Cost</span>
-                                        <span class="priority-value" id="costValue">Medium</span>
-                                    </label>
-                                    <select id="costPriority" class="priority-select">
-                                        <option value="low">Low</option>
-                                        <option value="medium" selected>Medium</option>
-                                        <option value="high">High</option>
-                                    </select>
-                                </div>
-
-                                <div class="priority-control">
-                                    <label for="qualityPriority">
-                                        <span>Quality</span>
-                                        <span class="priority-value" id="qualityValue">Medium</span>
-                                    </label>
-                                    <select id="qualityPriority" class="priority-select">
-                                        <option value="low">Low</option>
-                                        <option value="medium" selected>Medium</option>
-                                        <option value="high">High</option>
-                                    </select>
+                        <div style="max-height: 450px; overflow-y: auto; padding-right: 8px;">
+                            <div id="profilesGrid" style="display: flex; flex-wrap: wrap; gap: 16px;">
+                            <div class="profile-card active" data-profile="default" data-profile-label="Default" style="width: 260px; background: #fff; border-radius: 18px; border: 2px solid #8e3c2c; padding: 18px;">
+                                <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">Default</h4>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        Stats
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="modal-footer">
-                                <button class="btn-secondary" id="saveProfileBtn">Save Profile</button>
-                                <button class="btn-tertiary" id="deleteProfileBtn">Delete Profile</button>
+                            <div class="profile-card" data-profile="cost-optimized" data-profile-label="Cost Optimized" style="width: 260px; background: #fff; border-radius: 18px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 18px;">
+                                <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">Cost Optimized</h4>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        Stats
+                                    </button>
+                                </div>
                             </div>
+
+                            <div class="profile-card" data-profile="performance-first" data-profile-label="Performance First" style="width: 260px; background: #fff; border-radius: 18px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 18px;">
+                                <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">Performance First</h4>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        Stats
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="createNewProfileCard" style="width: 260px; background: #fff; border-radius: 18px; border: 2px dashed rgba(142, 60, 44, 0.3); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; min-height: 100px;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8e3c2c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; opacity: 0.6;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <p style="margin: 0; font-size: 16px; font-weight: 600; color: #5b2a1a;">Create new profile</p>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -350,8 +273,63 @@
             <section id="routerTab" class="tab-panel active" aria-labelledby="Chat">
                 <div class="chat-panel" aria-live="polite">
                     <div class="chat-header">
-                        <div>
-                            <h2>Chat workspace</h2>
+                        <div style="display: flex; align-items: stretch; gap: 16px; width: 100%;">
+                            <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="white-space: nowrap; margin: 0;">Chat workspace</h2>
+                                    <div class="model-slider-info">
+                                        <span class="info-icon">i</span>
+                                        <div class="info-tooltip">This interface displays model providers supported via their publicly available APIs. Logos are used for identification only; no partnership or endorsement is implied.</div>
+                                    </div>
+                                </div>
+                                <div id="currentProfileIndicator" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(142, 60, 44, 0.08); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; white-space: nowrap;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e3c2c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span style="font-size: 13px; font-weight: 500; color: #5b2a1a;">Profile: <strong id="currentProfileName">Default</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="model-slider-container">
+                                <div class="model-slider">
+                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
+                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
+                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
+                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
+                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
+                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
+                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
+                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
+                                    <!-- Duplicate 1 -->
+                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
+                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
+                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
+                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
+                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
+                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
+                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
+                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
+                                    <!-- Duplicate 2 -->
+                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
+                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
+                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
+                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
+                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
+                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
+                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
+                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
+                                    <!-- Duplicate 3 -->
+                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
+                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
+                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
+                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
+                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
+                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
+                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
+                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
