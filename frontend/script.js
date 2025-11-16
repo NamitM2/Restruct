@@ -8,7 +8,6 @@ const chatContainer = document.getElementById('chatContainer');
 const chatForm = document.getElementById('chatForm');
 const promptInput = document.getElementById('promptInput');
 const sendButton = document.getElementById('sendButton');
-const routingModeRadios = document.querySelectorAll('input[name="routingMode"]');
 const modelPicker = document.getElementById('modelPicker');
 const modelSelect = document.getElementById('modelSelect');
 
@@ -132,26 +131,6 @@ function wireTabs() {
     });
 }
 
-function handleRoutingModeChange() {
-    const selectedMode = document.querySelector('input[name="routingMode"]:checked');
-    const isManual = selectedMode && selectedMode.value === 'manual';
-
-    if (modelPicker) {
-        modelPicker.classList.toggle('is-visible', Boolean(isManual));
-    }
-
-    if (profilesGrid) {
-        profilesGrid.style.pointerEvents = isManual ? 'none' : 'auto';
-        profilesGrid.style.opacity = isManual ? '0.5' : '1';
-    }
-    if (newProfileBtn) {
-        newProfileBtn.disabled = Boolean(isManual);
-    }
-}
-
-routingModeRadios.forEach(radio => {
-    radio.addEventListener('change', handleRoutingModeChange);
-});
 
 // Profile management
 const profiles = {
@@ -423,7 +402,6 @@ if (chatForm) {
         const prompt = promptInput?.value.trim();
         if (!prompt || isLoading) return;
 
-        const routingMode = document.querySelector('input[name="routingMode"]:checked')?.value || 'auto';
         const currentProfile = profiles[currentProfileName] || profiles['default'];
         const payload = {
             prompt,
@@ -435,8 +413,8 @@ if (chatForm) {
             },
             max_tokens: 1000,
             temperature: 0.7,
-            router_mode: routingMode,
-            model_override: routingMode === 'manual' ? modelSelect?.value : null
+            router_mode: 'auto',
+            model_override: null
         };
 
         if (promptInput) {
