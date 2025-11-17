@@ -280,7 +280,9 @@
             </section>            <!-- Chat Tab -->
             <section id="routerTab" class="tab-panel active" aria-labelledby="Chat">
                 <div class="chat-panel" aria-live="polite">
-                    <div class="chat-container" id="chatContainer">
+                    <div class="chat-main-wrapper">
+                        <div class="chat-area">
+                            <div class="chat-container" id="chatContainer">
                         <div class="chat-controls">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <button id="previousConversationsBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
@@ -336,6 +338,44 @@
                                 <span class="button-icon">↑</span>
                             </button>
                         </form>
+                    </div>
+                        </div>
+
+                        <!-- Conversation Stats Sidebar -->
+                        <div class="conversation-stats-sidebar" id="conversationStatsSidebar">
+                            <div class="conversation-stats-header">
+                                <span style="font-weight: 600; font-size: 14px;">Conversation Stats</span>
+                            </div>
+                            <div class="conversation-stats-content">
+                                <div class="stat-item-vertical">
+                                    <span class="stat-label">Input Tokens</span>
+                                    <span class="stat-value" id="statsInputTokens">0</span>
+                                </div>
+                                <div class="stat-item-vertical">
+                                    <span class="stat-label">Output Tokens</span>
+                                    <span class="stat-value" id="statsOutputTokens">0</span>
+                                </div>
+                                <div class="stat-item-vertical">
+                                    <span class="stat-label">Models Used</span>
+                                    <span class="stat-value" id="statsModelsUsed">none</span>
+                                </div>
+                                <div class="stat-item-vertical">
+                                    <span class="stat-label">Avg Latency</span>
+                                    <span class="stat-value" id="statsAvgLatency">0ms</span>
+                                </div>
+                                <div class="stat-item-vertical">
+                                    <span class="stat-label">Total Cost</span>
+                                    <span class="stat-value" id="statsTotalCost">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Toggle Button (outside sidebar) -->
+                        <button class="stats-toggle-btn" id="statsToggleBtn" title="Toggle stats">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Previous Conversations Popup -->
