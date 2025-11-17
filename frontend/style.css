@@ -112,6 +112,7 @@ textarea {
     align-items: center;
     padding: 24px 0;
     gap: 32px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .sidebar-brand {
@@ -219,6 +220,7 @@ textarea {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transition: margin-left 0.3s ease;
 }
 
 .app-header {
@@ -1222,12 +1224,14 @@ textarea {
     min-height: calc(100vh - 64px);
     overflow: hidden;
     flex: 1;
+    transition: margin-left 0.3s ease;
 }
 
 .chat-header {
     padding: 24px 28px;
     border-bottom: 1px solid rgba(92, 49, 30, 0.08);
     background: linear-gradient(135deg, rgba(216, 182, 148, 0.4), rgba(255, 255, 255, 0));
+    transition: all 0.3s ease;
 }
 
 .chat-container {
@@ -1235,6 +1239,55 @@ textarea {
     padding: 28px;
     overflow-y: auto;
     background: linear-gradient(180deg, rgba(255, 250, 245, 0.9), rgba(255, 255, 255, 0.7));
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.chat-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+#enterFocusBtn:hover,
+#exitFocusBtn:hover {
+    background: rgba(142, 60, 44, 0.08);
+    border-color: rgba(142, 60, 44, 0.3);
+}
+
+/* Focus Mode */
+body.focus-mode .sidebar-nav {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.focus-mode .main-content {
+    margin-left: -200px;
+}
+
+body.focus-mode .chat-header {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+}
+
+body.focus-mode .chat-panel {
+    margin-left: 0;
+}
+
+body.focus-mode #enterFocusBtn {
+    display: none !important;
+}
+
+body.focus-mode #exitFocusBtn {
+    display: flex !important;
 }
 
 .welcome-message {
@@ -1246,11 +1299,13 @@ textarea {
     flex-direction: column;
     gap: 12px;
     align-items: center;
+    transition: all 0.3s ease;
 }
 
 .message {
     margin-bottom: 16px;
     display: flex;
+    transition: all 0.3s ease;
 }
 
 .message-content {
@@ -1378,7 +1433,7 @@ textarea {
 }
 
 .model-badge img[src*="claude-logo"] {
-    transform: scale(2.4);
+    transform: scale(2.88);
 }
 
 .model-badge img[src*="qwen-logo"] {
@@ -1410,7 +1465,7 @@ textarea {
         transform: translateX(0);
     }
     100% {
-        transform: translateX(-25%);
+        transform: translateX(calc(-120px * 8 - 12px * 8));
     }
 }
 
@@ -1470,10 +1525,16 @@ textarea {
     transform: translateY(0);
 }
 
+#previousConversationsBtn:hover {
+    background: rgba(142, 60, 44, 0.08);
+    border-color: rgba(142, 60, 44, 0.3);
+}
+
 .input-container {
     padding: 20px 24px 32px;
     border-top: 1px solid rgba(92, 49, 30, 0.08);
     background: #fffefb;
+    transition: all 0.3s ease;
 }
 
 .input-form {
