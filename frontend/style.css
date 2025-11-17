@@ -1357,6 +1357,61 @@ body.focus-mode #exitFocusBtn {
     font-weight: 600;
 }
 
+.model-badge-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(201, 132, 84, 0.15);
+    color: var(--clay-600);
+    font-weight: 600;
+}
+
+.model-attribution-logo {
+    height: 20px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Individual logo scaling for model attribution */
+.model-attribution-logo[src*="chatgpt-logo"] {
+    transform: scale(1.0);
+}
+
+.model-attribution-logo[src*="claude-logo"] {
+    transform: scale(2.88);
+}
+
+.model-attribution-logo[src*="qwen-logo"] {
+    transform: scale(1.0);
+}
+
+.model-attribution-logo[src*="mistral-logo"] {
+    transform: scale(1.65);
+}
+
+.model-attribution-logo[src*="perplexity-logo"] {
+    transform: scale(1.56);
+}
+
+.model-attribution-logo[src*="grok-logo"] {
+    transform: scale(1.0);
+}
+
+.model-attribution-logo[src*="deepseek-logo"] {
+    transform: scale(1.0);
+}
+
+.model-attribution-logo[src*="llama-logo"] {
+    transform: scale(1.32);
+}
+
+.model-attribution-logo[src*="gemini-logo"] {
+    transform: scale(4.0);
+}
+
 .loading {
     display: flex;
     align-items: center;
@@ -1855,6 +1910,223 @@ body.focus-mode #exitFocusBtn {
     background: #b91c1c;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Chat Main Wrapper - Flexbox layout */
+.chat-main-wrapper {
+    display: flex;
+    gap: 0;
+    height: 100%;
+    flex: 1;
+}
+
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Conversation Stats Sidebar */
+.conversation-stats-sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: rgba(142, 60, 44, 0.04);
+    border-left: 1px solid rgba(142, 60, 44, 0.15);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: relative;
+    transition: transform 0.3s ease, width 0.3s ease, min-width 0.3s ease, padding 0.3s ease;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.conversation-stats-sidebar.collapsed {
+    transform: translateX(220px);
+    width: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.stats-toggle-btn {
+    position: absolute;
+    right: 220px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 48px;
+    background: rgba(142, 60, 44, 0.04);
+    border: 1px solid rgba(142, 60, 44, 0.15);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--clay-600);
+    transition: right 0.3s ease, background 0.2s ease;
+    z-index: 101;
+}
+
+.stats-toggle-btn:hover {
+    background: rgba(142, 60, 44, 0.08);
+}
+
+.stats-toggle-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.conversation-stats-sidebar.collapsed ~ .stats-toggle-btn {
+    right: 0;
+}
+
+.conversation-stats-sidebar.collapsed ~ .stats-toggle-btn svg {
+    transform: rotate(180deg);
+}
+
+.conversation-stats-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(142, 60, 44, 0.15);
+    color: var(--clay-700);
+}
+
+.conversation-stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.stat-item-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--clay-700);
+    word-wrap: break-word;
+}
+
+/* For model names list */
+#statsModelsUsed {
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* Copy Button for Messages */
+.copy-button {
+    background: none;
+    border: 1px solid rgba(142, 60, 44, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--clay-600);
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.copy-button:hover {
+    background: rgba(142, 60, 44, 0.05);
+    border-color: var(--clay-600);
+}
+
+.copy-button svg {
+    width: 12px;
+    height: 12px;
+}
+
+.response-latency {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+/* Assistant Message Layout */
+.message-assistant {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Model Logo at Top of Message */
+.message-model-logo {
+    margin-bottom: 8px;
+}
+
+.message-model-logo img {
+    height: 32px;
+    width: 90px;
+    object-fit: contain;
+}
+
+/* Individual logo scaling for message logos (0.8x slider size) */
+.message-model-logo img[src*="chatgpt-logo"] {
+    transform: scale(0.8);
+}
+
+.message-model-logo img[src*="claude-logo"] {
+    transform: scale(2.304);
+}
+
+.message-model-logo img[src*="qwen-logo"] {
+    transform: scale(0.8);
+}
+
+.message-model-logo img[src*="mistral-logo"] {
+    transform: scale(1.32);
+}
+
+.message-model-logo img[src*="perplexity-logo"] {
+    transform: scale(1.248);
+}
+
+.message-model-logo img[src*="grok-logo"] {
+    transform: scale(0.8);
+}
+
+.message-model-logo img[src*="deepseek-logo"] {
+    transform: scale(0.8);
+}
+
+.message-model-logo img[src*="llama-logo"] {
+    transform: scale(1.056);
+}
+
+.message-model-logo img[src*="gemini-logo"] {
+    transform: scale(3.2);
+}
+
+/* Message Footer */
+.message-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.message-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.model-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--clay-700);
 }
 
 .input-container {

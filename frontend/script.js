@@ -1,6 +1,44 @@
 const API_URL = 'http://localhost:8000';
 window.API_URL = API_URL;
 
+// Session stats tracking
+const sessionStats = {
+    inputTokens: 0,
+    outputTokens: 0,
+    modelsUsed: new Set(),
+    latencies: [],
+    totalCost: 0
+};
+
+function updateSessionStats() {
+    document.getElementById('statsInputTokens').textContent = sessionStats.inputTokens.toLocaleString();
+    document.getElementById('statsOutputTokens').textContent = sessionStats.outputTokens.toLocaleString();
+
+    // Display model names instead of count
+    const modelsUsedEl = document.getElementById('statsModelsUsed');
+    if (sessionStats.modelsUsed.size === 0) {
+        modelsUsedEl.textContent = 'none';
+    } else {
+        const modelNames = Array.from(sessionStats.modelsUsed).join('\n');
+        modelsUsedEl.textContent = modelNames;
+    }
+
+    const avgLatency = sessionStats.latencies.length > 0
+        ? Math.round(sessionStats.latencies.reduce((a, b) => a + b, 0) / sessionStats.latencies.length)
+        : 0;
+    document.getElementById('statsAvgLatency').textContent = `${avgLatency}ms`;
+    document.getElementById('statsTotalCost').textContent = `$${sessionStats.totalCost.toFixed(4)}`;
+}
+
+function resetSessionStats() {
+    sessionStats.inputTokens = 0;
+    sessionStats.outputTokens = 0;
+    sessionStats.modelsUsed = new Set();
+    sessionStats.latencies = [];
+    sessionStats.totalCost = 0;
+    updateSessionStats();
+}
+
 // Tab navigation
 const tabButtons = document.querySelectorAll('.nav-icon-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -508,6 +546,8 @@ if (chatForm) {
         addMessage('user', prompt);
         const loadingId = showLoading();
 
+        const startTime = Date.now();
+
         try {
             // Create conversation first if this is a new chat
             if (!currentConversation.conversationId) {
@@ -541,12 +581,24 @@ if (chatForm) {
             }
 
             const data = await response.json();
+            const latency = Date.now() - startTime;
+
+            // Update session stats
+            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3; // Rough estimate
+            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
+            sessionStats.modelsUsed.add(data.model);
+            sessionStats.latencies.push(latency);
+            sessionStats.totalCost += data.usage?.cost || 0.001; // Default cost estimate
+            updateSessionStats();
 
             removeLoading(loadingId);
             addMessage('assistant', data.output, {
                 model: data.model,
                 provider: data.provider,
-                score: data.routing_metadata?.score
+                score: data.routing_metadata?.score,
+                latency: latency,
+                inputTokens: data.usage?.input_tokens,
+                outputTokens: data.usage?.output_tokens
             });
         } catch (error) {
             console.error('Chat error:', error);
@@ -568,47 +620,111 @@ function addMessage(role, content, metadata = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${role}`;
 
+    // Add model logo at the top for assistant messages
+    if (role === 'assistant' && metadata && metadata.model) {
+        const modelLogoMap = {
+            'gpt-4': 'assets/chatgpt-logo.png',
+            'gpt-3.5-turbo': 'assets/chatgpt-logo.png',
+            'claude-3-opus': 'assets/claude-logo.png',
+            'claude-3-sonnet': 'assets/claude-logo.png',
+            'claude-3-haiku': 'assets/claude-logo.png',
+            'qwen': 'assets/qwen-logo.png',
+            'mistral': 'assets/mistral-logo.png',
+            'perplexity': 'assets/perplexity-logo.png',
+            'grok': 'assets/grok-logo.png',
+            'deepseek': 'assets/deepseek-logo.png',
+            'llama': 'assets/llama-logo.png',
+            'gemini': 'assets/gemini-logo.png'
+        };
+
+        let logoSrc = null;
+        const modelLower = metadata.model.toLowerCase();
+        for (const [key, value] of Object.entries(modelLogoMap)) {
+            if (modelLower.includes(key)) {
+                logoSrc = value;
+                break;
+            }
+        }
+
+        if (logoSrc) {
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'message-model-logo';
+            const modelLogo = document.createElement('img');
+            modelLogo.src = logoSrc;
+            modelLogo.alt = metadata.model;
+            modelLogo.draggable = false;
+            logoDiv.appendChild(modelLogo);
+            messageDiv.appendChild(logoDiv);
+        }
+    }
+
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
 
-    if (role === 'assistant' && metadata && metadata.model !== 'error') {
-        const routingInfo = document.createElement('div');
-        routingInfo.className = 'routing-info';
-        routingInfo.innerHTML = `Routed to <strong>${metadata.model}</strong>`;
-        contentDiv.appendChild(routingInfo);
-    }
-
     const textDiv = document.createElement('div');
     textDiv.textContent = content;
+    textDiv.className = 'message-text';
     contentDiv.appendChild(textDiv);
 
+    // Add footer with copy button, latency and model name for assistant messages
     if (role === 'assistant' && metadata) {
-        const metadataDiv = document.createElement('div');
-        metadataDiv.className = 'message-metadata';
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'message-footer';
+
+        // Copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+        `;
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(content);
+            copyButton.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Copied!
+            `;
+            setTimeout(() => {
+                copyButton.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                `;
+            }, 2000);
+        });
+        footerDiv.appendChild(copyButton);
+
+        // Model name and latency
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'message-info';
 
         if (metadata.model) {
-            const modelBadge = document.createElement('span');
-            modelBadge.className = 'model-badge';
-            modelBadge.textContent = metadata.model;
-            metadataDiv.appendChild(modelBadge);
+            const modelSpan = document.createElement('span');
+            modelSpan.className = 'model-name';
+            modelSpan.textContent = metadata.model;
+            infoDiv.appendChild(modelSpan);
         }
 
-        if (metadata.provider) {
-            const providerSpan = document.createElement('span');
-            providerSpan.textContent = `Provider: ${metadata.provider}`;
-            metadataDiv.appendChild(providerSpan);
+        if (metadata.latency) {
+            const latencySpan = document.createElement('span');
+            latencySpan.className = 'response-latency';
+            latencySpan.textContent = `${metadata.latency}ms`;
+            infoDiv.appendChild(latencySpan);
         }
 
-        if (metadata.score) {
-            const scoreSpan = document.createElement('span');
-            scoreSpan.textContent = `Score: ${metadata.score.toFixed(2)}`;
-            metadataDiv.appendChild(scoreSpan);
-        }
-
-        contentDiv.appendChild(metadataDiv);
+        footerDiv.appendChild(infoDiv);
+        contentDiv.appendChild(footerDiv);
     }
 
     messageDiv.appendChild(contentDiv);
+
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -921,6 +1037,9 @@ function startNewConversation() {
         messages: [],
         timestamp: new Date()
     };
+
+    // Reset session stats
+    resetSessionStats();
 
     // Remove all messages but keep chat-controls
     const messages = chatContainer.querySelectorAll('.message');
@@ -1399,6 +1518,16 @@ if (enterFocusBtn) {
 if (exitFocusBtn) {
     exitFocusBtn.addEventListener('click', () => {
         document.body.classList.remove('focus-mode');
+    });
+}
+
+// Conversation Stats Toggle
+const statsToggleBtn = document.getElementById('statsToggleBtn');
+const conversationStatsSidebar = document.getElementById('conversationStatsSidebar');
+
+if (statsToggleBtn && conversationStatsSidebar) {
+    statsToggleBtn.addEventListener('click', () => {
+        conversationStatsSidebar.classList.toggle('collapsed');
     });
 }
 
