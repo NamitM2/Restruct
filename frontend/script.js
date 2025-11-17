@@ -952,6 +952,222 @@ if (newConversationBtn) {
     });
 }
 
+// Profile Selector Modal
+const profileSelectorModal = document.getElementById('profileSelectorModal');
+const currentProfileIndicator = document.getElementById('currentProfileIndicator');
+const closeProfileSelectorModal = document.getElementById('closeProfileSelectorModal');
+const profileSelectorList = document.getElementById('profileSelectorList');
+
+function renderProfileSelector() {
+    if (!profileSelectorList) return;
+
+    profileSelectorList.innerHTML = '';
+
+    // Get all profile cards to extract display names
+    const profileCards = document.querySelectorAll('.profile-card');
+    const profilesArray = [];
+
+    profileCards.forEach(card => {
+        const profileName = card.dataset.profile;
+        const displayName = card.dataset.profileLabel || profileName;
+        const profileData = profiles[profileName];
+
+        if (profileData) {
+            profilesArray.push({
+                name: profileName,
+                displayName: displayName,
+                description: profileData.description || 'Custom profile'
+            });
+        }
+    });
+
+    profilesArray.forEach(profile => {
+        const isActive = profile.name === currentProfileName;
+        const item = document.createElement('div');
+        item.className = `profile-selector-item ${isActive ? 'active' : ''}`;
+        item.dataset.profile = profile.name;
+
+        item.innerHTML = `
+            <div class="profile-selector-item-info">
+                <div class="profile-selector-item-name">${profile.displayName}</div>
+                <div class="profile-selector-item-desc">${profile.description}</div>
+            </div>
+            <div class="profile-selector-item-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+        `;
+
+        item.addEventListener('click', () => {
+            setActiveProfile(profile.name);
+            profileSelectorModal.classList.remove('active');
+        });
+
+        profileSelectorList.appendChild(item);
+    });
+}
+
+if (currentProfileIndicator) {
+    currentProfileIndicator.addEventListener('click', () => {
+        renderProfileSelector();
+        profileSelectorModal.classList.add('active');
+    });
+}
+
+if (closeProfileSelectorModal) {
+    closeProfileSelectorModal.addEventListener('click', () => {
+        profileSelectorModal.classList.remove('active');
+    });
+}
+
+if (profileSelectorModal) {
+    profileSelectorModal.addEventListener('click', (e) => {
+        if (e.target === profileSelectorModal) {
+            profileSelectorModal.classList.remove('active');
+        }
+    });
+}
+
+// API Key Management
+let currentApiKey = null;
+let apiKeyCreatedDate = null;
+
+const generateKeyBtn = document.getElementById('generateKeyBtn');
+const regenerateKeyBtn = document.getElementById('regenerateKeyBtn');
+const revokeKeyBtn = document.getElementById('revokeKeyBtn');
+const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
+const copyKeyBtn = document.getElementById('copyKeyBtn');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const noKeyState = document.getElementById('noKeyState');
+const keyActiveState = document.getElementById('keyActiveState');
+const keyCreatedDate = document.getElementById('keyCreatedDate');
+
+function generateApiKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = 'rst_';
+    for (let i = 0; i < 48; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return key;
+}
+
+function showApiKey(key) {
+    currentApiKey = key;
+    apiKeyCreatedDate = new Date();
+
+    if (apiKeyInput) {
+        apiKeyInput.value = key;
+    }
+
+    if (keyCreatedDate) {
+        keyCreatedDate.textContent = `Created: ${apiKeyCreatedDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}`;
+    }
+
+    if (noKeyState) {
+        noKeyState.style.display = 'none';
+    }
+
+    if (keyActiveState) {
+        keyActiveState.style.display = 'flex';
+    }
+}
+
+function hideApiKey() {
+    currentApiKey = null;
+    apiKeyCreatedDate = null;
+
+    if (apiKeyInput) {
+        apiKeyInput.value = '';
+        apiKeyInput.type = 'password';
+    }
+
+    if (noKeyState) {
+        noKeyState.style.display = 'flex';
+    }
+
+    if (keyActiveState) {
+        keyActiveState.style.display = 'none';
+    }
+}
+
+if (generateKeyBtn) {
+    generateKeyBtn.addEventListener('click', () => {
+        const newKey = generateApiKey();
+        showApiKey(newKey);
+    });
+}
+
+if (regenerateKeyBtn) {
+    regenerateKeyBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to regenerate your API key? The old key will be immediately revoked.')) {
+            const newKey = generateApiKey();
+            showApiKey(newKey);
+        }
+    });
+}
+
+if (revokeKeyBtn) {
+    revokeKeyBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to revoke your API key? This action cannot be undone.')) {
+            hideApiKey();
+        }
+    });
+}
+
+if (toggleKeyVisibility) {
+    toggleKeyVisibility.addEventListener('click', () => {
+        if (apiKeyInput) {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleKeyVisibility.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                `;
+            } else {
+                apiKeyInput.type = 'password';
+                toggleKeyVisibility.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                `;
+            }
+        }
+    });
+}
+
+if (copyKeyBtn) {
+    copyKeyBtn.addEventListener('click', async () => {
+        if (currentApiKey) {
+            try {
+                await navigator.clipboard.writeText(currentApiKey);
+
+                const originalHtml = copyKeyBtn.innerHTML;
+                copyKeyBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                `;
+
+                setTimeout(() => {
+                    copyKeyBtn.innerHTML = originalHtml;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+    });
+}
+
 // Focus Mode
 const enterFocusBtn = document.getElementById('enterFocusBtn');
 const exitFocusBtn = document.getElementById('exitFocusBtn');
