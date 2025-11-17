@@ -1770,6 +1770,93 @@ body.focus-mode #exitFocusBtn {
     stroke: white;
 }
 
+/* Revoke Key Modal */
+.revoke-key-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.revoke-key-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.revoke-key-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.revoke-key-modal.active .revoke-key-modal-content {
+    transform: translateY(0);
+}
+
+.revoke-key-modal-header {
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid rgba(92, 49, 30, 0.12);
+}
+
+.revoke-key-modal-body {
+    padding: 24px;
+}
+
+.revoke-key-modal-actions {
+    padding: 16px 24px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-cancel-btn {
+    padding: 10px 20px;
+    background: white;
+    color: #5b2a1a;
+    border: 1.5px solid rgba(142, 60, 44, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-cancel-btn:hover {
+    background: rgba(142, 60, 44, 0.04);
+    border-color: #8e3c2c;
+}
+
+.modal-revoke-btn {
+    padding: 10px 20px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-revoke-btn:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
 .input-container {
     padding: 20px 24px 32px;
     border-top: 1px solid rgba(92, 49, 30, 0.08);
@@ -2350,6 +2437,139 @@ body.focus-mode #exitFocusBtn {
 .revoke-key-btn:hover {
     background: rgba(220, 38, 38, 0.08);
     border-color: #dc2626;
+}
+
+.key-name-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid rgba(142, 60, 44, 0.2);
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    color: #2b1d14;
+    font-family: inherit;
+}
+
+.key-name-input:focus {
+    outline: none;
+    border-color: #8e3c2c;
+    box-shadow: 0 0 0 3px rgba(142, 60, 44, 0.1);
+}
+
+.activate-key-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #8e3c2c;
+    color: white;
+    border: none;
+}
+
+.activate-key-btn:hover {
+    background: #7a3325;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(142, 60, 44, 0.3);
+}
+
+.active-key-item {
+    background: white;
+    border: 1px solid rgba(92, 49, 30, 0.12);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.active-key-item:hover {
+    border-color: rgba(142, 60, 44, 0.25);
+    box-shadow: 0 4px 12px rgba(92, 49, 30, 0.08);
+}
+
+.active-key-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.active-key-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2b1d14;
+    margin: 0 0 2px 0;
+}
+
+.active-key-date {
+    font-size: 11px;
+    color: rgba(92, 49, 30, 0.6);
+}
+
+.active-key-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.active-key-value input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1.5px solid rgba(142, 60, 44, 0.15);
+    border-radius: 8px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    background: rgba(142, 60, 44, 0.03);
+    color: #2b1d14;
+}
+
+.active-key-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+.active-key-stat {
+    flex: 1;
+}
+
+.active-key-stat-label {
+    font-size: 10px;
+    color: rgba(92, 49, 30, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.active-key-stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2b1d14;
+}
+
+.active-key-revoke-btn {
+    padding: 6px 18px;
+    background: #8e3c2c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.active-key-revoke-btn:hover {
+    background: #7a3325;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(142, 60, 44, 0.3);
 }
 
 .api-usage-info {

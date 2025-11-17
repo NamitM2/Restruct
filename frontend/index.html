@@ -282,10 +282,6 @@
                 <div class="chat-panel" aria-live="polite">
                     <div class="chat-header">
                         <div style="display: flex; align-items: stretch; gap: 16px; width: 100%;">
-                            <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px;">
-                                <h2 style="white-space: nowrap; margin: 0;">Chat</h2>
-                            </div>
-
                             <div class="model-slider-container">
                                 <div class="model-slider">
                                     <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
@@ -428,6 +424,7 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
             </section>
 
@@ -631,6 +628,10 @@
 
                                     <div class="key-active-state" id="keyActiveState" style="display: none;">
                                         <div class="key-info">
+                                            <label>Name Your Key</label>
+                                            <input type="text" id="apiKeyName" placeholder="e.g., Production API Key" class="key-name-input">
+                                        </div>
+                                        <div class="key-info">
                                             <label>Your API Key</label>
                                             <div class="key-input-group">
                                                 <input type="password" id="apiKeyInput" value="" readonly>
@@ -650,21 +651,11 @@
                                             <p class="key-created-date" id="keyCreatedDate">Created: --</p>
                                         </div>
                                         <div class="key-actions">
-                                            <button class="regenerate-key-btn" id="regenerateKeyBtn">
+                                            <button class="activate-key-btn" id="activateKeyBtn">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                                    <polyline points="1 20 1 14 7 14"></polyline>
-                                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
                                                 </svg>
-                                                Regenerate Key
-                                            </button>
-                                            <button class="revoke-key-btn" id="revokeKeyBtn">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <circle cx="12" cy="12" r="10"></circle>
-                                                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                                                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                                                </svg>
-                                                Revoke Key
+                                                Activate Key
                                             </button>
                                         </div>
                                     </div>
@@ -696,6 +687,27 @@
                 </div>
             </section>
             </main>
+        </div>
+    </div>
+
+    <!-- Revoke API Key Confirmation Modal -->
+    <div id="revokeKeyModal" class="revoke-key-modal">
+        <div class="revoke-key-modal-content">
+            <div class="revoke-key-modal-header">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #2b1d14;">Revoke API Key</h3>
+            </div>
+            <div class="revoke-key-modal-body">
+                <p style="margin: 0 0 16px 0; color: #5b2a1a; font-size: 14px; line-height: 1.6;">
+                    Are you sure you want to revoke <strong id="revokeKeyName"></strong>? This action cannot be undone.
+                </p>
+                <p style="margin: 0; color: rgba(92, 49, 30, 0.6); font-size: 13px; line-height: 1.5;">
+                    Any applications using this key will immediately lose access to the API.
+                </p>
+            </div>
+            <div class="revoke-key-modal-actions">
+                <button id="cancelRevokeBtn" class="modal-cancel-btn">Cancel</button>
+                <button id="confirmRevokeBtn" class="modal-revoke-btn">Revoke Key</button>
+            </div>
         </div>
     </div>
 
