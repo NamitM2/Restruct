@@ -15,26 +15,12 @@ def call_openai(model: Dict[str, Any], prompt: str) -> str:
     model_name = model["model_name"]
 
     client = OpenAI(api_key=api_key)
-
-    # Reasoning models (o1, o3, gpt-5-pro, etc.) use responses endpoint
-    # Check if model uses reasoning endpoint based on name patterns
-    reasoning_models = ["o1-", "o3-", "gpt-5-pro", "gpt-5_pro"]
-    is_reasoning_model = any(pattern in model_name for pattern in reasoning_models)
-
-    if is_reasoning_model:
-        # For reasoning models: use v1/responses endpoint
-        response = client.responses.create(
-            model=model_name,
-            input=[{"role": "user", "content": prompt}]
-        )
-        return response.output_text
-    else:
-        # For chat models: use v1/chat/completions endpoint
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
+    response = client.responses.create(
+        model=model_name,
+        input=[{"role": "user", "content": prompt}]
+    )
+    return response.output_text
+ 
 
 
 def call_google(model: Dict[str, Any], prompt: str) -> str:
