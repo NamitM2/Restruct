@@ -589,6 +589,13 @@ function addMessage(role, content, metadata = null) {
     messageDiv.appendChild(contentDiv);
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    // Store message in current conversation
+    currentConversation.messages.push({
+        role,
+        text: content,
+        metadata
+    });
 }
 
 function showLoading() {
@@ -779,6 +786,170 @@ function toggleCostComparison(event) {
 
 function toggleModelStats(event) {
     toggleCollapsible(event, 'modelStatsContent', '.model-stats .collapse-toggle');
+}
+
+// Conversations Management
+let conversations = [];
+let currentConversation = {
+    id: Date.now(),
+    messages: [],
+    timestamp: new Date()
+};
+
+const conversationsModal = document.getElementById('conversationsModal');
+const previousConversationsBtn = document.getElementById('previousConversationsBtn');
+const closeConversationsModal = document.getElementById('closeConversationsModal');
+const newConversationBtn = document.getElementById('newConversationBtn');
+const conversationsList = document.getElementById('conversationsList');
+
+function formatTimestamp(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderConversations() {
+    if (conversations.length === 0) {
+        conversationsList.innerHTML = `
+            <div class="empty-conversations">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(92, 49, 30, 0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <p style="margin: 12px 0 0 0; color: rgba(92, 49, 30, 0.5); font-size: 14px;">No previous conversations</p>
+            </div>
+        `;
+        return;
+    }
+
+    conversationsList.innerHTML = conversations
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .map(conv => `
+            <div class="conversation-item" data-conversation-id="${conv.id}">
+                <div class="conversation-item-header">
+                    <span class="conversation-timestamp">${formatTimestamp(conv.timestamp)}</span>
+                </div>
+                <div class="conversation-summary">
+                    ${conv.messages.length > 0 ? conv.messages[0].text : 'Empty conversation'}
+                </div>
+            </div>
+        `).join('');
+
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const convId = parseInt(item.dataset.conversationId);
+            loadConversation(convId);
+        });
+    });
+}
+
+function loadConversation(conversationId) {
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) return;
+
+    // Remove all messages but keep chat-controls
+    const messages = chatContainer.querySelectorAll('.message');
+    const welcomeMsg = chatContainer.querySelector('.welcome-message');
+
+    messages.forEach(msg => msg.remove());
+    if (welcomeMsg) welcomeMsg.remove();
+
+    // Temporarily clear currentConversation messages to avoid duplication when addMessage is called
+    const tempConversation = currentConversation;
+    currentConversation = {
+        id: conversation.id,
+        messages: [],
+        timestamp: conversation.timestamp
+    };
+
+    conversation.messages.forEach(msg => {
+        addMessage(msg.role, msg.text, msg.metadata);
+    });
+
+    conversations = conversations.filter(c => c.id !== conversationId);
+
+    conversationsModal.classList.remove('active');
+}
+
+function saveCurrentConversation() {
+    if (currentConversation.messages.length > 0) {
+        conversations.push({
+            ...currentConversation,
+            timestamp: currentConversation.timestamp
+        });
+    }
+}
+
+function startNewConversation() {
+    saveCurrentConversation();
+
+    currentConversation = {
+        id: Date.now(),
+        messages: [],
+        timestamp: new Date()
+    };
+
+    // Remove all messages but keep chat-controls
+    const messages = chatContainer.querySelectorAll('.message');
+    const welcomeMsg = chatContainer.querySelector('.welcome-message');
+
+    messages.forEach(msg => msg.remove());
+    if (welcomeMsg) welcomeMsg.remove();
+
+    // Add fresh welcome message after chat-controls
+    const chatControls = chatContainer.querySelector('.chat-controls');
+    const welcomeDiv = document.createElement('div');
+    welcomeDiv.className = 'welcome-message';
+    welcomeDiv.innerHTML = `
+        <img src="assets/logo.png" alt="" class="logo-mark ghost">
+        <h3>Welcome to Restruct</h3>
+    `;
+
+    if (chatControls) {
+        chatControls.insertAdjacentElement('afterend', welcomeDiv);
+    } else {
+        chatContainer.appendChild(welcomeDiv);
+    }
+
+    if (promptInput) {
+        promptInput.value = '';
+        promptInput.focus();
+    }
+}
+
+if (previousConversationsBtn) {
+    previousConversationsBtn.addEventListener('click', () => {
+        renderConversations();
+        conversationsModal.classList.add('active');
+    });
+}
+
+if (closeConversationsModal) {
+    closeConversationsModal.addEventListener('click', () => {
+        conversationsModal.classList.remove('active');
+    });
+}
+
+if (conversationsModal) {
+    conversationsModal.addEventListener('click', (e) => {
+        if (e.target === conversationsModal) {
+            conversationsModal.classList.remove('active');
+        }
+    });
+}
+
+if (newConversationBtn) {
+    newConversationBtn.addEventListener('click', () => {
+        startNewConversation();
+    });
 }
 
 // Focus Mode
