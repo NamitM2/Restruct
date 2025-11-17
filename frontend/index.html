@@ -275,20 +275,7 @@
                     <div class="chat-header">
                         <div style="display: flex; align-items: stretch; gap: 16px; width: 100%;">
                             <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <h2 style="white-space: nowrap; margin: 0;">Chat workspace</h2>
-                                    <div class="model-slider-info">
-                                        <span class="info-icon">i</span>
-                                        <div class="info-tooltip">This interface displays model providers supported via their publicly available APIs. Logos are used for identification only; no partnership or endorsement is implied.</div>
-                                    </div>
-                                </div>
-                                <div id="currentProfileIndicator" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(142, 60, 44, 0.08); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; white-space: nowrap;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e3c2c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                    <span style="font-size: 13px; font-weight: 500; color: #5b2a1a;">Profile: <strong id="currentProfileName">Default</strong></span>
-                                </div>
+                                <h2 style="white-space: nowrap; margin: 0;">Chat workspace</h2>
                             </div>
 
                             <div class="model-slider-container">
@@ -334,6 +321,37 @@
                     </div>
 
                     <div class="chat-container" id="chatContainer">
+                        <div class="chat-controls">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="previousConversationsBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Previous Conversations
+                                </button>
+                                <div id="currentProfileIndicator" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(142, 60, 44, 0.08); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; white-space: nowrap;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e3c2c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span style="font-size: 13px; font-weight: 500; color: #5b2a1a;">Profile: <strong id="currentProfileName">Default</strong></span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="enterFocusBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                    </svg>
+                                    Focus Mode
+                                </button>
+                                <button id="exitFocusBtn" style="display: none; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                    </svg>
+                                    Exit Focus
+                                </button>
+                            </div>
+                        </div>
                         <div class="welcome-message">
                             <img src="assets/logo.png" alt="" class="logo-mark ghost">
                             <h3>Welcome to Restruct</h3>

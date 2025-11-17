@@ -500,6 +500,8 @@ if (chatForm) {
         const welcomeMsg = chatContainer?.querySelector('.welcome-message');
         if (welcomeMsg) {
             welcomeMsg.remove();
+            // Enter focus mode on first message
+            document.body.classList.add('focus-mode');
         }
 
         addMessage('user', prompt);
@@ -777,6 +779,22 @@ function toggleCostComparison(event) {
 
 function toggleModelStats(event) {
     toggleCollapsible(event, 'modelStatsContent', '.model-stats .collapse-toggle');
+}
+
+// Focus Mode
+const enterFocusBtn = document.getElementById('enterFocusBtn');
+const exitFocusBtn = document.getElementById('exitFocusBtn');
+
+if (enterFocusBtn) {
+    enterFocusBtn.addEventListener('click', () => {
+        document.body.classList.add('focus-mode');
+    });
+}
+
+if (exitFocusBtn) {
+    exitFocusBtn.addEventListener('click', () => {
+        document.body.classList.remove('focus-mode');
+    });
 }
 
 function init() {
