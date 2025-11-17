@@ -35,32 +35,32 @@
     <div class="app-shell">
         <nav class="sidebar-nav" aria-label="Primary">
             <div class="sidebar-brand">
-                <img src="assets/logo.png" alt="Restruct logo" class="sidebar-logo">
+                <img src="assets/logo.png" alt="Restruct logo" class="sidebar-logo" draggable="false">
                 <span class="brand-name">Restruct</span>
             </div>
             <div class="nav-items">
                 <button class="nav-icon-button" data-tab-target="routerTab" title="Chat">
-                    <img src="assets/chat-icon.png" alt="Chat" class="nav-icon">
+                    <img src="assets/chat-icon.png" alt="Chat" class="nav-icon" draggable="false">
                     <span class="nav-label">Chat</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="routingControlsTab" title="Routing Controls">
-                    <img src="assets/routing-controls-icon.png" alt="Routing Controls" class="nav-icon">
+                    <img src="assets/routing-controls-icon.png" alt="Routing Controls" class="nav-icon" draggable="false">
                     <span class="nav-label">Routing Lab</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="dashboardTab" title="Statistics">
-                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon">
+                    <img src="assets/stats-icon.png" alt="Stats" class="nav-icon" draggable="false">
                     <span class="nav-label">Statistics</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="settingsTab" title="Settings">
-                    <img src="assets/settings-icon.png" alt="Settings" class="nav-icon">
+                    <img src="assets/settings-icon.png" alt="Settings" class="nav-icon" draggable="false">
                     <span class="nav-label">Settings</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="billingTab" title="Billing">
-                    <img src="assets/billing-icon.png" alt="Billing" class="nav-icon">
+                    <img src="assets/billing-icon.png" alt="Billing" class="nav-icon" draggable="false">
                     <span class="nav-label">Billing</span>
                 </button>
                 <button class="nav-icon-button" data-tab-target="apiTab" title="API">
-                    <img src="assets/api-icon.png" alt="API" class="nav-icon">
+                    <img src="assets/api-icon.png" alt="API" class="nav-icon" draggable="false">
                     <span class="nav-label">API</span>
                 </button>
             </div>
@@ -226,7 +226,7 @@
                                         Edit
                                     </button>
                                     <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
                                         Stats
                                     </button>
                                 </div>
@@ -243,7 +243,7 @@
                                         Edit
                                     </button>
                                     <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
                                         Stats
                                     </button>
                                 </div>
@@ -260,7 +260,7 @@
                                         Edit
                                     </button>
                                     <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                                        <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
                                         Stats
                                     </button>
                                 </div>
@@ -280,54 +280,6 @@
             </section>            <!-- Chat Tab -->
             <section id="routerTab" class="tab-panel active" aria-labelledby="Chat">
                 <div class="chat-panel" aria-live="polite">
-                    <div class="chat-header">
-                        <div style="display: flex; align-items: stretch; gap: 16px; width: 100%;">
-                            <div class="model-slider-container">
-                                <div class="model-slider">
-                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
-                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
-                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
-                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
-                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
-                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
-                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
-                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
-                                    <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini"></div>
-                                    <!-- Duplicate 1 -->
-                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
-                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
-                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
-                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
-                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
-                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
-                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
-                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
-                                    <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini"></div>
-                                    <!-- Duplicate 2 -->
-                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
-                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
-                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
-                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
-                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
-                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
-                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
-                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
-                                    <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini"></div>
-                                    <!-- Duplicate 3 -->
-                                    <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT"></div>
-                                    <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude"></div>
-                                    <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen"></div>
-                                    <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral"></div>
-                                    <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"></div>
-                                    <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok"></div>
-                                    <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek"></div>
-                                    <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama"></div>
-                                    <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="chat-container" id="chatContainer">
                         <div class="chat-controls">
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -367,7 +319,7 @@
                             </div>
                         </div>
                         <div class="welcome-message">
-                            <img src="assets/logo.png" alt="" class="logo-mark ghost">
+                            <img src="assets/logo.png" alt="" class="logo-mark ghost" draggable="false">
                             <h3>Welcome to Restruct</h3>
                         </div>
                     </div>
@@ -618,10 +570,10 @@
                             <div class="api-key-card">
                                 <div class="api-key-display" id="apiKeyDisplay">
                                     <div class="no-key-state" id="noKeyState">
-                                        <img src="assets/api-icon.png" alt="API Key" style="width: 64px; height: 64px; opacity: 0.4;">
+                                        <img src="assets/api-icon.png" alt="API Key" style="width: 64px; height: 64px; opacity: 0.4;" draggable="false">
                                         <p>No API key generated yet</p>
                                         <button class="generate-key-btn" id="generateKeyBtn">
-                                            <img src="assets/api-icon.png" alt="API Key" style="width: 16px; height: 16px;">
+                                            <img src="assets/api-icon.png" alt="API Key" style="width: 16px; height: 16px;" draggable="false">
                                             Generate API Key
                                         </button>
                                     </div>
