@@ -124,7 +124,7 @@ MODELS = {
     "anthropic": {
         "api_key": os.getenv("ANTHROPIC_API_KEY", "your-anthropic-key"),
         "models": {
-            "claude-opus_4.1": {
+            "claude-opus-4.1": {
                 "input_token_cost": 15.0 / 1_000_000,   # $15 per 1M input tokens :contentReference[oaicite:16]{index=16}
                 "output_token_cost": 75.0 / 1_000_000,  # $75 per 1M output tokens :contentReference[oaicite:17]{index=17}
                 "max_tokens": 200000,                   # 200k input tokens context window :contentReference[oaicite:18]{index=18}
@@ -136,7 +136,7 @@ MODELS = {
                     "chain_of_thought_depth": 9.6
                 }
             },
-            "claude-sonnet_4.5": {
+            "claude-sonnet-4.5": {
                 "input_token_cost": 3.0 / 1_000_000,    # ~$3 input / $15 output per million tokens :contentReference[oaicite:19]{index=19}
                 "output_token_cost": 15.0 / 1_000_000,  # :contentReference[oaicite:20]{index=20}
                 "max_tokens": 200000,                   # assume same context window
@@ -148,7 +148,7 @@ MODELS = {
                     "chain_of_thought_depth": 9.2
                 }
             },
-            "claude-haiku_4.5": {
+            "claude-haiku-4.5": {
                 "input_token_cost": 0.8 / 1_000_000,    # ~$0.80 input / ~$4 output per million tokens :contentReference[oaicite:21]{index=21}
                 "output_token_cost": 4.0 / 1_000_000,   # :contentReference[oaicite:22]{index=22}
                 "max_tokens": 200000,                   # assume same context window
