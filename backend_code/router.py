@@ -168,8 +168,10 @@ def route_with_llm(prompt: str) -> Dict[str, Any]:
                     "score": attrs.get("overall_complexity", 0),
                     "llm_scores": normalized_scores,
                 }
-
-    print(model_scores)
+    print("--------------------")
+    print(f"prompt scores: {normalized_scores}")
+    print(f"model scores: {model_scores}")
+    print("--------------------")
     return best_model, model_scores
 
 
