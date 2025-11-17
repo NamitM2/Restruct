@@ -338,6 +338,12 @@
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="newConversationBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 5v14M5 12h14"></path>
+                                    </svg>
+                                    New Conversation
+                                </button>
                                 <button id="enterFocusBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
@@ -370,6 +376,28 @@
                                 <span class="button-icon">↑</span>
                             </button>
                         </form>
+                    </div>
+
+                    <!-- Previous Conversations Popup -->
+                    <div id="conversationsModal" class="conversations-modal">
+                        <div class="conversations-modal-content">
+                            <div class="conversations-modal-header">
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #2b1d14;">Previous Conversations</h3>
+                                <button id="closeConversationsModal" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; color: #5b2a1a; transition: all 0.2s;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 6L6 18M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="conversations-list" id="conversationsList">
+                                <div class="empty-conversations">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(92, 49, 30, 0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    <p style="margin: 12px 0 0 0; color: rgba(92, 49, 30, 0.5); font-size: 14px;">No previous conversations</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
