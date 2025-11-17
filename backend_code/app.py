@@ -66,11 +66,7 @@ def chat(body: dict):
     profile = body.get("profile", "default")
 
     if not conversation_id:
-        conversation = create_conversation(
-            user_id=user_id,
-            title="New Chat"
-        )
-        conversation_id = conversation['id']
+        raise HTTPException(status_code=400, detail="conversation_id is required")
 
     add_message(
         conversation_id=conversation_id,

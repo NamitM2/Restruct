@@ -480,6 +480,7 @@ if (chatForm) {
         const payload = {
             prompt,
             profile: currentProfileName,
+            conversation_id: currentConversation.conversationId,  // Include conversation ID
             priorities: {
                 latency: currentProfile.latency,
                 cost: currentProfile.cost,
@@ -508,6 +509,26 @@ if (chatForm) {
         const loadingId = showLoading();
 
         try {
+            // Create conversation first if this is a new chat
+            if (!currentConversation.conversationId) {
+                const convResponse = await fetch(`${API_URL}/conversations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 'default-user',
+                        title: 'New Chat'
+                    })
+                });
+
+                if (!convResponse.ok) {
+                    throw new Error('Failed to create conversation');
+                }
+
+                const convData = await convResponse.json();
+                currentConversation.conversationId = convData.conversation.id;
+                payload.conversation_id = currentConversation.conversationId;
+            }
+
             const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -520,6 +541,7 @@ if (chatForm) {
             }
 
             const data = await response.json();
+
             removeLoading(loadingId);
             addMessage('assistant', data.output, {
                 model: data.model,
@@ -792,6 +814,7 @@ function toggleModelStats(event) {
 let conversations = [];
 let currentConversation = {
     id: Date.now(),
+    conversationId: null,  // Backend conversation ID
     messages: [],
     timestamp: new Date()
 };
@@ -866,6 +889,7 @@ function loadConversation(conversationId) {
     const tempConversation = currentConversation;
     currentConversation = {
         id: conversation.id,
+        conversationId: conversation.conversationId,  // Restore backend conversation ID
         messages: [],
         timestamp: conversation.timestamp
     };
@@ -893,6 +917,7 @@ function startNewConversation() {
 
     currentConversation = {
         id: Date.now(),
+        conversationId: null,  // Reset backend conversation ID
         messages: [],
         timestamp: new Date()
     };
@@ -1030,18 +1055,20 @@ if (profileSelectorModal) {
 }
 
 // API Key Management
-let currentApiKey = null;
-let apiKeyCreatedDate = null;
+let activeApiKeys = [];
+let currentPendingKey = null;
+let currentPendingKeyDate = null;
 
 const generateKeyBtn = document.getElementById('generateKeyBtn');
-const regenerateKeyBtn = document.getElementById('regenerateKeyBtn');
-const revokeKeyBtn = document.getElementById('revokeKeyBtn');
+const activateKeyBtn = document.getElementById('activateKeyBtn');
 const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
 const copyKeyBtn = document.getElementById('copyKeyBtn');
 const apiKeyInput = document.getElementById('apiKeyInput');
+const apiKeyName = document.getElementById('apiKeyName');
 const noKeyState = document.getElementById('noKeyState');
 const keyActiveState = document.getElementById('keyActiveState');
 const keyCreatedDate = document.getElementById('keyCreatedDate');
+const activeKeysList = document.getElementById('activeKeysList');
 
 function generateApiKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1052,16 +1079,21 @@ function generateApiKey() {
     return key;
 }
 
-function showApiKey(key) {
-    currentApiKey = key;
-    apiKeyCreatedDate = new Date();
+function showPendingKey(key) {
+    currentPendingKey = key;
+    currentPendingKeyDate = new Date();
 
     if (apiKeyInput) {
         apiKeyInput.value = key;
+        apiKeyInput.type = 'password';
+    }
+
+    if (apiKeyName) {
+        apiKeyName.value = '';
     }
 
     if (keyCreatedDate) {
-        keyCreatedDate.textContent = `Created: ${apiKeyCreatedDate.toLocaleDateString('en-US', {
+        keyCreatedDate.textContent = `Created: ${currentPendingKeyDate.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
@@ -1079,13 +1111,17 @@ function showApiKey(key) {
     }
 }
 
-function hideApiKey() {
-    currentApiKey = null;
-    apiKeyCreatedDate = null;
+function resetKeyGeneration() {
+    currentPendingKey = null;
+    currentPendingKeyDate = null;
 
     if (apiKeyInput) {
         apiKeyInput.value = '';
         apiKeyInput.type = 'password';
+    }
+
+    if (apiKeyName) {
+        apiKeyName.value = '';
     }
 
     if (noKeyState) {
@@ -1097,27 +1133,209 @@ function hideApiKey() {
     }
 }
 
+function renderActiveKeys() {
+    if (!activeKeysList) return;
+
+    if (activeApiKeys.length === 0) {
+        activeKeysList.innerHTML = `
+            <div class="empty-keys-state">
+                <p style="margin: 0; color: rgba(92, 49, 30, 0.5); font-size: 14px;">No active keys yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    activeKeysList.innerHTML = '';
+
+    activeApiKeys.forEach((keyData, index) => {
+        const keyItem = document.createElement('div');
+        keyItem.className = 'active-key-item';
+
+        keyItem.innerHTML = `
+            <div class="active-key-header">
+                <div>
+                    <h4 class="active-key-name">${keyData.name}</h4>
+                    <span class="active-key-date">Created: ${keyData.createdDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</span>
+                </div>
+                <button class="active-key-revoke-btn" data-index="${index}" data-name="${keyData.name}">
+                    Revoke
+                </button>
+            </div>
+            <div class="active-key-value">
+                <input type="text" class="active-key-input" data-key="${keyData.key}" data-name="${keyData.name}" value="${keyData.name}" readonly>
+                <button class="key-action-btn active-key-reveal-btn" data-index="${index}" data-revealed="false" title="Reveal Key">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+                <button class="key-action-btn active-key-copy-btn" data-key="${keyData.key}" title="Copy to Clipboard">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="active-key-stats">
+                <div class="active-key-stat">
+                    <div class="active-key-stat-label">Last Used</div>
+                    <div class="active-key-stat-value">${keyData.lastUsed || 'Never'}</div>
+                </div>
+                <div class="active-key-stat">
+                    <div class="active-key-stat-label">Total Requests</div>
+                    <div class="active-key-stat-value">${keyData.requestCount || 0}</div>
+                </div>
+            </div>
+        `;
+
+        activeKeysList.appendChild(keyItem);
+    });
+}
+
+// Use event delegation for better reliability
+if (activeKeysList) {
+    activeKeysList.addEventListener('click', async (e) => {
+        // Handle reveal button clicks
+        const revealBtn = e.target.closest('.active-key-reveal-btn');
+        if (revealBtn) {
+            const keyInput = revealBtn.parentElement.querySelector('.active-key-input');
+            const isRevealed = revealBtn.dataset.revealed === 'true';
+
+            if (isRevealed) {
+                // Hide key, show name
+                keyInput.value = keyInput.dataset.name;
+                revealBtn.dataset.revealed = 'false';
+                revealBtn.title = 'Reveal Key';
+                revealBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                `;
+            } else {
+                // Show key, hide name
+                keyInput.value = keyInput.dataset.key;
+                revealBtn.dataset.revealed = 'true';
+                revealBtn.title = 'Hide Key';
+                revealBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                `;
+            }
+            return;
+        }
+
+        // Handle copy button clicks
+        const copyBtn = e.target.closest('.active-key-copy-btn');
+        if (copyBtn) {
+            const key = copyBtn.dataset.key;
+            try {
+                await navigator.clipboard.writeText(key);
+                const originalHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                `;
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHtml;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+            return;
+        }
+
+        // Handle revoke button clicks
+        const revokeBtn = e.target.closest('.active-key-revoke-btn');
+        if (revokeBtn) {
+            const index = parseInt(revokeBtn.dataset.index);
+            const keyName = revokeBtn.dataset.name;
+            showRevokeModal(index, keyName);
+            return;
+        }
+    });
+}
+
+// Revoke modal functionality
+const revokeKeyModal = document.getElementById('revokeKeyModal');
+const revokeKeyNameEl = document.getElementById('revokeKeyName');
+const cancelRevokeBtn = document.getElementById('cancelRevokeBtn');
+const confirmRevokeBtn = document.getElementById('confirmRevokeBtn');
+let pendingRevokeIndex = null;
+
+function showRevokeModal(index, keyName) {
+    pendingRevokeIndex = index;
+    if (revokeKeyNameEl) {
+        revokeKeyNameEl.textContent = `"${keyName}"`;
+    }
+    if (revokeKeyModal) {
+        revokeKeyModal.classList.add('active');
+    }
+}
+
+function hideRevokeModal() {
+    pendingRevokeIndex = null;
+    if (revokeKeyModal) {
+        revokeKeyModal.classList.remove('active');
+    }
+}
+
+if (cancelRevokeBtn) {
+    cancelRevokeBtn.addEventListener('click', () => {
+        hideRevokeModal();
+    });
+}
+
+if (confirmRevokeBtn) {
+    confirmRevokeBtn.addEventListener('click', () => {
+        if (pendingRevokeIndex !== null) {
+            activeApiKeys.splice(pendingRevokeIndex, 1);
+            renderActiveKeys();
+            hideRevokeModal();
+        }
+    });
+}
+
+if (revokeKeyModal) {
+    revokeKeyModal.addEventListener('click', (e) => {
+        if (e.target === revokeKeyModal) {
+            hideRevokeModal();
+        }
+    });
+}
+
 if (generateKeyBtn) {
     generateKeyBtn.addEventListener('click', () => {
         const newKey = generateApiKey();
-        showApiKey(newKey);
+        showPendingKey(newKey);
     });
 }
 
-if (regenerateKeyBtn) {
-    regenerateKeyBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to regenerate your API key? The old key will be immediately revoked.')) {
-            const newKey = generateApiKey();
-            showApiKey(newKey);
-        }
-    });
-}
+if (activateKeyBtn) {
+    activateKeyBtn.addEventListener('click', () => {
+        if (!currentPendingKey) return;
 
-if (revokeKeyBtn) {
-    revokeKeyBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to revoke your API key? This action cannot be undone.')) {
-            hideApiKey();
-        }
+        const keyName = apiKeyName?.value.trim() || 'Unnamed Key';
+
+        activeApiKeys.push({
+            name: keyName,
+            key: currentPendingKey,
+            createdDate: currentPendingKeyDate,
+            lastUsed: null,
+            requestCount: 0
+        });
+
+        renderActiveKeys();
+        resetKeyGeneration();
     });
 }
 
@@ -1147,9 +1365,9 @@ if (toggleKeyVisibility) {
 
 if (copyKeyBtn) {
     copyKeyBtn.addEventListener('click', async () => {
-        if (currentApiKey) {
+        if (currentPendingKey) {
             try {
-                await navigator.clipboard.writeText(currentApiKey);
+                await navigator.clipboard.writeText(currentPendingKey);
 
                 const originalHtml = copyKeyBtn.innerHTML;
                 copyKeyBtn.innerHTML = `
