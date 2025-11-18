@@ -497,7 +497,9 @@ if (deleteProfileBtn) {
 if (promptInput) {
     promptInput.addEventListener('input', function () {
         this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+        const newHeight = Math.min(this.scrollHeight, 150);
+        this.style.height = newHeight + 'px';
+        this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
     });
 
     promptInput.addEventListener('keydown', function (event) {
@@ -533,6 +535,7 @@ if (chatForm) {
         if (promptInput) {
             promptInput.value = '';
             promptInput.style.height = 'auto';
+            promptInput.style.overflowY = 'hidden';
         }
         setLoading(true);
 

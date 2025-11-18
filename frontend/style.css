@@ -2269,6 +2269,7 @@ body.focus-mode #exitFocusBtn {
     flex: 1;
     resize: none;
     max-height: 150px;
+    overflow-y: hidden;
 }
 
 .prompt-input:focus {
