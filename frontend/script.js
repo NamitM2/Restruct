@@ -614,6 +614,108 @@ if (chatForm) {
     });
 }
 
+function renderMarkdownAndLatex(text) {
+    let html = text;
+    const placeholders = [];
+
+    // Step 1: Protect LaTeX expressions by replacing with placeholders
+    let latexCounter = 0;
+    html = html.replace(/\$\$[\s\S]+?\$\$/g, (match) => {
+        const placeholder = `___LATEX_DISPLAY_${latexCounter}___`;
+        placeholders.push({ placeholder, content: match });
+        latexCounter++;
+        return placeholder;
+    });
+    html = html.replace(/\$[^$\n]+?\$/g, (match) => {
+        const placeholder = `___LATEX_INLINE_${latexCounter}___`;
+        placeholders.push({ placeholder, content: match });
+        latexCounter++;
+        return placeholder;
+    });
+
+    // Step 2: Handle code blocks (triple backticks)
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+    // Step 3: Handle inline code (single backticks)
+    html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
+
+    // Step 4: Headers (must be at line start)
+    html = html.replace(/^#### (.*?)$/gim, '<h4>$1</h4>');
+    html = html.replace(/^### (.*?)$/gim, '<h3>$1</h3>');
+    html = html.replace(/^## (.*?)$/gim, '<h2>$1</h2>');
+    html = html.replace(/^# (.*?)$/gim, '<h1>$1</h1>');
+
+    // Step 5: Bold (** or __)
+    html = html.replace(/\*\*([^\*\n]+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__([^_\n]+?)__/g, '<strong>$1</strong>');
+
+    // Step 6: Italic (* or _) - simple approach to avoid conflicts
+    // Only match single asterisks/underscores that aren't at line start and aren't doubled
+    html = html.replace(/([^\s\*])\*([^\*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
+    html = html.replace(/([^\s_])_([^_\n]+?)_(?!_)/g, '$1<em>$2</em>');
+
+    // Step 7: Bullet lists (lines starting with * or -)
+    const lines = html.split('\n');
+    let inList = false;
+    let processedLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const bulletMatch = line.match(/^[\*\-]\s+(.+)/);
+        const numberedMatch = line.match(/^\d+\.\s+(.+)/);
+
+        if (bulletMatch) {
+            if (!inList) {
+                processedLines.push('<ul>');
+                inList = 'ul';
+            } else if (inList === 'ol') {
+                processedLines.push('</ol>');
+                processedLines.push('<ul>');
+                inList = 'ul';
+            }
+            processedLines.push(`<li>${bulletMatch[1]}</li>`);
+        } else if (numberedMatch) {
+            if (!inList) {
+                processedLines.push('<ol>');
+                inList = 'ol';
+            } else if (inList === 'ul') {
+                processedLines.push('</ul>');
+                processedLines.push('<ol>');
+                inList = 'ol';
+            }
+            processedLines.push(`<li>${numberedMatch[1]}</li>`);
+        } else {
+            if (inList) {
+                processedLines.push(inList === 'ul' ? '</ul>' : '</ol>');
+                inList = false;
+            }
+            processedLines.push(line);
+        }
+    }
+    if (inList) {
+        processedLines.push(inList === 'ul' ? '</ul>' : '</ol>');
+    }
+    html = processedLines.join('\n');
+
+    // Step 8: Blockquotes
+    html = html.replace(/^&gt;\s(.+)$/gim, '<blockquote>$1</blockquote>');
+    html = html.replace(/^>\s(.+)$/gim, '<blockquote>$1</blockquote>');
+
+    // Step 9: Horizontal rules
+    html = html.replace(/^---+$/gim, '<hr>');
+
+    // Step 10: Line breaks
+    html = html.replace(/\n\n/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+
+    // Step 11: Restore LaTeX expressions
+    placeholders.forEach(({ placeholder, content }) => {
+        html = html.replace(placeholder, content);
+    });
+
+    return html;
+}
+
 function addMessage(role, content, metadata = null) {
     if (!chatContainer) return;
 
@@ -662,8 +764,23 @@ function addMessage(role, content, metadata = null) {
     contentDiv.className = 'message-content';
 
     const textDiv = document.createElement('div');
-    textDiv.textContent = content;
     textDiv.className = 'message-text';
+
+    // Render markdown and LaTeX
+    const htmlContent = renderMarkdownAndLatex(content);
+    textDiv.innerHTML = htmlContent;
+
+    // Render LaTeX expressions with KaTeX
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(textDiv, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+        });
+    }
+
     contentDiv.appendChild(textDiv);
 
     // Add footer with copy button, latency and model name for assistant messages
