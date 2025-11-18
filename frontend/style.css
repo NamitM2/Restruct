@@ -293,7 +293,7 @@ textarea {
     right: 0;
     width: 100%;
     pointer-events: none;
-    overflow: hidden;
+    overflow: visible;
 }
 
 #dashboardTab {
@@ -2504,6 +2504,25 @@ body.focus-mode #exitFocusBtn {
 #apiTab::-webkit-scrollbar-thumb:hover,
 #marketplaceTab::-webkit-scrollbar-thumb:hover {
     background: #7a3325;
+}
+
+/* Models Tab */
+#marketplaceTab {
+    padding: 0 40px 32px;
+}
+
+.marketplace-tab-header {
+    position: sticky;
+    top: 0;
+    padding-top: 32px;
+    background: var(--white);
+    z-index: 10;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(142, 60, 44, 0.1);
+}
+
+.marketplace-tab-body {
+    padding: 0 20px 96px;
 }
 
 .billing-container {
