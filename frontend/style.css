@@ -2018,7 +2018,7 @@ body.focus-mode #exitFocusBtn {
 
 /* For model names list */
 #statsModelsUsed {
-    font-size: 14px;
+    font-size: 18px;
     line-height: 1.6;
     white-space: pre-line;
 }
