@@ -17,7 +17,7 @@ function updateSessionStats() {
     // Display model names instead of count
     const modelsUsedEl = document.getElementById('statsModelsUsed');
     if (sessionStats.modelsUsed.size === 0) {
-        modelsUsedEl.textContent = 'none';
+        modelsUsedEl.textContent = 'None';
     } else {
         const modelNames = Array.from(sessionStats.modelsUsed).join('\n');
         modelsUsedEl.textContent = modelNames;
@@ -1509,21 +1509,27 @@ if (copyKeyBtn) {
 const enterFocusBtn = document.getElementById('enterFocusBtn');
 const exitFocusBtn = document.getElementById('exitFocusBtn');
 
+// Conversation Stats Toggle
+const statsToggleBtn = document.getElementById('statsToggleBtn');
+const conversationStatsSidebar = document.getElementById('conversationStatsSidebar');
+
 if (enterFocusBtn) {
     enterFocusBtn.addEventListener('click', () => {
         document.body.classList.add('focus-mode');
+        if (conversationStatsSidebar) {
+            conversationStatsSidebar.classList.add('collapsed');
+        }
     });
 }
 
 if (exitFocusBtn) {
     exitFocusBtn.addEventListener('click', () => {
         document.body.classList.remove('focus-mode');
+        if (conversationStatsSidebar) {
+            conversationStatsSidebar.classList.remove('collapsed');
+        }
     });
 }
-
-// Conversation Stats Toggle
-const statsToggleBtn = document.getElementById('statsToggleBtn');
-const conversationStatsSidebar = document.getElementById('conversationStatsSidebar');
 
 if (statsToggleBtn && conversationStatsSidebar) {
     statsToggleBtn.addEventListener('click', () => {
