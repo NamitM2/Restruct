@@ -39,6 +39,54 @@ function resetSessionStats() {
     updateSessionStats();
 }
 
+function renderAttachmentPreview() {
+    if (!attachmentPreview) return;
+
+    attachmentPreview.innerHTML = '';
+    if (attachedFiles.length === 0) {
+        attachmentPreview.classList.remove('has-files');
+        return;
+    }
+
+    attachmentPreview.classList.add('has-files');
+    attachedFiles.forEach((file, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'attachment-chip';
+
+        const icon = document.createElement('svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', '#8e3c2c');
+        icon.setAttribute('stroke-width', '2');
+        icon.setAttribute('stroke-linecap', 'round');
+        icon.setAttribute('stroke-linejoin', 'round');
+        icon.innerHTML = '<path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07L14.36 4.5a3.5 3.5 0 0 1 4.95 4.95L10 18.76a2 2 0 1 1-2.83-2.83L16.17 6.93"></path>';
+        chip.appendChild(icon);
+
+        const name = document.createElement('span');
+        name.textContent = file.name;
+        chip.appendChild(name);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-attachment';
+        removeBtn.setAttribute('data-remove-index', index);
+        removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
+        removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M6 18L18 6"></path></svg>';
+        chip.appendChild(removeBtn);
+
+        attachmentPreview.appendChild(chip);
+    });
+}
+
+function resetAttachments() {
+    attachedFiles = [];
+    renderAttachmentPreview();
+    if (chatFileInput) {
+        chatFileInput.value = '';
+    }
+}
+
 // Tab navigation
 const tabButtons = document.querySelectorAll('.nav-icon-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -46,6 +94,9 @@ const chatContainer = document.getElementById('chatContainer');
 const chatForm = document.getElementById('chatForm');
 const promptInput = document.getElementById('promptInput');
 const sendButton = document.getElementById('sendButton');
+const attachmentButton = document.getElementById('attachmentButton');
+const chatFileInput = document.getElementById('chatFileInput');
+const attachmentPreview = document.getElementById('attachmentPreview');
 const modelPicker = document.getElementById('modelPicker');
 const modelSelect = document.getElementById('modelSelect');
 
@@ -66,8 +117,14 @@ const qualityValue = document.getElementById('qualityValue');
 const profileModal = document.getElementById('profileModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const modalProfileName = document.getElementById('modalProfileName');
+const deleteProfileModal = document.getElementById('deleteProfileModal');
+const deleteProfileMessage = document.getElementById('deleteProfileMessage');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
 let currentProfileName = 'default';
+let attachedFiles = [];
+let profileToDelete = null;
 
 const spendIds = {
     daily: document.getElementById('spendDaily'),
@@ -216,6 +273,23 @@ function closeProfileModal() {
     profileModal.classList.remove('active');
 }
 
+function showDeleteConfirmation(profileName, profileLabel) {
+    profileToDelete = { name: profileName, label: profileLabel };
+    if (deleteProfileMessage) {
+        deleteProfileMessage.textContent = `Are you sure you want to delete "${profileLabel}"?`;
+    }
+    if (deleteProfileModal) {
+        deleteProfileModal.classList.add('active');
+    }
+}
+
+function closeDeleteModal() {
+    if (deleteProfileModal) {
+        deleteProfileModal.classList.remove('active');
+    }
+    profileToDelete = null;
+}
+
 function updateProfileBadges(card, profile) {
     const badges = card.querySelector('.profile-badges');
     if (!badges) return;
@@ -287,15 +361,8 @@ if (profilesGrid) {
             const card = deleteBtn.closest('.profile-card');
             if (card) {
                 const profileName = card.dataset.profile;
-
-                if (confirm(`Are you sure you want to delete the "${card.dataset.profileLabel}" profile?`)) {
-                    delete profiles[profileName];
-                    card.remove();
-
-                    if (currentProfileName === profileName) {
-                        setActiveProfile('default');
-                    }
-                }
+                const profileLabel = card.dataset.profileLabel;
+                showDeleteConfirmation(profileName, profileLabel);
             }
             return;
         }
@@ -355,6 +422,15 @@ function derivePriorityLevels(graphState) {
     return levels;
 }
 
+function appendProfileCardToGrid(card) {
+    if (!profilesGrid) return;
+    if (createNewProfileCard && profilesGrid.contains(createNewProfileCard)) {
+        profilesGrid.insertBefore(card, createNewProfileCard);
+    } else {
+        profilesGrid.appendChild(card);
+    }
+}
+
 function buildProfileCard(slug, displayName, profileData) {
     const card = document.createElement('div');
     card.className = 'profile-card';
@@ -363,8 +439,17 @@ function buildProfileCard(slug, displayName, profileData) {
     card.style.cssText = 'width: 260px; background: #fff; border-radius: 18px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 18px;';
 
     const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
+    const editButtonHtml = !isDefault ? `
+        <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit
+        </button>
+    ` : '';
     const deleteButtonHtml = !isDefault ? `
-        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px; background: white; color: #dc2626; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid #8e3c2c; border-radius: 8px; background: #8e3c2c; color: #fffef9; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -378,13 +463,7 @@ function buildProfileCard(slug, displayName, profileData) {
     card.innerHTML = `
         <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">${displayName}</h4>
         <div style="display: flex; gap: 8px;">
-            <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                Edit
-            </button>
+            ${editButtonHtml}
             <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
                 <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
                 Stats
@@ -430,7 +509,7 @@ window.addEventListener('routing-profile:created', (event) => {
     }
 
     const card = buildProfileCard(slug, displayName, profiles[slug]);
-    profilesGrid.appendChild(card);
+    appendProfileCardToGrid(card);
     setActiveProfile(slug);
 });
 
@@ -483,14 +562,45 @@ if (deleteProfileBtn) {
             return;
         }
 
-        delete profiles[currentProfileName];
         const card = document.querySelector(`[data-profile="${currentProfileName}"]`);
+        const profileLabel = card ? card.dataset.profileLabel : currentProfileName;
+
+        closeProfileModal();
+        showDeleteConfirmation(currentProfileName, profileLabel);
+    });
+}
+
+if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener('click', () => {
+        if (!profileToDelete) return;
+
+        const profileName = profileToDelete.name;
+        delete profiles[profileName];
+
+        const card = document.querySelector(`[data-profile="${profileName}"]`);
         if (card) {
             card.remove();
         }
 
-        closeProfileModal();
-        setActiveProfile('default');
+        if (currentProfileName === profileName) {
+            setActiveProfile('default');
+        }
+
+        closeDeleteModal();
+    });
+}
+
+if (cancelDeleteBtn) {
+    cancelDeleteBtn.addEventListener('click', () => {
+        closeDeleteModal();
+    });
+}
+
+if (deleteProfileModal) {
+    deleteProfileModal.addEventListener('click', (e) => {
+        if (e.target === deleteProfileModal) {
+            closeDeleteModal();
+        }
     });
 }
 
@@ -510,11 +620,60 @@ if (promptInput) {
     });
 }
 
+if (attachmentButton && chatFileInput) {
+    attachmentButton.addEventListener('click', () => {
+        chatFileInput.click();
+    });
+}
+
+if (chatFileInput) {
+    chatFileInput.addEventListener('change', () => {
+        const files = Array.from(chatFileInput.files || []);
+        if (!files.length) return;
+
+        const availableSlots = Math.max(0, 3 - attachedFiles.length);
+        if (availableSlots <= 0) {
+            alert('You can attach up to 3 files. Remove a file to add another.');
+            chatFileInput.value = '';
+            return;
+        }
+
+        const accepted = files.slice(0, availableSlots);
+        if (files.length > accepted.length) {
+            alert('Only 3 files can be attached at once.');
+        }
+
+        if (accepted.length) {
+            attachedFiles = attachedFiles.concat(accepted);
+            renderAttachmentPreview();
+        }
+
+        chatFileInput.value = '';
+    });
+}
+
+if (attachmentPreview) {
+    attachmentPreview.addEventListener('click', event => {
+        const trigger = event.target.closest('.remove-attachment');
+        if (!trigger) return;
+        const index = Number(trigger.dataset.removeIndex);
+        if (Number.isNaN(index)) return;
+        attachedFiles.splice(index, 1);
+        renderAttachmentPreview();
+    });
+}
+
 if (chatForm) {
     chatForm.addEventListener('submit', async event => {
         event.preventDefault();
         const prompt = promptInput?.value.trim();
         if (!prompt || isLoading) return;
+
+        const attachmentMetadata = attachedFiles.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+        }));
 
         const currentProfile = profiles[currentProfileName] || profiles['default'];
         const payload = {
@@ -532,6 +691,10 @@ if (chatForm) {
             model_override: selectedOverrideModel ? modelOverrideMap[selectedOverrideModel] : null
         };
 
+        if (attachmentMetadata.length) {
+            payload.attachments = attachmentMetadata;
+        }
+
         if (promptInput) {
             promptInput.value = '';
             promptInput.style.height = 'auto';
@@ -544,9 +707,13 @@ if (chatForm) {
             welcomeMsg.remove();
             // Enter focus mode on first message
             document.body.classList.add('focus-mode');
+            if (conversationStatsSidebar) {
+                conversationStatsSidebar.classList.add('collapsed');
+            }
         }
 
-        addMessage('user', prompt);
+        addMessage('user', prompt, null, attachmentMetadata);
+        resetAttachments();
         const loadingId = showLoading();
 
         const startTime = Date.now();
@@ -728,7 +895,7 @@ function renderMarkdownAndLatex(text) {
     return html;
 }
 
-function addMessage(role, content, metadata = null) {
+function addMessage(role, content, metadata = null, attachments = []) {
     if (!chatContainer) return;
 
     const messageDiv = document.createElement('div');
@@ -791,6 +958,34 @@ function addMessage(role, content, metadata = null) {
     }
 
     contentDiv.appendChild(textDiv);
+
+    if (attachments && attachments.length) {
+        const attachmentsDiv = document.createElement('div');
+        attachmentsDiv.className = 'message-attachments';
+
+        attachments.forEach(file => {
+            const pill = document.createElement('div');
+            pill.className = 'message-attachment';
+
+            const clip = document.createElement('svg');
+            clip.setAttribute('viewBox', '0 0 24 24');
+            clip.setAttribute('fill', 'none');
+            clip.setAttribute('stroke', '#8e3c2c');
+            clip.setAttribute('stroke-width', '2');
+            clip.setAttribute('stroke-linecap', 'round');
+            clip.setAttribute('stroke-linejoin', 'round');
+            clip.innerHTML = '<path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07L14.36 4.5a3.5 3.5 0 0 1 4.95 4.95L10 18.76a2 2 0 1 1-2.83-2.83L16.17 6.93"></path>';
+            pill.appendChild(clip);
+
+            const label = document.createElement('span');
+            label.textContent = file.name || 'attachment';
+            pill.appendChild(label);
+
+            attachmentsDiv.appendChild(pill);
+        });
+
+        contentDiv.appendChild(attachmentsDiv);
+    }
 
     // Add footer with copy button, latency and model name for assistant messages
     if (role === 'assistant' && metadata) {
@@ -858,7 +1053,8 @@ function addMessage(role, content, metadata = null) {
     currentConversation.messages.push({
         role,
         text: content,
-        metadata
+        metadata,
+        attachments
     });
 }
 
@@ -1137,7 +1333,7 @@ function loadConversation(conversationId) {
     };
 
     conversation.messages.forEach(msg => {
-        addMessage(msg.role, msg.text, msg.metadata);
+        addMessage(msg.role, msg.text, msg.metadata, msg.attachments || []);
     });
 
     conversations = conversations.filter(c => c.id !== conversationId);
