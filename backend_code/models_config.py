@@ -54,32 +54,6 @@ MODELS = {
                 }
             },
 
-            "gpt-5-mini-high": {
-                "input_token_cost": 0.80 / 1_000_000,
-                "output_token_cost": 6.0 / 1_000_000,
-                "max_tokens": 128_000,
-                "capability_attributes": {
-                    "overall_complexity": 7.8,
-                    "mathematical_and_logical_reasoning": 7.4,
-                    "linguistic_and_creative_reasoning": 7.9,
-                    "factuality": 7.5,
-                    "chain_of_thought_depth": 7.2
-                }
-            },
-
-            "gpt-5-mini-low": {
-                "input_token_cost": 0.35 / 1_000_000,
-                "output_token_cost": 2.5 / 1_000_000,
-                "max_tokens": 128_000,
-                "capability_attributes": {
-                    "overall_complexity": 6.4,
-                    "mathematical_and_logical_reasoning": 6.0,
-                    "linguistic_and_creative_reasoning": 6.8,
-                    "factuality": 6.3,
-                    "chain_of_thought_depth": 5.7
-                }
-            },
-
             # ------------------------------------------------------------------------------------
             # GPT-5-Nano (lightest tier)
             # ------------------------------------------------------------------------------------
@@ -93,32 +67,6 @@ MODELS = {
                     "linguistic_and_creative_reasoning": 6.2,
                     "factuality": 5.7,
                     "chain_of_thought_depth": 4.9
-                }
-            },
-
-            "gpt-5-nano-high": {
-                "input_token_cost": 0.30 / 1_000_000,
-                "output_token_cost": 2.4 / 1_000_000,
-                "max_tokens": 128_000,
-                "capability_attributes": {
-                    "overall_complexity": 6.0,
-                    "mathematical_and_logical_reasoning": 5.5,
-                    "linguistic_and_creative_reasoning": 6.5,
-                    "factuality": 6.0,
-                    "chain_of_thought_depth": 5.3
-                }
-            },
-
-            "gpt-5-nano-low": {
-                "input_token_cost": 0.18 / 1_000_000,
-                "output_token_cost": 1.2 / 1_000_000,
-                "max_tokens": 128_000,
-                "capability_attributes": {
-                    "overall_complexity": 4.7,
-                    "mathematical_and_logical_reasoning": 4.4,
-                    "linguistic_and_creative_reasoning": 5.2,
-                    "factuality": 4.8,
-                    "chain_of_thought_depth": 4.2
                 }
             },
         }
@@ -199,7 +147,7 @@ MODELS = {
     "anthropic": {
         "api_key": os.getenv("ANTHROPIC_API_KEY", "your-anthropic-key"),
         "models": {
-            "claude-opus-4.1": {
+            "claude-opus-4-1": {
                 "input_token_cost": 15.0 / 1_000_000,
                 "output_token_cost": 75.0 / 1_000_000,
                 "max_tokens": 200_000,
@@ -211,7 +159,7 @@ MODELS = {
                     "chain_of_thought_depth": 10.0
                 }
             },
-            "claude-sonnet-4.5": {
+            "claude-sonnet-4-5": {
                 "input_token_cost": 3.0 / 1_000_000,
                 "output_token_cost": 15.0 / 1_000_000,
                 "max_tokens": 200_000,
@@ -223,7 +171,7 @@ MODELS = {
                     "chain_of_thought_depth": 8.6
                 }
             },
-            "claude-haiku-4.5": {
+            "claude-haiku-4-5": {
                 "input_token_cost": 0.8 / 1_000_000,
                 "output_token_cost": 4.0 / 1_000_000,
                 "max_tokens": 200_000,
