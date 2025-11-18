@@ -734,18 +734,15 @@ function addMessage(role, content, metadata = null) {
     // Add model logo at the top for assistant messages
     if (role === 'assistant' && metadata && metadata.model) {
         const modelLogoMap = {
-            'gpt-4': 'assets/chatgpt-logo.png',
-            'gpt-3.5-turbo': 'assets/chatgpt-logo.png',
-            'claude-3-opus': 'assets/claude-logo.png',
-            'claude-3-sonnet': 'assets/claude-logo.png',
-            'claude-3-haiku': 'assets/claude-logo.png',
+            'gpt': 'assets/chatgpt-logo.png',
+            'claude': 'assets/claude-logo.png',
+            'gemini': 'assets/gemini-logo.png',
             'qwen': 'assets/qwen-logo.png',
             'mistral': 'assets/mistral-logo.png',
             'perplexity': 'assets/perplexity-logo.png',
             'grok': 'assets/grok-logo.png',
             'deepseek': 'assets/deepseek-logo.png',
-            'llama': 'assets/llama-logo.png',
-            'gemini': 'assets/gemini-logo.png'
+            'llama': 'assets/llama-logo.png'
         };
 
         let logoSrc = null;
