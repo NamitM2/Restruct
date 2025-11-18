@@ -6,7 +6,8 @@ const sessionStats = {
     inputTokens: 0,
     outputTokens: 0,
     modelsUsed: new Set(),
-    latencies: [],
+    routingTimes: [],
+    responseTimes: [],
     totalCost: 0
 };
 
@@ -23,10 +24,14 @@ function updateSessionStats() {
         modelsUsedEl.textContent = modelNames;
     }
 
-    const avgLatency = sessionStats.latencies.length > 0
-        ? Math.round(sessionStats.latencies.reduce((a, b) => a + b, 0) / sessionStats.latencies.length)
+    const avgRouting = sessionStats.routingTimes.length > 0
+        ? Math.round(sessionStats.routingTimes.reduce((a, b) => a + b, 0) / sessionStats.routingTimes.length)
         : 0;
-    document.getElementById('statsAvgLatency').textContent = `${avgLatency}ms`;
+    const avgResponse = sessionStats.responseTimes.length > 0
+        ? Math.round(sessionStats.responseTimes.reduce((a, b) => a + b, 0) / sessionStats.responseTimes.length)
+        : 0;
+    document.getElementById('statsAvgRouting').textContent = `${avgRouting}ms`;
+    document.getElementById('statsAvgResponse').textContent = `${avgResponse}ms`;
     document.getElementById('statsTotalCost').textContent = `$${sessionStats.totalCost.toFixed(4)}`;
 }
 
@@ -34,7 +39,8 @@ function resetSessionStats() {
     sessionStats.inputTokens = 0;
     sessionStats.outputTokens = 0;
     sessionStats.modelsUsed = new Set();
-    sessionStats.latencies = [];
+    sessionStats.routingTimes = [];
+    sessionStats.responseTimes = [];
     sessionStats.totalCost = 0;
     updateSessionStats();
 }
@@ -746,30 +752,58 @@ if (chatForm) {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'API request failed');
+                throw new Error('API request failed');
             }
 
-            const data = await response.json();
-            const latency = Date.now() - startTime;
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let routingTime = 0;
+            let responseTime = 0;
 
-            // Update session stats
-            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3; // Rough estimate
-            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
-            sessionStats.modelsUsed.add(data.model);
-            sessionStats.latencies.push(latency);
-            sessionStats.totalCost += data.usage?.cost || 0.001; // Default cost estimate
-            updateSessionStats();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            removeLoading(loadingId);
-            addMessage('assistant', data.output, {
-                model: data.model,
-                provider: data.provider,
-                score: data.routing_metadata?.score,
-                latency: latency,
-                inputTokens: data.usage?.input_tokens,
-                outputTokens: data.usage?.output_tokens
-            });
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+
+                        if (data.event === 'routing_complete') {
+                            routingTime = data.routing_time;
+                            updateLoadingWithModel(loadingId, data.model);
+                        } else if (data.event === 'response_complete') {
+                            responseTime = data.timing?.inference_time || 0;
+
+                            // Update session stats
+                            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
+                            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
+                            sessionStats.modelsUsed.add(data.model);
+                            sessionStats.routingTimes = sessionStats.routingTimes || [];
+                            sessionStats.responseTimes = sessionStats.responseTimes || [];
+                            sessionStats.routingTimes.push(routingTime);
+                            sessionStats.responseTimes.push(responseTime);
+                            sessionStats.totalCost += data.usage?.cost || 0.001;
+                            updateSessionStats();
+
+                            removeLoading(loadingId);
+                            addMessage('assistant', data.output, {
+                                model: data.model,
+                                provider: data.provider,
+                                score: data.routing_metadata?.score,
+                                routingTime: routingTime,
+                                responseTime: responseTime,
+                                inputTokens: data.usage?.input_tokens,
+                                outputTokens: data.usage?.output_tokens
+                            });
+                        }
+                    }
+                }
+            }
         } catch (error) {
             console.error('Chat error:', error);
             removeLoading(loadingId);
@@ -1033,11 +1067,18 @@ function addMessage(role, content, metadata = null, attachments = []) {
             infoDiv.appendChild(modelSpan);
         }
 
-        if (metadata.latency) {
-            const latencySpan = document.createElement('span');
-            latencySpan.className = 'response-latency';
-            latencySpan.textContent = `${metadata.latency}ms`;
-            infoDiv.appendChild(latencySpan);
+        if (metadata.routingTime) {
+            const routingSpan = document.createElement('span');
+            routingSpan.className = 'routing-latency';
+            routingSpan.textContent = `Routing: ${metadata.routingTime}ms`;
+            infoDiv.appendChild(routingSpan);
+        }
+
+        if (metadata.responseTime) {
+            const responseSpan = document.createElement('span');
+            responseSpan.className = 'response-latency';
+            responseSpan.textContent = `Response: ${metadata.responseTime}ms`;
+            infoDiv.appendChild(responseSpan);
         }
 
         footerDiv.appendChild(infoDiv);
@@ -1074,7 +1115,7 @@ function showLoading() {
             <div class="loading-dot"></div>
             <div class="loading-dot"></div>
         </div>
-        <span>Thinking...</span>
+        <span>Routing...</span>
     `;
 
     messageDiv.appendChild(loadingDiv);
@@ -1082,6 +1123,51 @@ function showLoading() {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
     return loadingId;
+}
+
+function updateLoadingWithModel(loadingId, modelName) {
+    if (!loadingId) return;
+    const loadingElement = document.getElementById(loadingId);
+    if (!loadingElement) return;
+
+    const modelLogoMap = {
+        'gpt': { src: 'assets/chatgpt-logo.png', scale: '1.0' },
+        'claude': { src: 'assets/claude-logo.png', scale: '2.88' },
+        'gemini': { src: 'assets/gemini-logo.png', scale: '4.0' }
+    };
+
+    let logoInfo = null;
+    const modelLower = modelName.toLowerCase();
+    for (const [key, value] of Object.entries(modelLogoMap)) {
+        if (modelLower.includes(key)) {
+            logoInfo = value;
+            break;
+        }
+    }
+
+    if (logoInfo) {
+        const logoDiv = document.createElement('div');
+        logoDiv.className = 'message-model-logo';
+        const modelLogo = document.createElement('img');
+        modelLogo.src = logoInfo.src;
+        modelLogo.alt = modelName;
+        modelLogo.style.transform = `scale(${logoInfo.scale})`;
+        modelLogo.draggable = false;
+        logoDiv.appendChild(modelLogo);
+
+        const loadingDiv = loadingElement.querySelector('.loading');
+        if (loadingDiv) {
+            loadingElement.insertBefore(logoDiv, loadingDiv);
+            loadingDiv.innerHTML = `
+                <div class="loading-dots">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+                <span>Thinking...</span>
+            `;
+        }
+    }
 }
 
 function removeLoading(loadingId) {

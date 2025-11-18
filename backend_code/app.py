@@ -6,8 +6,11 @@ Minimal endpoints, no error handling (errors will bubble up).
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from typing import Optional
 import os
+import json
+import asyncio
 
 from backend_code.router import route, route_specific, route_with_llm
 from backend_code.inference import inference
@@ -44,18 +47,13 @@ def root():
 
 
 @app.post("/chat")
-def chat(body: dict):
+async def chat(body: dict):
     """
-    Main chat endpoint with database persistence.
+    Main chat endpoint with streaming support.
 
-    Returns format expected by frontend:
-    {
-        "output": str,
-        "model": str,
-        "provider": str,
-        "routing_metadata": {"score": float},
-        "conversation_id": str
-    }
+    Streams events:
+    1. routing_complete: When model is selected
+    2. response_complete: When inference finishes
     """
 
     prompt = body.get("prompt")
@@ -68,50 +66,74 @@ def chat(body: dict):
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
 
-    add_message(
-        conversation_id=conversation_id,
-        role="user",
-        content=prompt
-    )
+    async def event_generator():
+        import time
 
-    model_choice = resolve_model_choice(router_mode, model_override, prompt)
+        add_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=prompt
+        )
 
-    response_data = inference(model_choice, prompt)
-    response_text = response_data["text"]
-    input_tokens = response_data["input_tokens"]
-    output_tokens = response_data["output_tokens"]
+        routing_start = time.time()
+        model_choice = resolve_model_choice(router_mode, model_override, prompt)
+        routing_time = time.time() - routing_start
 
-    input_cost = model_choice["config"]["input_token_cost"]
-    output_cost = model_choice["config"]["output_token_cost"]
-    total_cost = (input_tokens * input_cost) + (output_tokens * output_cost)
-
-    add_message(
-        conversation_id=conversation_id,
-        role="assistant",
-        content=response_text,
-        model=model_choice["model_name"],
-        provider=model_choice["vendor"],
-        profile_name=profile,
-        metadata={
-            "score": model_choice["score"],
-            "router_mode": router_mode
+        routing_event = {
+            "event": "routing_complete",
+            "model": model_choice["model_name"],
+            "provider": model_choice["vendor"],
+            "routing_time": round(routing_time * 1000, 2)
         }
-    )
+        yield f"data: {json.dumps(routing_event)}\n\n"
 
-    return {
-        "output": response_text,
-        "model": model_choice["model_name"],
-        "provider": model_choice["vendor"],
-        "routing_metadata": {
-            "score": model_choice["score"]
-        },
-        "usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost": total_cost
-        },
-        "conversation_id": conversation_id
-    }
+        inference_start = time.time()
+        response_data = inference(model_choice, prompt)
+        inference_time = time.time() - inference_start
+
+        response_text = response_data["text"]
+        input_tokens = response_data["input_tokens"]
+        output_tokens = response_data["output_tokens"]
+
+        input_cost = model_choice["config"]["input_token_cost"]
+        output_cost = model_choice["config"]["output_token_cost"]
+        total_cost = (input_tokens * input_cost) + (output_tokens * output_cost)
+
+        add_message(
+            conversation_id=conversation_id,
+            role="assistant",
+            content=response_text,
+            model=model_choice["model_name"],
+            provider=model_choice["vendor"],
+            profile_name=profile,
+            metadata={
+                "score": model_choice["score"],
+                "router_mode": router_mode
+            }
+        )
+
+        response_event = {
+            "event": "response_complete",
+            "output": response_text,
+            "model": model_choice["model_name"],
+            "provider": model_choice["vendor"],
+            "routing_metadata": {
+                "score": model_choice["score"]
+            },
+            "usage": {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost": total_cost
+            },
+            "timing": {
+                "routing_time": round(routing_time * 1000, 2),
+                "inference_time": round(inference_time * 1000, 2)
+            },
+            "conversation_id": conversation_id
+        }
+        yield f"data: {json.dumps(response_event)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/conversations")
