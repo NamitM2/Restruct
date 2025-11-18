@@ -125,7 +125,8 @@ def route_with_llm(prompt: str) -> Dict[str, Any]:
         f"User prompt:\n{prompt}\n"
     )
 
-    llm_response = run_inference(assessment_model, rating_prompt)
+    llm_response_data = run_inference(assessment_model, rating_prompt)
+    llm_response = llm_response_data["text"]
     match = re.search(r"\{.*\}", llm_response, re.DOTALL)
     if not match:
         return select_model(prompt), {}

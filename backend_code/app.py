@@ -76,7 +76,14 @@ def chat(body: dict):
 
     model_choice = resolve_model_choice(router_mode, model_override, prompt)
 
-    response_text = inference(model_choice, prompt)
+    response_data = inference(model_choice, prompt)
+    response_text = response_data["text"]
+    input_tokens = response_data["input_tokens"]
+    output_tokens = response_data["output_tokens"]
+
+    input_cost = model_choice["config"]["input_token_cost"]
+    output_cost = model_choice["config"]["output_token_cost"]
+    total_cost = (input_tokens * input_cost) + (output_tokens * output_cost)
 
     add_message(
         conversation_id=conversation_id,
@@ -97,6 +104,11 @@ def chat(body: dict):
         "provider": model_choice["vendor"],
         "routing_metadata": {
             "score": model_choice["score"]
+        },
+        "usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": total_cost
         },
         "conversation_id": conversation_id
     }

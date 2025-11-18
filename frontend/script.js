@@ -645,9 +645,9 @@ function renderMarkdownAndLatex(text) {
     html = html.replace(/^## (.*?)$/gim, '<h2>$1</h2>');
     html = html.replace(/^# (.*?)$/gim, '<h1>$1</h1>');
 
-    // Step 5: Bold (** or __)
-    html = html.replace(/\*\*([^\*\n]+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__([^_\n]+?)__/g, '<strong>$1</strong>');
+    // Step 5: Bold (** or __) - allow single asterisks/underscores inside
+    html = html.replace(/\*\*((?:[^*\n]+|\*(?!\*))+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__((?:[^_\n]+|_(?!_))+?)__/g, '<strong>$1</strong>');
 
     // Step 6: Italic (* or _) - simple approach to avoid conflicts
     // Only match single asterisks/underscores that aren't at line start and aren't doubled
@@ -704,9 +704,18 @@ function renderMarkdownAndLatex(text) {
     // Step 9: Horizontal rules
     html = html.replace(/^---+$/gim, '<hr>');
 
-    // Step 10: Line breaks
-    html = html.replace(/\n\n/g, '<br><br>');
-    html = html.replace(/\n/g, '<br>');
+    // Step 10: Clean line breaks
+    // Remove newlines around block elements to prevent excessive spacing
+    html = html.replace(/\n*(<\/?(?:h[1-4]|ul|ol|li|hr|pre|blockquote)>)\n*/g, '$1');
+
+    // Convert double newlines to paragraph breaks
+    html = html.replace(/\n\n+/g, '<br><br>');
+
+    // Convert single newlines to line breaks (but not around block elements)
+    html = html.replace(/([^>])\n([^<])/g, '$1<br>$2');
+
+    // Clean up multiple consecutive breaks
+    html = html.replace(/(<br>\s*){3,}/g, '<br><br>');
 
     // Step 11: Restore LaTeX expressions
     placeholders.forEach(({ placeholder, content }) => {

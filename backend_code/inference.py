@@ -9,7 +9,7 @@ from google import genai
 from anthropic import Anthropic
 
 
-def call_openai(model: Dict[str, Any], prompt: str) -> str:
+def call_openai(model: Dict[str, Any], prompt: str) -> Dict[str, Any]:
     """Call OpenAI API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
@@ -19,11 +19,16 @@ def call_openai(model: Dict[str, Any], prompt: str) -> str:
         model=model_name,
         input=[{"role": "user", "content": prompt}]
     )
-    return response.output_text
+
+    return {
+        "text": response.output_text,
+        "input_tokens": response.usage.input_tokens,
+        "output_tokens": response.usage.output_tokens
+    }
  
 
 
-def call_google(model: Dict[str, Any], prompt: str) -> str:
+def call_google(model: Dict[str, Any], prompt: str) -> Dict[str, Any]:
     """Call Google Gemini API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
@@ -34,10 +39,14 @@ def call_google(model: Dict[str, Any], prompt: str) -> str:
         contents=prompt
     )
 
-    return response.text
+    return {
+        "text": response.text,
+        "input_tokens": response.usage_metadata.prompt_token_count,
+        "output_tokens": response.usage_metadata.candidates_token_count
+    }
 
 
-def call_anthropic(model: Dict[str, Any], prompt: str) -> str:
+def call_anthropic(model: Dict[str, Any], prompt: str) -> Dict[str, Any]:
     """Call Anthropic Claude API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
@@ -50,10 +59,14 @@ def call_anthropic(model: Dict[str, Any], prompt: str) -> str:
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return response.content[0].text
+    return {
+        "text": response.content[0].text,
+        "input_tokens": response.usage.input_tokens,
+        "output_tokens": response.usage.output_tokens
+    }
 
 
-def infer(model: Dict[str, Any], prompt: str) -> str:
+def infer(model: Dict[str, Any], prompt: str) -> Dict[str, Any]:
     """
     Run inference on selected model.
 
@@ -62,7 +75,7 @@ def infer(model: Dict[str, Any], prompt: str) -> str:
         prompt: User's prompt
 
     Returns:
-        Model's response text
+        Dict with text, input_tokens, output_tokens
     """
     vendor = model["vendor"]
 
@@ -73,9 +86,9 @@ def infer(model: Dict[str, Any], prompt: str) -> str:
     elif vendor == "anthropic":
         return call_anthropic(model, prompt)
 
-    return f"Unsupported vendor: {vendor}"
+    return {"text": f"Unsupported vendor: {vendor}", "input_tokens": 0, "output_tokens": 0}
 
 
-def inference(model: Dict[str, Any], prompt: str) -> str:
+def inference(model: Dict[str, Any], prompt: str) -> Dict[str, Any]:
     """Main inference function."""
     return infer(model, prompt)
