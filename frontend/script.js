@@ -1663,12 +1663,288 @@ if (statsToggleBtn && conversationStatsSidebar) {
     });
 }
 
+// Model Marketplace
+function populateMarketplace(sortBy = 'score-desc') {
+    let modelsData = [
+        // OpenAI Models
+        {
+            name: "GPT-5",
+            provider: "OpenAI",
+            logo: "assets/chatgpt-logo.png",
+            inputCost: 1.25,
+            outputCost: 10.0,
+            maxTokens: "128K",
+            capabilities: {
+                "Overall Complexity": 10.0,
+                "Math & Logic": 10.0,
+                "Creative & Linguistic": 9.5,
+                "Factuality": 9.5,
+                "Chain of Thought": 9.4
+            }
+        },
+        {
+            name: "GPT-5 Mini",
+            provider: "OpenAI",
+            logo: "assets/chatgpt-logo.png",
+            inputCost: 0.60,
+            outputCost: 4.5,
+            maxTokens: "128K",
+            capabilities: {
+                "Overall Complexity": 7.1,
+                "Math & Logic": 6.8,
+                "Creative & Linguistic": 7.4,
+                "Factuality": 7.1,
+                "Chain of Thought": 6.6
+            }
+        },
+        {
+            name: "GPT-5 Nano",
+            provider: "OpenAI",
+            logo: "assets/chatgpt-logo.png",
+            inputCost: 0.25,
+            outputCost: 2.0,
+            maxTokens: "128K",
+            capabilities: {
+                "Overall Complexity": 5.7,
+                "Math & Logic": 5.1,
+                "Creative & Linguistic": 6.2,
+                "Factuality": 5.7,
+                "Chain of Thought": 4.9
+            }
+        },
+        // Google Models
+        {
+            name: "Gemini 2.5 Pro",
+            provider: "Google",
+            logo: "assets/gemini-logo.png",
+            inputCost: 1.25,
+            outputCost: 10.0,
+            maxTokens: "1M",
+            capabilities: {
+                "Overall Complexity": 9.6,
+                "Math & Logic": 9.0,
+                "Creative & Linguistic": 8.6,
+                "Factuality": 9.1,
+                "Chain of Thought": 9.4
+            }
+        },
+        {
+            name: "Gemini 2.5 Flash",
+            provider: "Google",
+            logo: "assets/gemini-logo.png",
+            inputCost: 0.30,
+            outputCost: 2.50,
+            maxTokens: "1M",
+            capabilities: {
+                "Overall Complexity": 6.9,
+                "Math & Logic": 5.8,
+                "Creative & Linguistic": 7.1,
+                "Factuality": 6.2,
+                "Chain of Thought": 6.1
+            }
+        },
+        {
+            name: "Gemini 2.5 Flash Lite",
+            provider: "Google",
+            logo: "assets/gemini-logo.png",
+            inputCost: 0.10,
+            outputCost: 0.40,
+            maxTokens: "1M",
+            capabilities: {
+                "Overall Complexity": 2.6,
+                "Math & Logic": 2.1,
+                "Creative & Linguistic": 2.9,
+                "Factuality": 2.4,
+                "Chain of Thought": 1.6
+            }
+        },
+        {
+            name: "Gemini 2.0 Flash",
+            provider: "Google",
+            logo: "assets/gemini-logo.png",
+            inputCost: 0.15,
+            outputCost: 0.60,
+            maxTokens: "512K",
+            capabilities: {
+                "Overall Complexity": 4.1,
+                "Math & Logic": 3.6,
+                "Creative & Linguistic": 4.2,
+                "Factuality": 4.0,
+                "Chain of Thought": 3.6
+            }
+        },
+        {
+            name: "Gemini 2.0 Flash Lite",
+            provider: "Google",
+            logo: "assets/gemini-logo.png",
+            inputCost: 0.05,
+            outputCost: 0.20,
+            maxTokens: "512K",
+            capabilities: {
+                "Overall Complexity": 1.0,
+                "Math & Logic": 1.0,
+                "Creative & Linguistic": 1.0,
+                "Factuality": 1.0,
+                "Chain of Thought": 1.0
+            }
+        },
+        // Anthropic Models
+        {
+            name: "Claude Opus 4.1",
+            provider: "Anthropic",
+            logo: "assets/claude-logo.png",
+            inputCost: 15.0,
+            outputCost: 75.0,
+            maxTokens: "200K",
+            capabilities: {
+                "Overall Complexity": 9.1,
+                "Math & Logic": 8.6,
+                "Creative & Linguistic": 10.0,
+                "Factuality": 10.0,
+                "Chain of Thought": 10.0
+            }
+        },
+        {
+            name: "Claude Sonnet 4.5",
+            provider: "Anthropic",
+            logo: "assets/claude-logo.png",
+            inputCost: 3.0,
+            outputCost: 15.0,
+            maxTokens: "200K",
+            capabilities: {
+                "Overall Complexity": 8.0,
+                "Math & Logic": 7.1,
+                "Creative & Linguistic": 9.0,
+                "Factuality": 8.4,
+                "Chain of Thought": 8.6
+            }
+        },
+        {
+            name: "Claude Haiku 4.5",
+            provider: "Anthropic",
+            logo: "assets/claude-logo.png",
+            inputCost: 0.8,
+            outputCost: 4.0,
+            maxTokens: "200K",
+            capabilities: {
+                "Overall Complexity": 4.1,
+                "Math & Logic": 4.5,
+                "Creative & Linguistic": 8.4,
+                "Factuality": 7.1,
+                "Chain of Thought": 4.6
+            }
+        }
+    ];
+
+    const grid = document.getElementById('marketplaceModelsGrid');
+    if (!grid) return;
+
+    // Sort models based on selected option
+    modelsData.sort((a, b) => {
+        const aScores = Object.values(a.capabilities);
+        const bScores = Object.values(b.capabilities);
+        const aAvgScore = aScores.reduce((sum, val) => sum + val, 0) / aScores.length;
+        const bAvgScore = bScores.reduce((sum, val) => sum + val, 0) / bScores.length;
+        const aAvgCost = (a.inputCost + a.outputCost) / 2;
+        const bAvgCost = (b.inputCost + b.outputCost) / 2;
+
+        switch(sortBy) {
+            case 'score-desc':
+                return bAvgScore - aAvgScore;
+            case 'score-asc':
+                return aAvgScore - bAvgScore;
+            case 'cost-asc':
+                return aAvgCost - bAvgCost;
+            case 'cost-desc':
+                return bAvgCost - aAvgCost;
+            case 'name-asc':
+                return a.name.localeCompare(b.name);
+            default:
+                return 0;
+        }
+    });
+
+    grid.innerHTML = modelsData.map(model => {
+        // Get logo scale based on provider (1.2x larger)
+        let logoScale = '1.0';
+        if (model.logo.includes('chatgpt')) logoScale = '0.9';
+        else if (model.logo.includes('claude')) logoScale = '2.592';
+        else if (model.logo.includes('gemini')) logoScale = '3.6';
+
+        // Calculate average score
+        const scores = Object.values(model.capabilities);
+        const avgScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+
+        const capabilitiesHTML = Object.entries(model.capabilities).map(([key, value]) => {
+            const percentage = (value / 10) * 100;
+            const barColor = value >= 8 ? '#8e3c2c' : value >= 5 ? '#c98454' : '#d4a574';
+            return `
+                <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                        <span style="font-size: 10px; color: #5b2a1a; font-weight: 500;">${key}</span>
+                        <span style="font-size: 10px; color: #8e3c2c; font-weight: 600;">${value.toFixed(1)}</span>
+                    </div>
+                    <div style="width: 100%; height: 5px; background: rgba(142, 60, 44, 0.1); border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${percentage}%; height: 100%; background: ${barColor}; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div style="background: #fff; border-radius: 14px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 16px; transition: all 0.2s; cursor: default;">
+                <div style="display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 8px 0 16px 0; margin-bottom: 14px; height: 36px;">
+                    <div></div>
+                    <div style="display: flex; justify-content: center;">
+                        <img src="${model.logo}" alt="${model.provider}" style="width: 108px; height: 36px; object-fit: contain; transform: scale(${logoScale});" draggable="false">
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <span style="font-size: 9px; font-weight: 500; color: rgba(92, 49, 30, 0.5); text-transform: uppercase; letter-spacing: 0.05em;">Score</span>
+                        <span style="font-size: 16px; font-weight: 700; color: #8e3c2c;">${avgScore}</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h4>
+                    ${capabilitiesHTML}
+                </div>
+
+                <div style="padding-top: 12px; border-top: 1px solid rgba(142, 60, 44, 0.1);">
+                    <h4 style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(43, 29, 20, 0.5);">Pricing</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div style="background: rgba(142, 60, 44, 0.05); padding: 8px 10px; border-radius: 8px;">
+                            <p style="margin: 0 0 3px 0; font-size: 10px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">Input</p>
+                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #8e3c2c;">$${model.inputCost.toFixed(2)}/M</p>
+                        </div>
+                        <div style="background: rgba(142, 60, 44, 0.05); padding: 8px 10px; border-radius: 8px;">
+                            <p style="margin: 0 0 3px 0; font-size: 10px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">Output</p>
+                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #8e3c2c;">$${model.outputCost.toFixed(2)}/M</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; text-align: center;">
+                        <span style="font-size: 10px; color: rgba(92, 49, 30, 0.5);">Max tokens: ${model.maxTokens}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function init() {
     wireTabs();
     hydrateDashboard();
     initCostComparisonChart();
+    populateMarketplace();
     testConnection();
     promptInput?.focus();
+
+    // Add event listener for model sort dropdown
+    const modelSortSelect = document.getElementById('modelSortSelect');
+    if (modelSortSelect) {
+        modelSortSelect.addEventListener('change', (e) => {
+            populateMarketplace(e.target.value);
+        });
+    }
 }
 
 init();
