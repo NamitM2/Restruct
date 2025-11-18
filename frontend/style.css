@@ -1335,9 +1335,16 @@ body.focus-mode #exitFocusBtn {
 
 /* Markdown and LaTeX styling in messages */
 .message-text h1, .message-text h2, .message-text h3, .message-text h4 {
-    margin: 16px 0 8px 0;
+    margin: 12px 0 8px 0;
     font-weight: 600;
     color: var(--clay-700);
+}
+
+.message-text h1:first-child,
+.message-text h2:first-child,
+.message-text h3:first-child,
+.message-text h4:first-child {
+    margin-top: 0;
 }
 
 .message-text h1 { font-size: 1.5em; }
@@ -1356,7 +1363,7 @@ body.focus-mode #exitFocusBtn {
 .message-text hr {
     border: none;
     border-top: 1px solid rgba(92, 49, 30, 0.2);
-    margin: 12px 0;
+    margin: 16px 0;
 }
 
 /* Code blocks and inline code */
@@ -1388,13 +1395,18 @@ body.focus-mode #exitFocusBtn {
 
 /* Lists */
 .message-text ul, .message-text ol {
-    margin: 8px 0;
+    margin: 10px 0;
     padding-left: 24px;
 }
 
+.message-text ul:first-child,
+.message-text ol:first-child {
+    margin-top: 0;
+}
+
 .message-text li {
-    margin: 4px 0;
-    line-height: 1.6;
+    margin: 2px 0;
+    line-height: 1.5;
 }
 
 .message-text ul {
@@ -1405,6 +1417,12 @@ body.focus-mode #exitFocusBtn {
     list-style-type: decimal;
 }
 
+/* Nested lists */
+.message-text li ul,
+.message-text li ol {
+    margin: 4px 0;
+}
+
 /* Blockquotes */
 .message-text blockquote {
     border-left: 3px solid rgba(142, 60, 44, 0.3);
@@ -1412,6 +1430,19 @@ body.focus-mode #exitFocusBtn {
     margin: 12px 0;
     color: rgba(43, 29, 20, 0.8);
     font-style: italic;
+}
+
+.message-text blockquote:first-child {
+    margin-top: 0;
+}
+
+/* Remove excessive spacing at the start/end */
+.message-text > :first-child {
+    margin-top: 0 !important;
+}
+
+.message-text > :last-child {
+    margin-bottom: 0 !important;
 }
 
 /* KaTeX math rendering */
