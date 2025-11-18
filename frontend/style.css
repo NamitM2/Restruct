@@ -1333,6 +1333,98 @@ body.focus-mode #exitFocusBtn {
     border-bottom-left-radius: 4px;
 }
 
+/* Markdown and LaTeX styling in messages */
+.message-text h1, .message-text h2, .message-text h3, .message-text h4 {
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+    color: var(--clay-700);
+}
+
+.message-text h1 { font-size: 1.5em; }
+.message-text h2 { font-size: 1.3em; }
+.message-text h3 { font-size: 1.15em; }
+.message-text h4 { font-size: 1.05em; }
+
+.message-text strong {
+    font-weight: 600;
+}
+
+.message-text em {
+    font-style: italic;
+}
+
+.message-text hr {
+    border: none;
+    border-top: 1px solid rgba(92, 49, 30, 0.2);
+    margin: 12px 0;
+}
+
+/* Code blocks and inline code */
+.message-text code {
+    background: rgba(142, 60, 44, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--clay-700);
+}
+
+.message-text pre {
+    background: rgba(142, 60, 44, 0.04);
+    border: 1px solid rgba(142, 60, 44, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    margin: 12px 0;
+}
+
+.message-text pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+/* Lists */
+.message-text ul, .message-text ol {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.message-text li {
+    margin: 4px 0;
+    line-height: 1.6;
+}
+
+.message-text ul {
+    list-style-type: disc;
+}
+
+.message-text ol {
+    list-style-type: decimal;
+}
+
+/* Blockquotes */
+.message-text blockquote {
+    border-left: 3px solid rgba(142, 60, 44, 0.3);
+    padding-left: 12px;
+    margin: 12px 0;
+    color: rgba(43, 29, 20, 0.8);
+    font-style: italic;
+}
+
+/* KaTeX math rendering */
+.message-text .katex-display {
+    margin: 12px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.message-text .katex {
+    font-size: 1.05em;
+}
+
 .routing-info {
     font-size: 0.85rem;
     color: var(--clay-500);
