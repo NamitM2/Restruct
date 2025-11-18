@@ -526,8 +526,8 @@ if (chatForm) {
             },
             max_tokens: 1000,
             temperature: 0.7,
-            router_mode: 'auto',
-            model_override: null
+            router_mode: selectedOverrideModel ? 'manual' : 'auto',
+            model_override: selectedOverrideModel ? modelOverrideMap[selectedOverrideModel] : null
         };
 
         if (promptInput) {
@@ -1930,6 +1930,115 @@ function populateMarketplace(sortBy = 'score-desc') {
     }).join('');
 }
 
+// Model Override
+let selectedOverrideModel = null;
+
+const allModels = [
+    { name: "GPT-5", provider: "OpenAI", logo: "assets/chatgpt-logo.png", logoScale: "1.08", score: 9.7 },
+    { name: "GPT-5 Mini", provider: "OpenAI", logo: "assets/chatgpt-logo.png", logoScale: "1.08", score: 7.0 },
+    { name: "GPT-5 Nano", provider: "OpenAI", logo: "assets/chatgpt-logo.png", logoScale: "1.08", score: 5.5 },
+    { name: "Gemini 2.5 Pro", provider: "Google", logo: "assets/gemini-logo.png", logoScale: "3.6", score: 9.1 },
+    { name: "Gemini 2.5 Flash", provider: "Google", logo: "assets/gemini-logo.png", logoScale: "3.6", score: 6.6 },
+    { name: "Gemini 2.5 Flash Lite", provider: "Google", logo: "assets/gemini-logo.png", logoScale: "3.6", score: 2.4 },
+    { name: "Gemini 2.0 Flash", provider: "Google", logo: "assets/gemini-logo.png", logoScale: "3.6", score: 3.9 },
+    { name: "Gemini 2.0 Flash Lite", provider: "Google", logo: "assets/gemini-logo.png", logoScale: "3.6", score: 1.0 },
+    { name: "Claude Opus 4.1", provider: "Anthropic", logo: "assets/claude-logo.png", logoScale: "2.592", score: 9.5 },
+    { name: "Claude Sonnet 4.5", provider: "Anthropic", logo: "assets/claude-logo.png", logoScale: "2.592", score: 8.2 },
+    { name: "Claude Haiku 4.5", provider: "Anthropic", logo: "assets/claude-logo.png", logoScale: "2.592", score: 5.7 }
+];
+
+const modelOverrideMap = {
+    "GPT-5": "openai:gpt-5",
+    "GPT-5 Mini": "openai:gpt-5-mini",
+    "GPT-5 Nano": "openai:gpt-5-nano",
+    "Gemini 2.5 Pro": "google:gemini-2.5-pro",
+    "Gemini 2.5 Flash": "google:gemini-2.5-flash",
+    "Gemini 2.5 Flash Lite": "google:gemini-2.5-flash-lite",
+    "Gemini 2.0 Flash": "google:gemini-2.0-flash",
+    "Gemini 2.0 Flash Lite": "google:gemini-2.0-flash-lite",
+    "Claude Opus 4.1": "anthropic:claude-opus-4-1",
+    "Claude Sonnet 4.5": "anthropic:claude-sonnet-4-5",
+    "Claude Haiku 4.5": "anthropic:claude-haiku-4-5"
+};
+
+function populateModelOverrideList(searchTerm = '') {
+    const modelList = document.getElementById('modelOverrideList');
+    if (!modelList) return;
+
+    const filteredModels = allModels.filter(model =>
+        model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.provider.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    modelList.innerHTML = filteredModels.map(model => `
+        <div class="model-override-card" data-model-name="${model.name}" style="background: #fff; border-radius: 12px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 16px; cursor: pointer; transition: all 0.2s;">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px; height: 40px;">
+                <img src="${model.logo}" alt="${model.provider}" style="width: 80px; height: 40px; object-fit: contain; transform: scale(${model.logoScale});" draggable="false">
+            </div>
+            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h4>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
+                <span style="font-size: 11px; font-weight: 500; color: rgba(92, 49, 30, 0.6);">Score:</span>
+                <span style="font-size: 14px; font-weight: 700; color: #8e3c2c;">${model.score}</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers
+    document.querySelectorAll('.model-override-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const modelName = card.dataset.modelName;
+            selectOverrideModel(modelName);
+        });
+
+        card.addEventListener('mouseenter', () => {
+            card.style.borderColor = '#8e3c2c';
+            card.style.transform = 'translateY(-2px)';
+            card.style.boxShadow = '0 4px 12px rgba(142, 60, 44, 0.15)';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.borderColor = 'rgba(92, 49, 30, 0.12)';
+            card.style.transform = 'translateY(0)';
+            card.style.boxShadow = 'none';
+        });
+    });
+}
+
+function selectOverrideModel(modelName) {
+    selectedOverrideModel = modelName;
+    const selectedModelNameSpan = document.getElementById('selectedModelName');
+    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
+
+    if (selectedModelNameSpan) {
+        selectedModelNameSpan.textContent = `: ${modelName}`;
+        selectedModelNameSpan.style.display = 'inline';
+    }
+
+    if (clearOverrideBtn) {
+        clearOverrideBtn.style.display = 'flex';
+    }
+
+    // Close the modal
+    const modal = document.getElementById('modelOverrideModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function clearOverrideModel() {
+    selectedOverrideModel = null;
+    const selectedModelNameSpan = document.getElementById('selectedModelName');
+    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
+
+    if (selectedModelNameSpan) {
+        selectedModelNameSpan.style.display = 'none';
+    }
+
+    if (clearOverrideBtn) {
+        clearOverrideBtn.style.display = 'none';
+    }
+}
+
 function init() {
     wireTabs();
     hydrateDashboard();
@@ -1943,6 +2052,55 @@ function init() {
     if (modelSortSelect) {
         modelSortSelect.addEventListener('change', (e) => {
             populateMarketplace(e.target.value);
+        });
+    }
+
+    // Model Override Modal
+    const modelOverrideBtn = document.getElementById('modelOverrideBtn');
+    const modelOverrideModal = document.getElementById('modelOverrideModal');
+    const closeModelOverrideModal = document.getElementById('closeModelOverrideModal');
+    const modelSearchInput = document.getElementById('modelSearchInput');
+
+    if (modelOverrideBtn) {
+        modelOverrideBtn.addEventListener('click', () => {
+            if (modelOverrideModal) {
+                modelOverrideModal.classList.add('active');
+                populateModelOverrideList();
+                if (modelSearchInput) {
+                    modelSearchInput.value = '';
+                    setTimeout(() => modelSearchInput.focus(), 100);
+                }
+            }
+        });
+    }
+
+    if (closeModelOverrideModal) {
+        closeModelOverrideModal.addEventListener('click', () => {
+            if (modelOverrideModal) {
+                modelOverrideModal.classList.remove('active');
+            }
+        });
+    }
+
+    if (modelOverrideModal) {
+        modelOverrideModal.addEventListener('click', (e) => {
+            if (e.target === modelOverrideModal) {
+                modelOverrideModal.classList.remove('active');
+            }
+        });
+    }
+
+    if (modelSearchInput) {
+        modelSearchInput.addEventListener('input', (e) => {
+            populateModelOverrideList(e.target.value);
+        });
+    }
+
+    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
+    if (clearOverrideBtn) {
+        clearOverrideBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearOverrideModel();
         });
     }
 }
