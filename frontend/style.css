@@ -1247,7 +1247,7 @@ textarea {
 .chat-controls {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 16px;
     transition: all 0.3s ease;
 }
@@ -1454,6 +1454,30 @@ body.focus-mode #exitFocusBtn {
 
 .message-text .katex {
     font-size: 1.05em;
+}
+
+.message-attachments {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.message-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(142, 60, 44, 0.08);
+    color: #5b2a1a;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.message-attachment svg {
+    width: 12px;
+    height: 12px;
 }
 
 .routing-info {
@@ -2259,10 +2283,66 @@ body.focus-mode #exitFocusBtn {
     transition: all 0.3s ease;
 }
 
+.attachment-preview {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.attachment-preview.has-files {
+    display: flex;
+}
+
+.attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(142, 60, 44, 0.08);
+    color: #5b2a1a;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.attachment-chip svg {
+    width: 14px;
+    height: 14px;
+    color: #8e3c2c;
+}
+
+.remove-attachment {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(92, 49, 30, 0.6);
+}
+
+.remove-attachment:hover {
+    color: #8e3c2c;
+}
+
+.remove-attachment svg {
+    width: 12px;
+    height: 12px;
+}
+
 .input-form {
     display: flex;
     gap: 16px;
-    align-items: flex-end;
+    align-items: stretch;
+}
+
+.input-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .prompt-input {
@@ -2270,6 +2350,8 @@ body.focus-mode #exitFocusBtn {
     resize: none;
     max-height: 150px;
     overflow-y: hidden;
+    min-height: 56px;
+    padding: 16px 18px;
 }
 
 .prompt-input:focus {
@@ -2278,13 +2360,36 @@ body.focus-mode #exitFocusBtn {
     box-shadow: 0 0 0 3px rgba(201, 132, 84, 0.15);
 }
 
+.attach-button {
+    border: 1px solid rgba(142, 60, 44, 0.3);
+    background: #fffdf8;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.attach-button:hover {
+    border-color: rgba(142, 60, 44, 0.6);
+    transform: translateY(-1px);
+}
+
+.attach-button svg {
+    width: 20px;
+    height: 20px;
+}
+
 .send-button {
     border: none;
     border-radius: 12px;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    font-size: 1.2rem;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    font-size: 1.4rem;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
