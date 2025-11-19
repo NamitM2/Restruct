@@ -984,8 +984,8 @@ function addMessage(role, content, metadata = null, attachments = []) {
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(textDiv, {
             delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false}
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false }
             ],
             throwOnError: false
         });
@@ -1251,7 +1251,7 @@ function initCostComparisonChart() {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const value = context.parsed.y;
                             const savings = costs[0];
                             const diff = value - savings;
@@ -1292,7 +1292,7 @@ function initCostComparisonChart() {
                             family: 'Space Grotesk',
                             size: 11
                         },
-                        callback: function(value) {
+                        callback: function (value) {
                             return '$' + (value / 1000).toFixed(0) + 'k';
                         }
                     }
@@ -1681,12 +1681,12 @@ function renderActiveKeys() {
                 <div>
                     <h4 class="active-key-name">${keyData.name}</h4>
                     <span class="active-key-date">Created: ${keyData.createdDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}</span>
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}</span>
                 </div>
                 <button class="active-key-revoke-btn" data-index="${index}" data-name="${keyData.name}">
                     Revoke
@@ -2128,7 +2128,7 @@ function populateMarketplace(sortBy = 'score-desc') {
         const aAvgCost = (a.inputCost + a.outputCost) / 2;
         const bAvgCost = (b.inputCost + b.outputCost) / 2;
 
-        switch(sortBy) {
+        switch (sortBy) {
             case 'score-desc':
                 return bAvgScore - aAvgScore;
             case 'score-asc':
