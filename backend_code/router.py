@@ -89,8 +89,8 @@ def route_with_phi(prompt: str) -> Dict[str, float]:
     from backend_code.local_llm_router import get_local_router
 
     router = get_local_router()
-    if not router.has_gpu():
-        raise RuntimeError("Local GPU router unavailable.")
+    if not router.is_ready():
+        raise RuntimeError("Local router unavailable.")
     return router.assess_prompt(prompt)
 
 

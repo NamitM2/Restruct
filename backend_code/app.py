@@ -33,10 +33,11 @@ async def lifespan(_app: FastAPI):
     router = get_local_router()
     elapsed = (time.time() - start) * 1000
 
-    if router.has_gpu():
-        print(f"✓ Using local GPU routing (loaded in {elapsed:.2f}ms)")
+    if router.is_ready():
+        mode = "GPU" if router.has_gpu() else "CPU"
+        print(f"✓ Using local {mode} routing (loaded in {elapsed:.2f}ms)")
     else:
-        print(f"✓ Using Gemini API routing (GPU not available)")
+        print(f"✓ Using Gemini API routing (Local model not loaded)")
 
     yield
 
