@@ -5,6 +5,10 @@ No classes, just functions.
 """
 
 from typing import Dict, Any
+import json
+import re
+import os
+import google.generativeai as genai
 from backend_code.models_config import MODELS
 
 
@@ -94,60 +98,37 @@ def calculate_model_score(prompt_attrs: Dict[str, float], model_attrs: Dict[str,
     return distance
 
 
-def route_with_llm(prompt: str) -> Dict[str, Any]:
-    """Route by asking Gemini 2.5 Flash Lite to assess prompt difficulty."""
-    from backend_code.inference import inference as run_inference
-    import json
-    import re
-
-    google_cfg = MODELS.get("google")
-    if not google_cfg:
-        raise ValueError("Google provider configuration missing.")
-
-    gemini_cfg = google_cfg["models"].get("gemini-2.5-flash-lite")
-    if not gemini_cfg:
-        raise ValueError("Gemini 2.5 Flash Lite configuration missing.")
-
-    assessment_model = {
-        "vendor": "google",
-        "model_name": "gemini-2.5-flash-lite",
-        "api_key": google_cfg["api_key"],
-        "config": gemini_cfg,
-        "score": gemini_cfg.get("capability_attributes", {}).get("overall_complexity", 0),
-    }
-
-    rating_prompt = (
-        "You are an expert routing assistant that estimates how demanding prompts are.\n"
-        "Score the user's prompt from 1-10 (inclusive, numbers only) for the following keys:\n"
-        "overall_complexity, mathematical_and_logical_reasoning, linguistic_and_creative_reasoning, "
-        "factuality, chain_of_thought_depth.\n"
-        "Return only minified JSON with exactly those keys and numeric values.\n\n"
-        f"User prompt:\n{prompt}\n"
-    )
-
-    llm_response_data = run_inference(assessment_model, rating_prompt)
-    llm_response = llm_response_data["text"]
-    match = re.search(r"\{.*\}", llm_response, re.DOTALL)
-    if not match:
+def route_with_gemini_api(prompt: str) -> Dict[str, Any]:
+    """Route using Gemini 2.0 Flash Lite API to assess prompt difficulty."""
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        print("GOOGLE_API_KEY not set, falling back to simple routing...")
         return select_model(prompt), {}
 
-    raw_scores = json.loads(match.group())
-    dimensions = [
-        "overall_complexity",
-        "mathematical_and_logical_reasoning",
-        "linguistic_and_creative_reasoning",
-        "factuality",
-        "chain_of_thought_depth",
-    ]
+    system_prompt = f"""Rate this prompt with scores 0-10 (integers). Use these exact keys: overall_complexity, mathematical_and_logical_reasoning, linguistic_and_creative_reasoning, factuality, chain_of_thought_depth. Return ONLY valid JSON.
 
-    normalized_scores = {}
-    for dim in dimensions:
-        value = raw_scores.get(dim)
-        if value is None:
-            normalized_scores[dim] = 0.0
-            continue
-        normalized_value = float(value)
-        normalized_scores[dim] = max(1.0, min(10.0, normalized_value))
+Prompt: {prompt}
+
+JSON:"""
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-lite",
+            contents=system_prompt
+        )
+
+        response_text = response.text
+        match = re.search(r'\{[^}]+\}', response_text, re.DOTALL)
+        if not match:
+            raise ValueError(f"No JSON in Gemini response: {response_text}")
+
+        normalized_scores = json.loads(match.group())
+
+    except Exception as e:
+        print(f"Gemini API routing failed: {e}")
+        print("Falling back to simple routing...")
+        return select_model(prompt), {}
 
     best_model = None
     best_distance = float("inf")
@@ -169,10 +150,47 @@ def route_with_llm(prompt: str) -> Dict[str, Any]:
                     "score": attrs.get("overall_complexity", 0),
                     "llm_scores": normalized_scores,
                 }
-    print("--------------------")
-    print(f"prompt scores: {normalized_scores}")
-    print(f"model scores: {model_scores}")
-    print("--------------------")
+
+    return best_model, model_scores
+
+
+def route_with_llm(prompt: str) -> Dict[str, Any]:
+    """Route using local GPU model if available, otherwise Gemini API."""
+    from backend_code.local_llm_router import get_local_router
+
+    router = get_local_router()
+
+    if not router.has_gpu():
+        return route_with_gemini_api(prompt)
+
+    try:
+        normalized_scores = router.assess_prompt(prompt)
+    except Exception as e:
+        print(f"Local LLM routing failed: {e}")
+        print("Falling back to Gemini API routing...")
+        return route_with_gemini_api(prompt)
+
+    best_model = None
+    best_distance = float("inf")
+    model_scores = {}
+
+    for vendor, vendor_data in MODELS.items():
+        api_key = vendor_data["api_key"]
+        for model_name, model_cfg in vendor_data["models"].items():
+            attrs = model_cfg.get("capability_attributes", {})
+            distance = calculate_model_score(normalized_scores, attrs)
+            model_scores[f"{vendor}:{model_name}"] = distance
+            if distance < best_distance:
+                best_distance = distance
+                best_model = {
+                    "vendor": vendor,
+                    "model_name": model_name,
+                    "api_key": api_key,
+                    "config": model_cfg,
+                    "score": attrs.get("overall_complexity", 0),
+                    "llm_scores": normalized_scores,
+                }
+
     return best_model, model_scores
 
 

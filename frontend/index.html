@@ -300,10 +300,8 @@
                 <div class="chat-panel" aria-live="polite">
                     <div class="chat-main-wrapper">
                         <div class="chat-area">
-                            <div class="chat-container" id="chatContainer">
-                        <div class="chat-controls">
-                            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="chat-toolbar">
+                                <div class="chat-toolbar-group center">
                                     <button id="previousConversationsBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -318,7 +316,7 @@
                                         <span style="font-size: 13px; font-weight: 500; color: #5b2a1a;">Profile: <strong id="currentProfileName">Default</strong></span>
                                     </button>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="chat-toolbar-group start">
                                     <button id="modelOverrideBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #8e3c2c; border: 1px solid #8e3c2c; border-radius: 8px; color: #fffef9; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 4px 12px rgba(142, 60, 44, 0.25);">
                                         Model Override
                                         <span id="selectedModelName" style="font-weight: 600; color: #8e3c2c; display: none;"></span>
@@ -329,29 +327,29 @@
                                         </svg>
                                     </button>
                                 </div>
+                                <div class="chat-toolbar-group end">
+                                    <button id="newConversationBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 5v14M5 12h14"></path>
+                                        </svg>
+                                        New Conversation
+                                    </button>
+                                    <button id="enterFocusBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                        </svg>
+                                        Focus Mode
+                                    </button>
+                                    <button id="exitFocusBtn" style="display: none; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                        </svg>
+                                        Exit Focus
+                                    </button>
+                                </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button id="newConversationBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 5v14M5 12h14"></path>
-                                    </svg>
-                                    New Conversation
-                                </button>
-                                <button id="enterFocusBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                                    </svg>
-                                    Focus Mode
-                                </button>
-                                <button id="exitFocusBtn" style="display: none; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; color: #5b2a1a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                                    </svg>
-                                    Exit Focus
-                                </button>
-                            </div>
-                        </div>
-                        <div class="welcome-message">
+                            <div class="chat-container" id="chatContainer">
+                            <div class="welcome-message">
                             <img src="assets/logo.png" alt="" class="logo-mark ghost" draggable="false">
                             <h3>Welcome to Restruct</h3>
                         </div>
