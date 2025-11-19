@@ -4,12 +4,22 @@ MVP: picks model with highest overall_complexity.
 No classes, just functions.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Union
 import json
 import re
 import os
 from backend_code.models_config import MODELS
 from backend_code.inference import call_google
+
+
+def _conversation_to_prompt(conversation: Union[str, List[Dict[str, str]]]) -> str:
+    """Collapse a list of messages into a single prompt string."""
+    parts = []
+    for message in conversation:
+        role = message.get("role", "user")
+        content = message.get("content", "")
+        parts.append(f"{role}: {content}")
+    return "\n".join(parts)
 
 
 def select_specific_model(provider: str, model_name: str) -> Dict[str, Any]:
@@ -42,9 +52,7 @@ def select_specific_model(provider: str, model_name: str) -> Dict[str, Any]:
 
 
 
-def route(prompt: str) -> Dict[str, Any]:
-    """Main routing function."""
-    return select_model(prompt)
+
 
 
 def calculate_model_score(prompt_attrs: Dict[str, float], model_attrs: Dict[str, float]) -> float:
@@ -57,7 +65,7 @@ def calculate_model_score(prompt_attrs: Dict[str, float], model_attrs: Dict[str,
     return distance
 
 
-def route_with_gemini(prompt: str) -> Dict[str, float]:
+def route_with_gemini(conversation) -> Dict[str, float]:
     """Obtain routing scores using Gemini via the shared inference helper."""
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -69,13 +77,18 @@ def route_with_gemini(prompt: str) -> Dict[str, float]:
         "api_key": api_key,
     }
 
+    prompt_text = _conversation_to_prompt(conversation)
     system_prompt = f"""Rate this prompt with scores 0-10 (integers). Use these exact keys: overall_complexity, mathematical_and_logical_reasoning, linguistic_and_creative_reasoning, factuality, chain_of_thought_depth. Return ONLY valid JSON.
 
-Prompt: {prompt}
+Prompt: {prompt_text}
 
 JSON:"""
 
-    response = call_google(router_model, system_prompt)
+    payload = []
+    payload.extend(conversation)
+    payload.append({"role": "user", "content": system_prompt})
+
+    response = call_google(router_model, payload)
     response_text = response["text"]
     match = re.search(r"\{[^}]+\}", response_text, re.DOTALL)
     if not match:
@@ -84,30 +97,34 @@ JSON:"""
     return json.loads(match.group())
 
 
-def route_with_phi(prompt: str) -> Dict[str, float]:
+def route_with_phi(conversation) -> Dict[str, float]:
     """Obtain routing scores using the local Phi router."""
     from backend_code.local_llm_router import get_local_router
 
     router = get_local_router()
     if not router.is_ready():
         raise RuntimeError("Local router unavailable.")
-    return router.assess_prompt(prompt)
+    prompt_text = _conversation_to_prompt(conversation)
+    return router.assess_prompt(prompt_text)
 
 
-def route_with_llm(prompt: str) -> Dict[str, Any]:
+def route_with_llm(conversation) -> Dict[str, Any]:
     """Route using local Phi router if available, otherwise Gemini API."""
     normalized_scores = None
     routing_model = None
     try:
         from backend_code.local_llm_router import get_local_router
         router = get_local_router()
-        normalized_scores = route_with_phi(prompt)
+        normalized_scores = route_with_phi(conversation)
         routing_model = "phi"
     except Exception as e:
-        normalized_scores = route_with_gemini(prompt)
+        normalized_scores = route_with_gemini(conversation)
         routing_model = "gemini"
-
+    print("---------")
     print(f"routing with {routing_model}")
+    print(f"normalized scores: {normalized_scores}")
+    print("---------")
+
 
     best_model = None
     best_distance = float("inf")
