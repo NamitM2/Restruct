@@ -32,7 +32,7 @@ function updateSessionStats() {
         : 0;
     document.getElementById('statsAvgRouting').textContent = `${avgRouting}ms`;
     document.getElementById('statsAvgResponse').textContent = `${avgResponse}ms`;
-    document.getElementById('statsTotalCost').textContent = `$${sessionStats.totalCost.toFixed(4)}`;
+    document.getElementById('statsTotalCost').textContent = formatConversationCost(sessionStats.totalCost);
 }
 
 function resetSessionStats() {
@@ -178,6 +178,12 @@ function formatCurrency(value) {
 
 function formatNumber(value) {
     return value.toLocaleString();
+}
+
+function formatConversationCost(value) {
+    if (!Number.isFinite(value)) return '$0.0000';
+    const precision = value >= 0.01 ? 4 : 6;
+    return `$${value.toFixed(precision)}`;
 }
 
 function hydrateDashboard() {
@@ -768,7 +774,8 @@ if (chatForm) {
             sessionStats.responseTimes = sessionStats.responseTimes || [];
             sessionStats.routingTimes.push(routingTime);
             sessionStats.responseTimes.push(responseTime);
-            sessionStats.totalCost += data.usage?.cost || 0.001;
+            const costIncrement = Number(data.usage?.cost);
+            sessionStats.totalCost += Number.isFinite(costIncrement) ? costIncrement : 0;
             updateSessionStats();
 
             removeLoading(loadingId);
