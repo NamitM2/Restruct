@@ -381,33 +381,54 @@
 
                         <!-- Conversation Stats Sidebar -->
                         <div class="conversation-stats-sidebar" id="conversationStatsSidebar">
-                            <div class="conversation-stats-header">
-                                <span style="font-weight: 600; font-size: 14px;">Conversation Stats</span>
+                            <div class="stats-header">
+                                <h3>Session Stats</h3>
+                                <span class="stats-badge">Live</span>
                             </div>
-                            <div class="conversation-stats-content">
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Input Tokens</span>
-                                    <span class="stat-value" id="statsInputTokens">0</span>
+
+                            <div class="stat-group cost-display">
+                                <div class="stat-label">Total Cost</div>
+                                <div class="stat-value" id="statsTotalCost">$0.00</div>
+                                <div class="stat-sub">Avg $0.00 / msg</div>
+                            </div>
+
+                            <div class="stat-group">
+                                <div class="stat-row">
+                                    <span class="stat-label">Tokens</span>
                                 </div>
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Output Tokens</span>
-                                    <span class="stat-value" id="statsOutputTokens">0</span>
+                                <div style="display: flex; gap: 16px; margin-top: 8px;">
+                                    <div>
+                                        <div class="stat-value" id="statsInputTokens">0</div>
+                                        <div class="stat-sub">Input</div>
+                                    </div>
+                                    <div style="width: 1px; background: rgba(0,0,0,0.05);"></div>
+                                    <div>
+                                        <div class="stat-value" id="statsOutputTokens">0</div>
+                                        <div class="stat-sub">Output</div>
+                                    </div>
                                 </div>
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Models Used</span>
-                                    <span class="stat-value" id="statsModelsUsed">None</span>
+                            </div>
+
+                            <div class="stat-group">
+                                <div class="stat-row">
+                                    <span class="stat-label">Latency</span>
                                 </div>
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Avg Routing</span>
-                                    <span class="stat-value" id="statsAvgRouting">0ms</span>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                    <div>
+                                        <div class="stat-value" id="statsAvgRouting">0ms</div>
+                                        <div class="stat-sub">Routing</div>
+                                    </div>
+                                    <div>
+                                        <div class="stat-value" id="statsAvgResponse">0s</div>
+                                        <div class="stat-sub">Response</div>
+                                    </div>
                                 </div>
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Avg Response</span>
-                                    <span class="stat-value" id="statsAvgResponse">0ms</span>
-                                </div>
-                                <div class="stat-item-vertical">
-                                    <span class="stat-label">Total Cost</span>
-                                    <span class="stat-value" id="statsTotalCost">$0.00</span>
+                            </div>
+
+                            <div class="stat-group">
+                                <div class="stat-label">Models Used</div>
+                                <div class="model-list" id="statsModelsUsed">
+                                    <div class="model-chip">None</div>
                                 </div>
                             </div>
                         </div>

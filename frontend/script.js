@@ -15,13 +15,15 @@ function updateSessionStats() {
     document.getElementById('statsInputTokens').textContent = sessionStats.inputTokens.toLocaleString();
     document.getElementById('statsOutputTokens').textContent = sessionStats.outputTokens.toLocaleString();
 
-    // Display model names instead of count
+    // Display model names as chips
     const modelsUsedEl = document.getElementById('statsModelsUsed');
     if (sessionStats.modelsUsed.size === 0) {
-        modelsUsedEl.textContent = 'None';
+        modelsUsedEl.innerHTML = '<div class="model-chip">None</div>';
     } else {
-        const modelNames = Array.from(sessionStats.modelsUsed).join('\n');
-        modelsUsedEl.textContent = modelNames;
+        const chips = Array.from(sessionStats.modelsUsed)
+            .map(model => `<div class="model-chip">${model}</div>`)
+            .join('');
+        modelsUsedEl.innerHTML = chips;
     }
 
     const avgRouting = sessionStats.routingTimes.length > 0
@@ -751,7 +753,8 @@ if (chatForm) {
                 payload.conversation_id = currentConversation.conversationId;
             }
 
-            const response = await fetch(`${API_URL}/chat`, {
+
+            const response = await fetch(`${API_URL}/chat/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -761,11 +764,47 @@ if (chatForm) {
                 throw new Error('API request failed');
             }
 
-            const data = await response.json();
+            // Process Server-Sent Events stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let finalData = null;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // Keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6);
+                        const event = JSON.parse(jsonStr);
+
+                        if (event.status === 'routing_complete') {
+                            console.log('[ROUTING COMPLETE]', new Date().toISOString(), event);
+                            // Update loading to show model logo and "Thinking..."
+                            const modelDisplay = event.model_display;
+                            if (modelDisplay) {
+                                updateLoadingWithModel(loadingId, modelDisplay.model_name);
+                            }
+                        } else if (event.status === 'complete') {
+                            console.log('[INFERENCE COMPLETE]', new Date().toISOString(), event);
+                            finalData = event;
+                        }
+                    }
+                }
+            }
+
+            if (!finalData) {
+                throw new Error('No response received from server');
+            }
+
+            const data = finalData;
             const routingTime = data.timing?.routing_time || 0;
             const responseTime = data.timing?.inference_time || 0;
-
-            updateLoadingWithModel(loadingId, data.model);
 
             sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
             sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
