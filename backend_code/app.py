@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from typing import Optional
+from contextlib import asynccontextmanager
 import os
 import json
 import asyncio
@@ -23,7 +24,27 @@ from backend_code.database import (
     get_routing_profiles
 )
 
-app = FastAPI(title="Restruct API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Pre-load the local LLM router on startup for faster first request."""
+    import time
+    from backend_code.local_llm_router import get_local_router
+
+    print("Initializing routing system...")
+    start = time.time()
+    router = get_local_router()
+    elapsed = (time.time() - start) * 1000
+
+    if router.has_gpu():
+        print(f"✓ Using local GPU routing (loaded in {elapsed:.2f}ms)")
+    else:
+        print(f"✓ Using Gemini API routing (GPU not available)")
+
+    yield
+
+
+app = FastAPI(title="Restruct API", version="0.1.0", lifespan=lifespan)
 DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
 # CORS for local testing
@@ -86,6 +107,10 @@ async def chat(body: dict):
             "routing_time": round(routing_time * 1000, 2)
         }
         yield f"data: {json.dumps(routing_event)}\n\n"
+
+        # Small delay to ensure routing event is sent before starting inference
+        import asyncio
+        await asyncio.sleep(0.01)
 
         inference_start = time.time()
         response_data = inference(model_choice, prompt)

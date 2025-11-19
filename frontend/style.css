@@ -1237,19 +1237,48 @@ textarea {
 
 .chat-container {
     flex: 1;
-    padding: 28px;
+    padding: 20px 28px 28px;
     overflow-y: auto;
     background: linear-gradient(180deg, rgba(255, 250, 245, 0.9), rgba(255, 255, 255, 0.7));
     position: relative;
     transition: all 0.3s ease;
 }
 
-.chat-controls {
+.chat-toolbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 8px;
+    padding: 12px 20px;
+    background: #fffef9;
+    border-bottom: 1px solid rgba(142, 60, 44, 0.15);
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 10px 30px rgba(92, 49, 30, 0.08);
+}
+
+.chat-toolbar-group {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    transition: all 0.3s ease;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.chat-toolbar-group.start {
+    justify-self: start;
+}
+
+.chat-toolbar-group.center {
+    justify-self: center;
+}
+
+.chat-toolbar-group.end {
+    justify-self: end;
 }
 
 #enterFocusBtn:hover,

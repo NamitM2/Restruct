@@ -1088,7 +1088,6 @@ function addMessage(role, content, metadata = null, attachments = []) {
     messageDiv.appendChild(contentDiv);
 
     chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
 
     // Store message in current conversation
     currentConversation.messages.push({
@@ -1120,7 +1119,6 @@ function showLoading() {
 
     messageDiv.appendChild(loadingDiv);
     chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
 
     return loadingId;
 }
