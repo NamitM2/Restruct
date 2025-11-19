@@ -10,7 +10,7 @@ from typing import Optional
 from contextlib import asynccontextmanager
 import os
 
-from backend_code.router import route, route_specific, route_with_llm
+from backend_code.router import route_specific, route_with_llm
 from backend_code.inference import inference
 from backend_code.database import (
     create_conversation,
@@ -85,13 +85,14 @@ async def chat(body: dict):
         role="user",
         content=prompt
     )
+    conversation = get_conversation_messages(conversation_id)
 
     routing_start = time.time()
-    model_choice = resolve_model_choice(router_mode, model_override, prompt)
+    model_choice = resolve_model_choice(router_mode, model_override, conversation)
     routing_time = time.time() - routing_start
 
     inference_start = time.time()
-    response_data = inference(model_choice, prompt)
+    response_data = inference(model_choice, conversation)
     inference_time = time.time() - inference_start
 
     response_text = response_data["text"]
@@ -186,14 +187,10 @@ def create_profile(body: dict):
     return {"profile": profile}
 
 
-def resolve_model_choice(router_mode: str, model_override: Optional[str], prompt: str):
+def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation):
     """
     Decide how to obtain a model: router-driven or manual override.
     """
-    print("----------")
-    print(router_mode)
-    print("----------")
-
     if router_mode == "manual":
         if not model_override:
             raise ValueError("Manual routing mode requires a model selection.")
@@ -203,7 +200,7 @@ def resolve_model_choice(router_mode: str, model_override: Optional[str], prompt
 
         provider, model_name = model_override.split(":", 1)
         return route_specific(provider, model_name)
-    model, model_scores = route_with_llm(prompt)
+    model, model_scores = route_with_llm(conversation)
     return model
 
 

@@ -36,8 +36,22 @@ def get_user_conversations(user_id: str) -> list:
 
 
 def get_conversation_messages(conversation_id: str) -> list:
-    result = supabase.table("messages").select("*").eq("conversation_id", conversation_id).order("created_at", desc=False).execute()
-    return result.data
+    result = (
+        supabase.table("messages")
+        .select("*")
+        .eq("conversation_id", conversation_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    messages = []
+    for message in result.data:
+        role = message.get("role") or "user"
+        content = message.get("content") or ""
+        messages.append({
+            "role": role,
+            "content": content
+        })
+    return messages
 
 
 def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None) -> dict:
