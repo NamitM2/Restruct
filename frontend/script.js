@@ -755,55 +755,32 @@ if (chatForm) {
                 throw new Error('API request failed');
             }
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let routingTime = 0;
-            let responseTime = 0;
+            const data = await response.json();
+            const routingTime = data.timing?.routing_time || 0;
+            const responseTime = data.timing?.inference_time || 0;
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+            updateLoadingWithModel(loadingId, data.model);
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop();
+            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
+            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
+            sessionStats.modelsUsed.add(data.model);
+            sessionStats.routingTimes = sessionStats.routingTimes || [];
+            sessionStats.responseTimes = sessionStats.responseTimes || [];
+            sessionStats.routingTimes.push(routingTime);
+            sessionStats.responseTimes.push(responseTime);
+            sessionStats.totalCost += data.usage?.cost || 0.001;
+            updateSessionStats();
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
-
-                        if (data.event === 'routing_complete') {
-                            routingTime = data.routing_time;
-                            updateLoadingWithModel(loadingId, data.model);
-                        } else if (data.event === 'response_complete') {
-                            responseTime = data.timing?.inference_time || 0;
-
-                            // Update session stats
-                            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
-                            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
-                            sessionStats.modelsUsed.add(data.model);
-                            sessionStats.routingTimes = sessionStats.routingTimes || [];
-                            sessionStats.responseTimes = sessionStats.responseTimes || [];
-                            sessionStats.routingTimes.push(routingTime);
-                            sessionStats.responseTimes.push(responseTime);
-                            sessionStats.totalCost += data.usage?.cost || 0.001;
-                            updateSessionStats();
-
-                            removeLoading(loadingId);
-                            addMessage('assistant', data.output, {
-                                model: data.model,
-                                provider: data.provider,
-                                score: data.routing_metadata?.score,
-                                routingTime: routingTime,
-                                responseTime: responseTime,
-                                inputTokens: data.usage?.input_tokens,
-                                outputTokens: data.usage?.output_tokens
-                            });
-                        }
-                    }
-                }
-            }
+            removeLoading(loadingId);
+            addMessage('assistant', data.output, {
+                model: data.model,
+                provider: data.provider,
+                score: data.routing_metadata?.score,
+                routingTime: routingTime,
+                responseTime: responseTime,
+                inputTokens: data.usage?.input_tokens,
+                outputTokens: data.usage?.output_tokens
+            });
         } catch (error) {
             console.error('Chat error:', error);
             removeLoading(loadingId);
