@@ -22,9 +22,8 @@ class LocalLLMRouter:
         return cls._instance
 
     def __init__(self):
-        if self._has_gpu is None:
-            self._detect_gpu()
-        if self._model is None and self._has_gpu:
+        self._detect_gpu()
+        if self._model is None:
             self._initialize_model()
 
     def _detect_gpu(self):
@@ -35,24 +34,26 @@ class LocalLLMRouter:
             if self._has_gpu:
                 print(f"GPU detected: {torch.cuda.get_device_name(0)}")
             else:
-                print("No GPU detected - will use Gemini API routing")
+                print("No GPU detected (running on CPU)")
         except ImportError:
             self._has_gpu = False
-            print("PyTorch not available - will use Gemini API routing")
+            print("PyTorch not available (running on CPU)")
 
     def has_gpu(self) -> bool:
         """Check if GPU is available."""
         return self._has_gpu or False
+
+    def is_ready(self) -> bool:
+        """Check if the local model is loaded and ready."""
+        return self._model is not None
 
     def _initialize_model(self):
         """Load Phi-3.5-Mini model using llama-cpp-python."""
         try:
             from llama_cpp import Llama
         except ImportError:
-            raise ImportError(
-                "llama-cpp-python is not installed. "
-                "Install with: pip install llama-cpp-python"
-            )
+            print("llama-cpp-python not installed. Cannot use local router.")
+            return
 
         model_path = os.path.join(
             os.path.dirname(__file__),
@@ -61,25 +62,27 @@ class LocalLLMRouter:
         )
 
         if not os.path.exists(model_path):
-            raise FileNotFoundError(
-                f"Model not found at {model_path}\n"
-                f"Download from: https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf\n"
-                f"Place in: backend_code/models/"
-            )
+            print(f"Local model not found at {model_path}")
+            return
 
         print(f"Loading Phi-3.5-Mini model from {model_path}...")
 
         n_threads = os.cpu_count() or 4
+        n_gpu_layers = -1 if self._has_gpu else 0
 
-        self._model = Llama(
-            model_path=model_path,
-            n_ctx=512,
-            n_threads=n_threads,
-            n_gpu_layers=-1,  # Offload all layers to GPU
-            n_batch=512,  # Larger batch for faster GPU processing
-            verbose=False
-        )
-        print(f"Model loaded successfully! (GPU mode with {n_threads} CPU threads)")
+        try:
+            self._model = Llama(
+                model_path=model_path,
+                n_ctx=2048,  # Increased context window
+                n_threads=n_threads,
+                n_gpu_layers=n_gpu_layers,
+                n_batch=512,
+                verbose=False
+            )
+            mode = "GPU" if self._has_gpu else "CPU"
+            print(f"Model loaded successfully! ({mode} mode with {n_threads} threads)")
+        except Exception as e:
+            print(f"Failed to load local model: {e}")
 
     def assess_prompt(self, prompt: str) -> Dict[str, float]:
         """
