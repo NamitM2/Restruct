@@ -51,10 +51,6 @@ def select_specific_model(provider: str, model_name: str) -> Dict[str, Any]:
     }
 
 
-
-
-
-
 def calculate_model_score(prompt_attrs: Dict[str, float], model_attrs: Dict[str, float]) -> float:
     """Return squared distance between prompt attributes and a model."""
     distance = 0.0
@@ -109,17 +105,24 @@ def route_with_phi(conversation) -> Dict[str, float]:
 
 
 def route_with_llm(conversation) -> Dict[str, Any]:
-    """Route using local Phi router if available, otherwise Gemini API."""
+    """Route using Gemini API (local Phi router temporarily disabled)."""
     normalized_scores = None
     routing_model = None
-    try:
-        from backend_code.local_llm_router import get_local_router
-        router = get_local_router()
-        normalized_scores = route_with_phi(conversation)
-        routing_model = "phi"
-    except Exception as e:
-        normalized_scores = route_with_gemini(conversation)
-        routing_model = "gemini"
+    
+    # Local PHI router disabled - using Gemini API for routing
+    # TODO: Re-enable when GPU support is configured
+    # try:
+    #     from backend_code.local_llm_router import get_local_router
+    #     router = get_local_router()
+    #     normalized_scores = route_with_phi(conversation)
+    #     routing_model = "phi"
+    # except Exception as e:
+    #     normalized_scores = route_with_gemini(conversation)
+    #     routing_model = "gemini"
+    
+    normalized_scores = route_with_gemini(conversation)
+    routing_model = "gemini"
+    
     print("---------")
     print(f"routing with {routing_model}")
     print(f"normalized scores: {normalized_scores}")
