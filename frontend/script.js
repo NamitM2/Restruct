@@ -2290,7 +2290,7 @@ function selectOverrideModel(modelName) {
     const clearOverrideBtn = document.getElementById('clearOverrideBtn');
 
     if (selectedModelNameSpan) {
-        selectedModelNameSpan.textContent = `: ${modelName}`;
+        selectedModelNameSpan.textContent = modelName;
         selectedModelNameSpan.style.display = 'inline';
     }
 
