@@ -6,12 +6,9 @@ Minimal endpoints, no error handling (errors will bubble up).
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse
 from typing import Optional
 from contextlib import asynccontextmanager
 import os
-import json
-import asyncio
 
 from backend_code.router import route, route_specific, route_with_llm
 from backend_code.inference import inference
@@ -69,14 +66,7 @@ def root():
 
 @app.post("/chat")
 async def chat(body: dict):
-    """
-    Main chat endpoint with streaming support.
-
-    Streams events:
-    1. routing_complete: When model is selected
-    2. response_complete: When inference finishes
-    """
-
+    """Main chat endpoint without SSE streaming."""
     prompt = body.get("prompt")
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
@@ -87,78 +77,62 @@ async def chat(body: dict):
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
 
-    async def event_generator():
-        import time
+    import time
 
-        add_message(
-            conversation_id=conversation_id,
-            role="user",
-            content=prompt
-        )
+    add_message(
+        conversation_id=conversation_id,
+        role="user",
+        content=prompt
+    )
 
-        routing_start = time.time()
-        model_choice = resolve_model_choice(router_mode, model_override, prompt)
-        routing_time = time.time() - routing_start
+    routing_start = time.time()
+    model_choice = resolve_model_choice(router_mode, model_override, prompt)
+    routing_time = time.time() - routing_start
 
-        routing_event = {
-            "event": "routing_complete",
-            "model": model_choice["model_name"],
-            "provider": model_choice["vendor"],
-            "routing_time": round(routing_time * 1000, 2)
+    inference_start = time.time()
+    response_data = inference(model_choice, prompt)
+    inference_time = time.time() - inference_start
+
+    response_text = response_data["text"]
+    input_tokens = response_data["input_tokens"]
+    output_tokens = response_data["output_tokens"]
+
+    input_cost = model_choice["config"]["input_token_cost"]
+    output_cost = model_choice["config"]["output_token_cost"]
+    total_cost = (input_tokens * input_cost) + (output_tokens * output_cost)
+
+    add_message(
+        conversation_id=conversation_id,
+        role="assistant",
+        content=response_text,
+        model=model_choice["model_name"],
+        provider=model_choice["vendor"],
+        profile_name=profile,
+        metadata={
+            "score": model_choice["score"],
+            "router_mode": router_mode
         }
-        yield f"data: {json.dumps(routing_event)}\n\n"
+    )
 
-        # Small delay to ensure routing event is sent before starting inference
-        import asyncio
-        await asyncio.sleep(0.01)
-
-        inference_start = time.time()
-        response_data = inference(model_choice, prompt)
-        inference_time = time.time() - inference_start
-
-        response_text = response_data["text"]
-        input_tokens = response_data["input_tokens"]
-        output_tokens = response_data["output_tokens"]
-
-        input_cost = model_choice["config"]["input_token_cost"]
-        output_cost = model_choice["config"]["output_token_cost"]
-        total_cost = (input_tokens * input_cost) + (output_tokens * output_cost)
-
-        add_message(
-            conversation_id=conversation_id,
-            role="assistant",
-            content=response_text,
-            model=model_choice["model_name"],
-            provider=model_choice["vendor"],
-            profile_name=profile,
-            metadata={
-                "score": model_choice["score"],
-                "router_mode": router_mode
-            }
-        )
-
-        response_event = {
-            "event": "response_complete",
-            "output": response_text,
-            "model": model_choice["model_name"],
-            "provider": model_choice["vendor"],
-            "routing_metadata": {
-                "score": model_choice["score"]
-            },
-            "usage": {
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "cost": total_cost
-            },
-            "timing": {
-                "routing_time": round(routing_time * 1000, 2),
-                "inference_time": round(inference_time * 1000, 2)
-            },
-            "conversation_id": conversation_id
-        }
-        yield f"data: {json.dumps(response_event)}\n\n"
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    response_event = {
+        "output": response_text,
+        "model": model_choice["model_name"],
+        "provider": model_choice["vendor"],
+        "routing_metadata": {
+            "score": model_choice["score"]
+        },
+        "usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": total_cost
+        },
+        "timing": {
+            "routing_time": round(routing_time * 1000, 2),
+            "inference_time": round(inference_time * 1000, 2)
+        },
+        "conversation_id": conversation_id
+    }
+    return response_event
 
 
 @app.get("/conversations")
@@ -215,6 +189,10 @@ def resolve_model_choice(router_mode: str, model_override: Optional[str], prompt
     """
     Decide how to obtain a model: router-driven or manual override.
     """
+    print("----------")
+    print(router_mode)
+    print("----------")
+
     if router_mode == "manual":
         if not model_override:
             raise ValueError("Manual routing mode requires a model selection.")
