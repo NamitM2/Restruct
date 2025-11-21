@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:8000';
 window.API_URL = API_URL;
 
-// Session stats tracking
+// Conversation stats tracking
 const sessionStats = {
     inputTokens: 0,
     outputTokens: 0,
@@ -1409,7 +1409,7 @@ function startNewConversation() {
         timestamp: new Date()
     };
 
-    // Reset session stats
+    // Reset conversation stats
     resetSessionStats();
 
     // Remove all messages but keep chat-controls
