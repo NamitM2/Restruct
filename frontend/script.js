@@ -163,13 +163,7 @@ const dashboardData = {
         monthly: 26588000,
         yearly: 312450000
     },
-    models: [
-        { name: 'GPT-5', vendor: 'OpenAI', share: 42, spend: 4820, tokens: 12200000, latency: '610 ms' },
-        { name: 'Gemini 2.5 Pro', vendor: 'Google', share: 27, spend: 2415, tokens: 8200000, latency: '520 ms' },
-        { name: 'Claude Opus 4.1', vendor: 'Anthropic', share: 18, spend: 3200, tokens: 5600000, latency: '480 ms' },
-        { name: 'Gemini 2.5 Flash', vendor: 'Google', share: 8, spend: 860, tokens: 3900000, latency: '340 ms' },
-        { name: 'GPT-5 Mini Nano', vendor: 'OpenAI', share: 5, spend: 260, tokens: 2100000, latency: '220 ms' }
-    ]
+
 };
 
 let isLoading = false;
@@ -204,19 +198,7 @@ function hydrateDashboard() {
         tokenIds.yearly.textContent = formatNumber(dashboardData.tokens.yearly);
     }
 
-    const modelStatsBody = document.getElementById('modelStatsBody');
-    if (modelStatsBody) {
-        modelStatsBody.innerHTML = dashboardData.models.map(model => `
-            <tr>
-                <td>${model.name}</td>
-                <td>${model.vendor}</td>
-                <td>${model.share}%</td>
-                <td>${formatCurrency(model.spend)}</td>
-                <td>${formatNumber(model.tokens)}</td>
-                <td>${model.latency}</td>
-            </tr>
-        `).join('');
-    }
+
 }
 
 function wireTabs() {
@@ -754,7 +736,7 @@ if (chatForm) {
             }
 
 
-            const response = await fetch(`${API_URL}/chat/stream`, {
+            const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -764,45 +746,7 @@ if (chatForm) {
                 throw new Error('API request failed');
             }
 
-            // Process Server-Sent Events stream
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let finalData = null;
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop(); // Keep incomplete line in buffer
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.slice(6);
-                        const event = JSON.parse(jsonStr);
-
-                        if (event.status === 'routing_complete') {
-                            console.log('[ROUTING COMPLETE]', new Date().toISOString(), event);
-                            // Update loading to show model logo and "Thinking..."
-                            const modelDisplay = event.model_display;
-                            if (modelDisplay) {
-                                updateLoadingWithModel(loadingId, modelDisplay.model_name);
-                            }
-                        } else if (event.status === 'complete') {
-                            console.log('[INFERENCE COMPLETE]', new Date().toISOString(), event);
-                            finalData = event;
-                        }
-                    }
-                }
-            }
-
-            if (!finalData) {
-                throw new Error('No response received from server');
-            }
-
-            const data = finalData;
+            const data = await response.json();
             const routingTime = data.timing?.routing_time || 0;
             const responseTime = data.timing?.inference_time || 0;
 
@@ -1351,9 +1295,7 @@ function toggleCostComparison(event) {
     toggleCollapsible(event, 'costComparisonContent', '.cost-comparison-section .collapse-toggle');
 }
 
-function toggleModelStats(event) {
-    toggleCollapsible(event, 'modelStatsContent', '.model-stats .collapse-toggle');
-}
+
 
 // Conversations Management
 let conversations = [];

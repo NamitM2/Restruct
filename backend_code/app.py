@@ -6,20 +6,126 @@ Minimal endpoints, no error handling (errors will bubble up).
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Optional
+from typing import Optional, List
 from contextlib import asynccontextmanager
 import os
+import re
+from uuid import uuid4
 
-from backend_code.router import route_specific, route_with_llm
-from backend_code.inference import inference
-from backend_code.database import (
-    create_conversation,
-    add_message,
-    get_user_conversations,
-    get_conversation_messages,
-    create_routing_profile,
-    get_routing_profiles
+import backend_code.router as router
+import backend_code.inference as inference
+
+import atexit
+import httpx
+from dotenv import load_dotenv
+from supabase import Client, ClientOptions, create_client
+
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+_httpx_client = httpx.Client()
+atexit.register(_httpx_client.close)
+supabase: Client = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    ClientOptions(httpx_client=_httpx_client),
 )
+
+
+def create_conversation(user_id: str, title: str = "New Conversation") -> dict:
+    result = supabase.table("conversations").insert({
+        "user_id": user_id,
+        "title": title
+    }).execute()
+    return result.data[0]
+
+
+def get_user_conversations(user_id: str) -> list:
+    result = supabase.table("conversations").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+    return result.data
+
+
+def get_conversation_messages(conversation_id: str) -> list:
+    result = (
+        supabase.table("messages")
+        .select("*")
+        .eq("conversation_id", conversation_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    messages = []
+    for message in result.data:
+        role = message.get("role") or "user"
+        content = message.get("content") or ""
+        messages.append({
+            "role": role,
+            "content": content
+        })
+    return messages
+
+
+def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None) -> dict:
+    message_data = {
+        "conversation_id": conversation_id,
+        "role": role,
+        "content": content
+    }
+
+    if model:
+        message_data["model"] = model
+    if provider:
+        message_data["provider"] = provider
+    if profile_name:
+        message_data["profile_name"] = profile_name
+    if metadata:
+        message_data["metadata"] = metadata
+
+    result = supabase.table("messages").insert(message_data).execute()
+    return result.data[0]
+
+
+def update_conversation_title(conversation_id: str, title: str) -> dict:
+    result = supabase.table("conversations").update({"title": title}).eq("id", conversation_id).execute()
+    return result.data[0]
+
+
+def delete_conversation(conversation_id: str) -> None:
+    supabase.table("conversations").delete().eq("id", conversation_id).execute()
+
+
+def delete_message(message_id: str) -> None:
+    supabase.table("messages").delete().eq("id", message_id).execute()
+
+
+def slugify_profile_name(name: str) -> str:
+    base = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'profile'
+    suffix = uuid4().hex[:6]
+    return f"{base}-{suffix}"
+
+
+def create_routing_profile(user_id: str, name: str, description: Optional[str], graph_state: dict) -> dict:
+    payload = {
+        "user_id": user_id,
+        "name": name,
+        "description": description,
+        "graph_state": graph_state,
+        "slug": slugify_profile_name(name)
+    }
+    result = supabase.table("routing_profiles").insert(payload).execute()
+    return result.data[0]
+
+
+def get_routing_profiles(user_id: str) -> List[dict]:
+    result = (
+        supabase.table("routing_profiles")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data
 
 
 @asynccontextmanager
@@ -70,12 +176,9 @@ def root():
 
 @app.post("/chat")
 async def chat(body: dict):
-    """Main chat endpoint with enhanced metadata tracking."""
-    from backend_code.api_call_metadata import (
-        create_inference_complete_event,
-        get_model_display_info
-    )
-    
+    """Main chat endpoint."""
+    import time
+
     prompt = body.get("prompt")
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
@@ -85,8 +188,6 @@ async def chat(body: dict):
 
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
-
-    import time
 
     # Add user message to conversation
     add_message(
@@ -103,10 +204,12 @@ async def chat(body: dict):
 
     # PHASE 2: INFERENCE
     inference_start = time.time()
-    response_data = inference(model_choice, conversation)
+    response_data = inference.inference(model_choice, conversation)
     inference_time = time.time() - inference_start
 
     response_text = response_data["text"]
+    input_tokens = response_data.get("input_tokens", 0)
+    output_tokens = response_data.get("output_tokens", 0)
 
     # Save assistant message to database
     add_message(
@@ -122,58 +225,35 @@ async def chat(body: dict):
         }
     )
 
-    # Create complete response event with all metadata
-    response_event = create_inference_complete_event(
-        response_text=response_text,
-        model_choice=model_choice,
-        response_data=response_data,
-        routing_time_seconds=routing_time,
-        inference_time_seconds=inference_time,
-        routing_model="gemini"  # Currently using Gemini for routing
-    )
-    
-    # Add conversation_id to response
-    response_event["conversation_id"] = conversation_id
-    
-    # Add model display info for frontend
-    model_display = get_model_display_info(
-        provider=model_choice["vendor"],
-        model_name=model_choice["model_name"]
-    )
-    response_event["model_display"] = model_display
+    # Calculate cost
+    input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
+    output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
+    total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
 
-    return response_event
-
-
-@app.post("/chat/stream")
-async def chat_stream(body: dict):
-    """Streaming chat endpoint with routing complete event."""
-    from backend_code.streaming_helper import generate_chat_events, create_sse_response
-    
-    prompt = body.get("prompt")
-    router_mode = body.get("router_mode", "auto")
-    model_override = body.get("model_override")
-    conversation_id = body.get("conversation_id")
-    user_id = body.get("user_id", DEFAULT_USER_ID)
-    profile = body.get("profile", "default")
-
-    if not conversation_id:
-        raise HTTPException(status_code=400, detail="conversation_id is required")
-
-    event_generator = generate_chat_events(
-        prompt=prompt,
-        conversation_id=conversation_id,
-        router_mode=router_mode,
-        model_override=model_override,
-        profile=profile,
-        user_id=user_id,
-        add_message_func=add_message,
-        get_conversation_func=get_conversation_messages,
-        resolve_model_func=resolve_model_choice,
-        inference_func=inference
-    )
-    
-    return create_sse_response(event_generator)
+    # Build response
+    return {
+        "status": "complete",
+        "timestamp": time.time(),
+        "output": response_text,
+        "model": model_choice["model_name"],
+        "provider": model_choice["vendor"],
+        "conversation_id": conversation_id,
+        "routing_metadata": {
+            "score": model_choice.get("score", 0),
+            "routing_model": "gemini",
+            "llm_scores": model_choice.get("llm_scores")
+        },
+        "usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": total_cost
+        },
+        "timing": {
+            "routing_time": round(routing_time * 1000, 2),
+            "inference_time": round(inference_time * 1000, 2),
+            "total_time_ms": round((routing_time + inference_time) * 1000, 2)
+        }
+    }
 
 
 @app.get("/conversations")
@@ -238,75 +318,51 @@ def resolve_model_choice(router_mode: str, model_override: Optional[str], conver
             raise ValueError("Model override must use 'provider:model_name' format.")
 
         provider, model_name = model_override.split(":", 1)
-        return route_specific(provider, model_name)
-    model, model_scores = route_with_llm(conversation)
+        return router.route_specific(provider, model_name)
+    model, model_scores = router.route_with_llm(conversation)
     return model
 
 
 @app.get("/models/info")
 def get_model_info(provider: str, model_name: str):
     """Get display information for a specific model."""
-    from backend_code.api_call_metadata import get_model_display_info, get_model_max_tokens
-    
-    model_display = get_model_display_info(provider, model_name)
-    max_tokens = get_model_max_tokens(provider, model_name)
-    
+    from backend_code.models_config import MODELS
+
+    vendor_config = MODELS.get(provider)
+    if not vendor_config:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    model_config = vendor_config.get("models", {}).get(model_name)
+    if not model_config:
+        raise HTTPException(status_code=404, detail="Model not found")
+
     return {
         "success": True,
         "model_info": {
-            **model_display,
-            "max_tokens": max_tokens
+            "provider": provider,
+            "model_name": model_name,
+            "max_tokens": model_config.get("max_tokens", 0)
         }
-    }
-
-
-@app.post("/models/estimate-cost")
-def estimate_model_cost(body: dict):
-    """Estimate cost for a model given estimated token counts."""
-    from backend_code.api_call_metadata import estimate_cost_for_model
-    
-    provider = body.get("provider")
-    model_name = body.get("model_name")
-    estimated_input_tokens = body.get("estimated_input_tokens", 0)
-    estimated_output_tokens = body.get("estimated_output_tokens", 0)
-    
-    if not provider or not model_name:
-        raise HTTPException(status_code=400, detail="provider and model_name are required")
-    
-    cost_estimate = estimate_cost_for_model(
-        estimated_input_tokens=estimated_input_tokens,
-        estimated_output_tokens=estimated_output_tokens,
-        provider=provider,
-        model_name=model_name
-    )
-    
-    if not cost_estimate:
-        raise HTTPException(status_code=404, detail="Model not found")
-    
-    return {
-        "success": True,
-        "cost_estimate": cost_estimate.to_dict()
     }
 
 
 @app.get("/models/list")
 def list_available_models():
-    """List all available models with their display information."""
-    from backend_code.api_call_metadata import get_model_display_info
+    """List all available models."""
     from backend_code.models_config import MODELS
-    
+
     models_list = []
     for provider, config in MODELS.items():
         for model_name, model_config in config.get("models", {}).items():
-            model_display = get_model_display_info(provider, model_name)
             models_list.append({
-                **model_display,
+                "provider": provider,
+                "model_name": model_name,
                 "max_tokens": model_config.get("max_tokens", 0),
                 "input_cost_per_million": model_config.get("input_token_cost", 0) * 1_000_000,
                 "output_cost_per_million": model_config.get("output_token_cost", 0) * 1_000_000,
                 "capabilities": model_config.get("capability_attributes", {})
             })
-    
+
     return {
         "success": True,
         "models": models_list
