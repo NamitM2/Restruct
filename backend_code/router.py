@@ -8,8 +8,10 @@ from typing import Dict, Any, List, Union
 import json
 import re
 import os
-from backend_code.models_config import MODELS
-from backend_code.inference import call_google
+import backend_code.models_config as models_config
+import backend_code.inference as inference
+
+MODELS = models_config.MODELS
 
 
 def _conversation_to_prompt(conversation: Union[str, List[Dict[str, str]]]) -> str:
@@ -84,7 +86,7 @@ JSON:"""
     payload.extend(conversation)
     payload.append({"role": "user", "content": system_prompt})
 
-    response = call_google(router_model, payload)
+    response = inference.call_google(router_model, payload)
     response_text = response["text"]
     match = re.search(r"\{[^}]+\}", response_text, re.DOTALL)
     if not match:

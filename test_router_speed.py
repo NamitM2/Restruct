@@ -1,7 +1,7 @@
 """Test script to measure local LLM router performance."""
 
 import time
-from backend_code.local_llm_router import get_local_router
+import backend_code.local_llm_router as local_llm_router
 
 # Test prompts of varying complexity
 test_prompts = [
@@ -14,7 +14,7 @@ test_prompts = [
 
 print("Initializing router (this includes model loading time)...")
 start_init = time.time()
-router = get_local_router()
+router = local_llm_router.get_local_router()
 init_time = (time.time() - start_init) * 1000
 print(f"Router initialized in {init_time:.2f}ms\n")
 
