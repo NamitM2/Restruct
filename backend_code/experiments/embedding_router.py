@@ -27,7 +27,8 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.append(project_root)
 try:
-    from backend_code.models_config import MODELS
+    import backend_code.models_config as models_config
+    MODELS = models_config.MODELS
 except Exception as e:
     print(f"Failed to import MODELS from models_config: {e}")
     sys.exit(1)
