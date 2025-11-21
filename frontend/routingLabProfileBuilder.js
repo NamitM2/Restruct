@@ -482,6 +482,10 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [nodePositions, setNodePositions] = useState({});
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+    const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
     const leftRefs = useRef({});
     const centerRef = useRef(null);
@@ -826,7 +830,28 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     key: 'graph-container',
                     ref: containerRef,
                     className: 'relative flex-1 overflow-hidden',
-                    onClick: e => e.stopPropagation()
+                    style: { cursor: isPanning ? 'grabbing' : 'grab' },
+                    onClick: e => e.stopPropagation(),
+                    onWheel: e => {
+                        e.preventDefault();
+                        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                        setZoom(prev => Math.min(2, Math.max(0.3, prev + delta)));
+                    },
+                    onMouseDown: e => {
+                        if (e.button === 0) {
+                            setIsPanning(true);
+                            panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+                        }
+                    },
+                    onMouseMove: e => {
+                        if (isPanning) {
+                            const dx = e.clientX - panStartRef.current.x;
+                            const dy = e.clientY - panStartRef.current.y;
+                            setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
+                        }
+                    },
+                    onMouseUp: () => setIsPanning(false),
+                    onMouseLeave: () => setIsPanning(false)
                 }, [
                     React.createElement('div', {
                         key: 'bg',
@@ -836,7 +861,8 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     React.createElement(MeshLensBackground, { key: 'mesh' }),
                     React.createElement('div', {
                         key: 'grid-wrapper',
-                        className: 'relative h-full w-full flex items-center justify-end pr-8'
+                        className: 'relative h-full w-full flex items-center justify-end pr-8',
+                        style: { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.15s ease-out' }
                     },
                         React.createElement('div', {
                             key: 'grid',
@@ -919,7 +945,8 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     key: 'svg',
                     className: 'pointer-events-none absolute inset-0',
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    style: { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.15s ease-out' }
                 }, edges.map(edge => {
                     const router = nodePositions.router;
                     if (!router || !edge.visible) return null;
@@ -985,7 +1012,39 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     key: 'success',
                     className: 'absolute bottom-6 left-6 rounded-2xl border px-4 py-3',
                     style: { borderColor: 'rgba(181, 103, 71, 0.3)', backgroundColor: 'rgba(181, 103, 71, 0.1)', color: '#b56747' }
-                }, success)
+                }, success),
+                React.createElement('div', {
+                    key: 'zoom-controls',
+                    className: 'absolute bottom-6 right-6 flex items-center gap-2 rounded-2xl border bg-white px-3 py-2 shadow-lg',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
+                }, [
+                    React.createElement('button', {
+                        key: 'zoom-out',
+                        type: 'button',
+                        className: 'w-8 h-8 rounded-full flex items-center justify-center text-lg font-semibold transition hover:bg-[rgba(92,49,30,0.08)]',
+                        style: { color: '#5b2a1a' },
+                        onClick: () => setZoom(prev => Math.max(0.3, prev - 0.1))
+                    }, '−'),
+                    React.createElement('span', {
+                        key: 'zoom-level',
+                        className: 'w-14 text-center text-sm font-medium',
+                        style: { color: '#2b1d14' }
+                    }, `${Math.round(zoom * 100)}%`),
+                    React.createElement('button', {
+                        key: 'zoom-in',
+                        type: 'button',
+                        className: 'w-8 h-8 rounded-full flex items-center justify-center text-lg font-semibold transition hover:bg-[rgba(92,49,30,0.08)]',
+                        style: { color: '#5b2a1a' },
+                        onClick: () => setZoom(prev => Math.min(2, prev + 0.1))
+                    }, '+'),
+                    React.createElement('button', {
+                        key: 'zoom-reset',
+                        type: 'button',
+                        className: 'ml-2 px-3 py-1 rounded-full text-xs font-medium transition hover:bg-[rgba(92,49,30,0.08)]',
+                        style: { color: 'rgba(43, 29, 20, 0.6)' },
+                        onClick: () => { setZoom(1); setPan({ x: 0, y: 0 }); }
+                    }, 'Reset')
+                ])
             ])
         ])
     ]);
