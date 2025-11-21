@@ -43,6 +43,8 @@
         router: "#5b2a1a",
         edgeIdle: "rgba(92, 49, 30, 0.25)"
       };
+      var grabCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, grab`;
+      var grabbingCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%235b2a1a'/%3E%3C/svg%3E") 10 10, grabbing`;
       var familyPresets = [
         { id: "openai", label: "OpenAI", accent: "#b56747", models: ["GPT-4.1", "GPT-4o mini", "o1-preview"] },
         { id: "anthropic", label: "Anthropic", accent: "#c98454", models: ["Claude 3 Opus", "Claude 3 Haiku", "Claude 3.5 Sonnet"] },
@@ -757,7 +759,7 @@
               key: "graph-container",
               ref: containerRef,
               className: "relative flex-1 overflow-hidden",
-              style: { cursor: isPanning ? "grabbing" : "grab" },
+              style: { cursor: isPanning ? grabbingCursor : grabCursor },
               onClick: (e) => e.stopPropagation(),
               onWheel: (e) => {
                 e.preventDefault();
