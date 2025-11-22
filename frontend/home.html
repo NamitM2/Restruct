@@ -36,7 +36,6 @@
             font-family: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--sand-50);
             color: var(--ink);
-            min-height: 100vh;
             margin: 0;
             padding: 0;
         }
@@ -66,12 +65,57 @@
             background: var(--clay-700);
         }
 
-        .page-wrapper {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+        /* Reveal animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
 
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal-scale.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
+
+        /* Model Slider */
         .model-slider-container {
             width: 100%;
             overflow: hidden;
@@ -90,10 +134,6 @@
             animation: slide 25s linear infinite;
             width: fit-content;
             padding-left: 12px;
-        }
-
-        .model-slider:hover {
-            animation-play-state: paused;
         }
 
         .model-badge {
@@ -117,62 +157,70 @@
             display: block;
         }
 
-        /* Individual logo scaling for text normalization */
-        .model-badge img[src*="chatgpt-logo"] {
-            transform: scale(1.0);
-        }
-
-        .model-badge img[src*="claude-logo"] {
-            transform: scale(2.88);
-        }
-
-        .model-badge img[src*="qwen-logo"] {
-            transform: scale(1.0);
-        }
-
-        .model-badge img[src*="mistral-logo"] {
-            transform: scale(1.65);
-        }
-
-        .model-badge img[src*="perplexity-logo"] {
-            transform: scale(1.56);
-        }
-
-        .model-badge img[src*="grok-logo"] {
-            transform: scale(1.0);
-        }
-
-        .model-badge img[src*="deepseek-logo"] {
-            transform: scale(1.0);
-        }
-
-        .model-badge img[src*="llama-logo"] {
-            transform: scale(1.32);
-        }
-
-        .model-badge img[src*="gemini-logo"] {
-            transform: scale(4.0);
-        }
+        .model-badge img[src*="chatgpt-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="claude-logo"] { transform: scale(2.88); }
+        .model-badge img[src*="qwen-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="mistral-logo"] { transform: scale(1.65); }
+        .model-badge img[src*="perplexity-logo"] { transform: scale(1.56); }
+        .model-badge img[src*="grok-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="deepseek-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="llama-logo"] { transform: scale(1.32); }
+        .model-badge img[src*="gemini-logo"] { transform: scale(4.0); }
 
         @keyframes slide {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(calc(-120px * 9 - 12px * 9));
-            }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-120px * 9 - 12px * 9)); }
         }
 
+        /* Mesh Container */
+        .mesh-container {
+            position: relative;
+        }
+
+        /* Mesh Edges */
+        .mesh-edge {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 120px;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .mesh-edge.left {
+            left: 0;
+        }
+
+        .mesh-edge.right {
+            right: 0;
+        }
+
+        .mesh-edge canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Hero Section */
         .hero-section {
-            flex: 1;
+            min-height: 90vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 80px 40px;
             text-align: center;
-            max-width: 1200px;
-            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 1;
         }
 
         .logo-container {
@@ -195,12 +243,14 @@
         }
 
         .hero-text {
-            font-size: 28px;
+            font-size: 24px;
             line-height: 1.6;
             color: var(--ink);
             font-weight: 400;
-            margin-bottom: 60px;
-            max-width: 900px;
+            margin-bottom: 50px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .cta-buttons {
@@ -272,71 +322,392 @@
             background: rgba(142, 60, 44, 0.05);
             transform: translateY(-1px);
         }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 14px;
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-hint svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 120px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: var(--muted);
+            margin-bottom: 60px;
+            max-width: 600px;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            background: var(--sand-100);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .problem-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid var(--sand-200);
+        }
+
+        .problem-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(142, 60, 44, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .problem-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+
+        .problem-card p {
+            font-size: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* How It Works Section */
+        .how-section {
+            text-align: center;
+            background: var(--sand-50);
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .step-card {
+            flex: 1;
+            min-width: 280px;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .step-number {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .step-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+
+        .step-card p {
+            font-size: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .step-connector {
+            display: none;
+        }
+
+        @media (min-width: 900px) {
+            .step-connector {
+                display: flex;
+                align-items: center;
+                color: var(--sand-400);
+                font-size: 32px;
+            }
+        }
+
+        /* Features Section */
+        .features-section {
+            background: var(--sand-100);
+        }
+
+        .feature-row {
+            display: flex;
+            align-items: center;
+            gap: 80px;
+            margin-bottom: 100px;
+        }
+
+        .feature-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-row.reverse {
+            flex-direction: row-reverse;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-visual {
+            flex: 1;
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid var(--sand-200);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-visual-inner {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(201, 132, 84, 0.2), rgba(142, 60, 44, 0.1));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .feature-content h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--ink);
+        }
+
+        .feature-content p {
+            font-size: 18px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            color: var(--ink);
+            margin-bottom: 12px;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: var(--clay-600);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .feature-row, .feature-row.reverse {
+                flex-direction: column;
+                gap: 40px;
+            }
+        }
+
+        /* Stats Section */
+        .stats-section {
+            text-align: center;
+            background: linear-gradient(135deg, var(--clay-600), var(--clay-700));
+            color: var(--white);
+            padding: 100px 40px;
+        }
+
+        .stats-section .section-title {
+            color: var(--white);
+        }
+
+        .stats-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Final CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 140px 40px;
+            background: var(--sand-50);
+        }
+
+        .cta-section .section-title {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        .cta-section .section-subtitle {
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 40px;
+        }
+
+        .cta-section .primary-button {
+            padding: 20px 60px;
+            font-size: 20px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            background: var(--sand-100);
+            border-top: 1px solid var(--sand-200);
+            color: var(--muted);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="page-wrapper">
-        <!-- Model Slider -->
-        <div class="model-slider-container">
-            <div class="model-slider">
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
-                <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
-                <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
-                <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
-                <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
-                <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+    <!-- Model Slider -->
+    <div class="model-slider-container">
+        <div class="model-slider">
+            <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+            <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+            <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+            <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+            <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+            <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+            <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+            <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+            <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
-                <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
-                <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
-                <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
-                <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
-                <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+            <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+            <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+            <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+            <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+            <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+            <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+            <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+            <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+            <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
-                <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
-                <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
-                <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
-                <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
-                <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+            <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+            <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+            <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+            <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+            <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+            <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+            <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+            <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+            <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
-                <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
-                <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
-                <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
-                <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
-                <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
-            </div>
+            <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+            <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+            <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+            <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+            <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+            <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+            <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+            <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+            <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+        </div>
+    </div>
+
+    <!-- Mesh Container (wraps sections with mesh edges) -->
+    <div class="mesh-container" id="meshContainer">
+        <!-- Mesh Edges -->
+        <div class="mesh-edge left" id="meshLeft">
+            <canvas id="meshCanvasLeft"></canvas>
+        </div>
+        <div class="mesh-edge right" id="meshRight">
+            <canvas id="meshCanvasRight"></canvas>
         </div>
 
         <!-- Hero Section -->
-        <div class="hero-section">
-            <div class="logo-container">
+        <section class="hero-section" id="heroSection">
+            <div class="hero-content">
+            <div class="logo-container reveal">
                 <img src="assets/logo.png" alt="Restruct logo" draggable="false">
                 <h1>Restruct</h1>
             </div>
 
-            <p class="hero-text">
-                Restruct offers reliable, intelligent prompt-to-model routing that improves LLM performance while minimizing unnecessary spend. Combined with simplified API management, streamlined workflows, and customizable routing profiles, Restruct offers a flexible, optimized AI stack designed for maximum efficiency.
+            <p class="hero-text reveal delay-1">
+                Intelligent prompt-to-model routing that improves LLM performance while cutting costs. One API, every model, optimized automatically.
             </p>
 
-            <div class="cta-buttons">
+            <div class="cta-buttons reveal delay-2">
                 <a href="signin.html" class="primary-button">Try Restruct</a>
             </div>
 
-            <div class="download-section">
+            <div class="download-section reveal delay-3">
                 <p class="download-label">Download for:</p>
                 <div class="download-buttons">
                     <a href="#" class="download-button">Windows</a>
@@ -345,6 +716,362 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="scroll-hint">
+            <span>Scroll to explore</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section problem-section">
+        <h2 class="section-title reveal">The LLM Management Problem</h2>
+        <p class="section-subtitle reveal delay-1">Managing multiple AI providers shouldn't be this hard.</p>
+
+        <div class="problem-grid">
+            <div class="problem-card reveal delay-1">
+                <div class="problem-icon">$</div>
+                <h3>Cost Sprawl</h3>
+                <p>Different models, different pricing, different billing cycles. Costs spiral out of control without visibility.</p>
+            </div>
+            <div class="problem-card reveal delay-2">
+                <div class="problem-icon">~</div>
+                <h3>Inconsistent Results</h3>
+                <p>Not every prompt needs GPT-4. Using premium models for simple tasks wastes money and slows responses.</p>
+            </div>
+            <div class="problem-card reveal delay-3">
+                <div class="problem-icon">{}</div>
+                <h3>API Juggling</h3>
+                <p>Multiple API keys, different SDKs, varying rate limits. Integration complexity grows with each provider.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section how-section">
+        <h2 class="section-title reveal">How Restruct Works</h2>
+        <p class="section-subtitle reveal delay-1" style="margin-left: auto; margin-right: auto;">Three steps to smarter AI routing.</p>
+
+        <div class="steps-container">
+            <div class="step-card reveal delay-1">
+                <div class="step-number">1</div>
+                <h3>Connect Once</h3>
+                <p>Add your API keys for any provider. Restruct handles authentication and rate limiting automatically.</p>
+            </div>
+
+            <div class="step-connector reveal delay-2">→</div>
+
+            <div class="step-card reveal delay-2">
+                <div class="step-number">2</div>
+                <h3>Define Rules</h3>
+                <p>Create routing profiles that match prompts to optimal models based on complexity, cost, or speed.</p>
+            </div>
+
+            <div class="step-connector reveal delay-3">→</div>
+
+            <div class="step-card reveal delay-3">
+                <div class="step-number">3</div>
+                <h3>Send Requests</h3>
+                <p>Use one unified API endpoint. Restruct analyzes each prompt and routes it to the best model.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section features-section">
+        <div class="feature-row">
+            <div class="feature-content reveal-left">
+                <h3>Routing Lab</h3>
+                <p>Visually design routing logic with an intuitive node-based interface. Test prompts in real-time and see exactly how they'll be routed.</p>
+                <ul class="feature-list">
+                    <li>Drag-and-drop rule builder</li>
+                    <li>Real-time routing preview</li>
+                    <li>A/B testing built-in</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-right">
+                <div class="feature-visual-inner">Routing Lab</div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-content reveal-right">
+                <h3>Cost Analytics</h3>
+                <p>Track spending across all providers in one dashboard. Set budgets, get alerts, and identify optimization opportunities.</p>
+                <ul class="feature-list">
+                    <li>Unified billing view</li>
+                    <li>Cost-per-request breakdown</li>
+                    <li>Budget alerts</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-left">
+                <div class="feature-visual-inner">Analytics</div>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-content reveal-left">
+                <h3>Profile Builder</h3>
+                <p>Create reusable routing profiles for different use cases. Share configurations across teams and projects.</p>
+                <ul class="feature-list">
+                    <li>Shareable configurations</li>
+                    <li>Version control</li>
+                    <li>Team collaboration</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-right">
+                <div class="feature-visual-inner">Profiles</div>
+            </div>
+        </div>
+    </section>
+
+    </div><!-- End Mesh Container -->
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <h2 class="section-title reveal">Built for Performance</h2>
+        <p class="section-subtitle reveal delay-1" style="margin-left: auto; margin-right: auto;">Real results from intelligent routing.</p>
+
+        <div class="stats-grid">
+            <div class="stat-item reveal delay-1">
+                <div class="stat-number" data-target="40">0%</div>
+                <div class="stat-label">Average Cost Reduction</div>
+            </div>
+            <div class="stat-item reveal delay-2">
+                <div class="stat-number" data-target="99.9">0%</div>
+                <div class="stat-label">Uptime SLA</div>
+            </div>
+            <div class="stat-item reveal delay-3">
+                <div class="stat-number" data-target="50">&lt;0ms</div>
+                <div class="stat-label">Routing Latency</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="cta-section">
+        <h2 class="section-title reveal">Ready to Optimize Your AI Stack?</h2>
+        <p class="section-subtitle reveal delay-1">Start routing smarter today. No credit card required.</p>
+        <a href="signin.html" class="primary-button reveal delay-2">Get Started Free</a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2024 Restruct. Intelligent AI Routing.</p>
+    </footer>
+
+    <script>
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+
+                    // Animate stat counters
+                    if (entry.target.classList.contains('stat-item')) {
+                        const numberEl = entry.target.querySelector('.stat-number');
+                        const target = parseFloat(numberEl.dataset.target);
+                        animateCounter(numberEl, target);
+                    }
+                } else {
+                    // Remove visible class when element leaves viewport (allows re-animation)
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all reveal elements
+        document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .stat-item').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Counter animation
+        function animateCounter(element, target) {
+            const duration = 2000;
+            const start = 0;
+            const startTime = performance.now();
+            const isPercentage = element.textContent.includes('%');
+            const isLatency = element.textContent.includes('ms');
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = start + (target - start) * easeOut;
+
+                if (isLatency) {
+                    element.textContent = `<${Math.round(current)}ms`;
+                } else if (target === 99.9) {
+                    element.textContent = `${current.toFixed(1)}%`;
+                } else {
+                    element.textContent = `${Math.round(current)}%`;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Trigger hero animations on load
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.hero-section .reveal').forEach(el => {
+                el.classList.add('visible');
+            });
+        });
+
+        // Mesh Animation
+        function initMesh(canvasId, containerId) {
+            const canvas = document.getElementById(canvasId);
+            const container = document.getElementById(containerId);
+            if (!canvas || !container) return;
+
+            const ctx = canvas.getContext('2d');
+            const config = {
+                gridSize: 35,
+                gravityStrength: 18,
+                influenceRadius: 100,
+                dampening: 0.95,
+                returnSpeed: 0.05,
+                lineColor: 'rgba(142, 60, 44, 0.15)',
+                maxDisplacement: 20
+            };
+
+            let points = [];
+            let originalPoints = [];
+            let gridDimensions = { cols: 0, rows: 0 };
+            let mouse = { x: -1000, y: -1000, isActive: false };
+
+            function resizeCanvas() {
+                const rect = container.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                initializeGrid();
+            }
+
+            function initializeGrid() {
+                points = [];
+                originalPoints = [];
+                const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+                const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+                gridDimensions = { cols, rows };
+
+                for (let i = 0; i < cols; i++) {
+                    for (let j = 0; j < rows; j++) {
+                        const x = i * config.gridSize;
+                        const y = j * config.gridSize;
+                        points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
+                        originalPoints.push({ x, y });
+                    }
+                }
+            }
+
+            function updatePoints() {
+                points.forEach((point, index) => {
+                    const original = originalPoints[index];
+                    const dx = mouse.x - point.x;
+                    const dy = mouse.y - point.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (mouse.isActive && distance < config.influenceRadius) {
+                        const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                        const angle = Math.atan2(dy, dx);
+                        point.vx += Math.cos(angle) * force * 0.01;
+                        point.vy += Math.sin(angle) * force * 0.01;
+                    } else {
+                        point.vx += (original.x - point.x) * config.returnSpeed;
+                        point.vy += (original.y - point.y) * config.returnSpeed;
+                    }
+
+                    point.vx *= config.dampening;
+                    point.vy *= config.dampening;
+                    point.x += point.vx;
+                    point.y += point.vy;
+
+                    const dispX = point.x - original.x;
+                    const dispY = point.y - original.y;
+                    const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+
+                    if (displacement > config.maxDisplacement) {
+                        const scale = config.maxDisplacement / displacement;
+                        point.x = original.x + dispX * scale;
+                        point.y = original.y + dispY * scale;
+                    }
+                });
+            }
+
+            function drawMesh() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const { cols, rows } = gridDimensions;
+                if (!cols || !rows || points.length === 0) return;
+
+                ctx.strokeStyle = config.lineColor;
+                ctx.lineWidth = 1;
+
+                for (let j = 0; j < rows; j++) {
+                    ctx.beginPath();
+                    for (let i = 0; i < cols; i++) {
+                        const index = i * rows + j;
+                        const point = points[index];
+                        if (!point) continue;
+                        if (i === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+
+                for (let i = 0; i < cols; i++) {
+                    ctx.beginPath();
+                    for (let j = 0; j < rows; j++) {
+                        const index = i * rows + j;
+                        const point = points[index];
+                        if (!point) continue;
+                        if (j === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            function animate() {
+                updatePoints();
+                drawMesh();
+                requestAnimationFrame(animate);
+            }
+
+            const meshContainer = document.getElementById('meshContainer');
+
+            window.addEventListener('resize', resizeCanvas);
+            if (meshContainer) {
+                meshContainer.addEventListener('mousemove', (e) => {
+                    const rect = container.getBoundingClientRect();
+                    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
+                });
+                meshContainer.addEventListener('mouseleave', () => {
+                    mouse.isActive = false;
+                });
+            }
+
+            setTimeout(() => {
+                resizeCanvas();
+                requestAnimationFrame(animate);
+            }, 50);
+        }
+
+        // Initialize both mesh edges
+        initMesh('meshCanvasLeft', 'meshLeft');
+        initMesh('meshCanvasRight', 'meshRight');
+    </script>
 </body>
 </html>

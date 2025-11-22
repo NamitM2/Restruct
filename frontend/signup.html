@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Restruct</title>
+    <title>Sign Up - Restruct</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -84,7 +84,7 @@
             align-items: center;
         }
 
-        .signin-container {
+        .signup-container {
             flex: 1;
             display: flex;
             align-items: center;
@@ -108,9 +108,15 @@
             height: 100%;
         }
 
-        .signin-card {
+        .signup-card {
             position: relative;
             z-index: 1;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 48px;
+            box-shadow: 0 2px 8px rgba(43, 29, 20, 0.08);
+            max-width: 480px;
+            width: 100%;
         }
 
         .model-slider {
@@ -188,16 +194,7 @@
             }
         }
 
-        .signin-card {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 48px;
-            box-shadow: 0 2px 8px rgba(43, 29, 20, 0.08);
-            max-width: 480px;
-            width: 100%;
-        }
-
-        .signin-header {
+        .signup-header {
             text-align: center;
             margin-bottom: 40px;
         }
@@ -221,7 +218,7 @@
             color: var(--ink);
         }
 
-        .signin-header p {
+        .signup-header p {
             color: var(--muted);
             font-size: 16px;
         }
@@ -260,7 +257,18 @@
             color: rgba(43, 29, 20, 0.4);
         }
 
-        .signin-button {
+        .form-group .error {
+            border-color: #c94444;
+        }
+
+        .error-message {
+            color: #c94444;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .signup-button {
             width: 100%;
             padding: 14px 24px;
             background: var(--clay-600);
@@ -275,13 +283,13 @@
             margin-top: 8px;
         }
 
-        .signin-button:hover {
+        .signup-button:hover {
             background: var(--clay-700);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(142, 60, 44, 0.2);
         }
 
-        .signin-button:active {
+        .signup-button:active {
             transform: translateY(0);
         }
 
@@ -301,63 +309,6 @@
 
         .form-footer a:hover {
             color: var(--clay-700);
-            text-decoration: underline;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 24px 0;
-            position: relative;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 100%;
-            height: 1px;
-            background: var(--sand-200);
-        }
-
-        .divider span {
-            background: var(--white);
-            padding: 0 16px;
-            position: relative;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .remember-forgot {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            font-size: 14px;
-        }
-
-        .remember-forgot label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            color: var(--ink);
-        }
-
-        .remember-forgot input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--clay-600);
-        }
-
-        .remember-forgot a {
-            color: var(--clay-600);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .remember-forgot a:hover {
             text-decoration: underline;
         }
     </style>
@@ -409,21 +360,21 @@
             </div>
         </div>
 
-        <!-- Sign In Section -->
-        <div class="signin-container" id="signinContainer">
+        <!-- Sign Up Section -->
+        <div class="signup-container" id="signupContainer">
             <div class="mesh-background" id="meshBackground">
                 <canvas id="meshCanvas"></canvas>
             </div>
-            <div class="signin-card">
-                <div class="signin-header">
+            <div class="signup-card">
+                <div class="signup-header">
                     <div class="logo-container">
                         <img src="assets/logo.png" alt="Restruct logo" draggable="false">
                         <h1>Restruct</h1>
                     </div>
-                    <p>Sign in to your account</p>
+                    <p>Create your account</p>
                 </div>
 
-                <form id="signinForm">
+                <form id="signupForm">
                     <div class="form-group">
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" placeholder="Enter your email" required>
@@ -431,22 +382,20 @@
 
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <input type="password" id="password" name="password" placeholder="Create a password" required>
                     </div>
 
-                    <div class="remember-forgot">
-                        <label>
-                            <input type="checkbox" name="remember" id="remember">
-                            Remember me
-                        </label>
-                        <a href="#">Forgot password?</a>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                        <p class="error-message" id="passwordError">Passwords do not match</p>
                     </div>
 
-                    <button type="submit" class="signin-button">Sign In</button>
+                    <button type="submit" class="signup-button">Sign Up</button>
                 </form>
 
                 <div class="form-footer">
-                    Don't have an account? <a href="signup.html">Sign up</a>
+                    Already have an account? <a href="signin.html">Sign in</a>
                 </div>
             </div>
         </div>
@@ -593,14 +542,28 @@
         })();
 
         // Form submit handler
-        document.getElementById('signinForm').addEventListener('submit', function(e) {
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordError = document.getElementById('passwordError');
+            const confirmInput = document.getElementById('confirmPassword');
 
-            // TODO: Add actual authentication logic here
-            console.log('Sign in attempt:', { email, password });
+            // Reset error state
+            passwordError.style.display = 'none';
+            confirmInput.classList.remove('error');
+
+            // Check password match
+            if (password !== confirmPassword) {
+                passwordError.style.display = 'block';
+                confirmInput.classList.add('error');
+                return;
+            }
+
+            // TODO: Add actual registration logic here
+            console.log('Sign up attempt:', { email, password });
 
             // For now, just redirect to main app
             window.location.href = 'index.html';
