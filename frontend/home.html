@@ -518,7 +518,184 @@
             align-items: center;
             justify-content: center;
             font-size: 48px;
+            position: relative;
+            overflow: hidden;
         }
+
+        /* Routing Lab Animation */
+        .routing-mockup {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .routing-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .routing-node.input { background: var(--clay-600); left: 15%; top: 50%; transform: translateY(-50%); }
+        .routing-node.router { background: linear-gradient(135deg, var(--clay-400), var(--clay-600)); left: 50%; top: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; border-radius: 50%; }
+        .routing-node.output1 { background: var(--clay-500); right: 15%; top: 20%; }
+        .routing-node.output2 { background: var(--clay-500); right: 15%; top: 50%; transform: translateY(-50%); }
+        .routing-node.output3 { background: var(--clay-500); right: 15%; bottom: 20%; }
+
+        .routing-line {
+            position: absolute;
+            height: 2px;
+            background: var(--clay-400);
+            transform-origin: left center;
+        }
+
+        .routing-line::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--clay-600);
+            border-radius: 50%;
+            top: -3px;
+            animation: flowDot 2s ease-in-out infinite;
+        }
+
+        .routing-line.line1 { left: calc(15% + 50px); top: 50%; width: calc(35% - 30px); }
+        .routing-line.line2 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); transform: rotate(-25deg); animation-delay: 0.3s; }
+        .routing-line.line3 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); }
+        .routing-line.line4 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); transform: rotate(25deg); }
+
+        .routing-line.line2::after { animation-delay: 0.3s; }
+        .routing-line.line3::after { animation-delay: 0.6s; }
+        .routing-line.line4::after { animation-delay: 0.9s; }
+
+        @keyframes flowDot {
+            0% { left: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: calc(100% - 8px); opacity: 0; }
+        }
+
+        /* Analytics Animation */
+        .analytics-mockup {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            height: 100%;
+            padding: 20px;
+        }
+
+        .analytics-bar {
+            width: 40px;
+            background: linear-gradient(to top, var(--clay-600), var(--clay-400));
+            border-radius: 6px 6px 0 0;
+            animation: barGrow 2s ease-out infinite;
+        }
+
+        .analytics-bar:nth-child(1) { animation-delay: 0s; }
+        .analytics-bar:nth-child(2) { animation-delay: 0.2s; }
+        .analytics-bar:nth-child(3) { animation-delay: 0.4s; }
+        .analytics-bar:nth-child(4) { animation-delay: 0.6s; }
+        .analytics-bar:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes barGrow {
+            0%, 100% { height: 20%; }
+            50% { height: var(--bar-height, 60%); }
+        }
+
+        /* Profiles Animation */
+        .profiles-mockup {
+            position: relative;
+            width: 200px;
+            height: 140px;
+        }
+
+        .profile-card {
+            position: absolute;
+            width: 180px;
+            height: 80px;
+            background: var(--white);
+            border: 2px solid var(--sand-200);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(43, 29, 20, 0.1);
+            transition: all 0.5s ease;
+        }
+
+        .profile-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+
+        .profile-card-bar {
+            height: 8px;
+            background: var(--sand-200);
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .profile-card-bar.filled {
+            background: linear-gradient(90deg, var(--clay-400), var(--clay-600));
+            width: 70%;
+        }
+
+        .profile-card:nth-child(1) { top: 0; left: 10px; z-index: 3; animation: cardFloat 3s ease-in-out infinite; }
+        .profile-card:nth-child(2) { top: 20px; left: 0; z-index: 2; opacity: 0.7; animation: cardFloat 3s ease-in-out infinite 0.5s; }
+        .profile-card:nth-child(3) { top: 40px; left: 20px; z-index: 1; opacity: 0.4; animation: cardFloat 3s ease-in-out infinite 1s; }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Code Block Animation */
+        .code-mockup {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .code-line {
+            opacity: 0;
+            animation: typeIn 0.5s ease forwards;
+        }
+
+        .code-line:nth-child(1) { animation-delay: 0.2s; }
+        .code-line:nth-child(2) { animation-delay: 0.5s; }
+        .code-line:nth-child(3) { animation-delay: 0.8s; }
+        .code-line:nth-child(4) { animation-delay: 1.1s; }
+        .code-line:nth-child(5) { animation-delay: 1.4s; }
+        .code-line:nth-child(6) { animation-delay: 1.7s; }
+        .code-line:nth-child(7) { animation-delay: 2.0s; }
+        .code-line:nth-child(8) { animation-delay: 2.3s; }
+
+        @keyframes typeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .code-keyword { color: #c586c0; }
+        .code-string { color: #ce9178; }
+        .code-function { color: #dcdcaa; }
+        .code-variable { color: #9cdcfe; }
+        .code-comment { color: #6a9955; }
+        .code-bracket { color: #ffd700; }
 
         .feature-content h3 {
             font-size: 32px;
@@ -792,7 +969,19 @@
                 </ul>
             </div>
             <div class="feature-visual reveal-right">
-                <div class="feature-visual-inner">Routing Lab</div>
+                <div class="feature-visual-inner">
+                    <div class="routing-mockup">
+                        <div class="routing-node input">IN</div>
+                        <div class="routing-line line1"></div>
+                        <div class="routing-node router">R</div>
+                        <div class="routing-line line2"></div>
+                        <div class="routing-line line3"></div>
+                        <div class="routing-line line4"></div>
+                        <div class="routing-node output1">GPT</div>
+                        <div class="routing-node output2">C</div>
+                        <div class="routing-node output3">G</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -807,7 +996,15 @@
                 </ul>
             </div>
             <div class="feature-visual reveal-left">
-                <div class="feature-visual-inner">Analytics</div>
+                <div class="feature-visual-inner">
+                    <div class="analytics-mockup">
+                        <div class="analytics-bar" style="--bar-height: 45%"></div>
+                        <div class="analytics-bar" style="--bar-height: 70%"></div>
+                        <div class="analytics-bar" style="--bar-height: 55%"></div>
+                        <div class="analytics-bar" style="--bar-height: 85%"></div>
+                        <div class="analytics-bar" style="--bar-height: 60%"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -822,7 +1019,51 @@
                 </ul>
             </div>
             <div class="feature-visual reveal-right">
-                <div class="feature-visual-inner">Profiles</div>
+                <div class="feature-visual-inner">
+                    <div class="profiles-mockup">
+                        <div class="profile-card">
+                            <div class="profile-card-title">Fast & Cheap</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                        <div class="profile-card">
+                            <div class="profile-card-title">Balanced</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                        <div class="profile-card">
+                            <div class="profile-card-title">Quality</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-content reveal-right">
+                <h3>Simple API</h3>
+                <p>Integrate Restruct with just a few lines of code. Use your routing profiles directly from any Python environment.</p>
+                <ul class="feature-list">
+                    <li>One import, one function call</li>
+                    <li>Profile-based routing</li>
+                    <li>Works anywhere Python runs</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-left">
+                <div class="feature-visual-inner">
+                    <div class="code-mockup">
+                        <div class="code-line"><span class="code-keyword">from</span> <span class="code-variable">restruct</span> <span class="code-keyword">import</span> <span class="code-function">route</span></div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="code-comment"># Route with your profile</span></div>
+                        <div class="code-line"><span class="code-variable">response</span> = <span class="code-function">route</span><span class="code-bracket">(</span></div>
+                        <div class="code-line">    <span class="code-variable">prompt</span>=<span class="code-string">"Explain quantum computing"</span>,</div>
+                        <div class="code-line">    <span class="code-variable">profile</span>=<span class="code-string">"fast-cheap"</span></div>
+                        <div class="code-line"><span class="code-bracket">)</span></div>
+                        <div class="code-line"><span class="code-keyword">print</span><span class="code-bracket">(</span><span class="code-variable">response</span><span class="code-bracket">)</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
