@@ -40,22 +40,55 @@ const siteColors = {
 };
 
 // Custom burgundy cursors
-const grabCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, grab`;
-const grabbingCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%235b2a1a'/%3E%3C/svg%3E") 10 10, grabbing`;
+const defaultCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
+const activeCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%235b2a1a' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
 
-const familyPresets = [
-    { id: 'openai', label: 'OpenAI', accent: '#b56747', models: ['GPT-4.1', 'GPT-4o mini', 'o1-preview'] },
-    { id: 'anthropic', label: 'Anthropic', accent: '#c98454', models: ['Claude 3 Opus', 'Claude 3 Haiku', 'Claude 3.5 Sonnet'] },
-    { id: 'google', label: 'Google', accent: '#8e3c2c', models: ['Gemini 2.5 Pro', 'Gemini 1.5 Flash', 'Gemini Nano'] },
-    { id: 'mistral', label: 'Mistral', accent: '#d0b190', models: ['Mistral Large', 'Mistral Small', 'Mixtral 8x7b'] },
-    { id: 'local', label: 'Local Models', accent: '#b56747', models: ['Llama 3 Local', 'Phi-4 Local', 'Custom QLoRA'] },
-    { id: 'specialized', label: 'Specialized Models', accent: '#c98454', models: ['Legal FT', 'Support FT', 'Creative FT'] },
+// Global cursor styles injected once
+const cursorStyles = `
+  * { cursor: ${defaultCursor} !important; }
+  *:active { cursor: ${activeCursor} !important; }
+  input:focus, textarea:focus { cursor: text !important; }
+  input:focus, textarea:focus, select:focus {
+    outline: none !important;
+    border-color: #b56747 !important;
+    box-shadow: 0 0 0 2px rgba(181, 103, 71, 0.15) !important;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+`;
+
+const providerPresets = [
+    { id: 'openai', label: 'OpenAI', icon: 'O', models: ['GPT-4o', 'GPT-4o mini', 'o1-preview'] },
+    { id: 'anthropic', label: 'Anthropic', icon: 'A', models: ['Claude 3 Opus', 'Claude 3 Haiku', 'Claude 3.5 Sonnet'] },
+    { id: 'google', label: 'Google', icon: 'G', models: ['Gemini 2.5 Pro', 'Gemini 1.5 Flash', 'Gemini Nano'] },
+    { id: 'mistral', label: 'Mistral', icon: 'M', models: ['Mistral Large', 'Mistral Small', 'Mixtral 8x7b'] },
+    { id: 'qwen', label: 'Qwen', icon: 'Q', models: ['Qwen 2.5', 'Qwen 2'] },
 ];
 
-const defaultPriorities = [
-    { id: 'cost', label: 'Cost', subtitle: 'Spend efficiency', weight: 0.35, accent: siteColors.cost },
-    { id: 'quality', label: 'Quality', subtitle: 'Model fidelity', weight: 0.45, accent: siteColors.quality },
-    { id: 'latency', label: 'Latency', subtitle: 'Response speed', weight: 0.20, accent: siteColors.latency },
+const defaultWeights = [
+    { id: 'quality', label: 'Quality', weight: 0.45 },
+    { id: 'cost', label: 'Cost', weight: 0.35 },
+    { id: 'latency', label: 'Latency', weight: 0.20 },
+];
+
+const defaultHardLimits = {
+    maxCostPerCall: 300,
+    maxOutputTokens: 10000,
+    maxLatency: 0.20,
+    maxRateLimits: 0,
+};
+
+const ruleConditions = [
+    { id: 'tokenCount', label: 'token count' },
+    { id: 'promptContains', label: 'prompt contains' },
+    { id: 'expectedOutputTokens', label: 'expected output tokens' },
+];
+
+const ruleActions = [
+    { id: 'preferCheap', label: 'prefer cheap models' },
+    { id: 'boostClaude', label: 'boost Claude Code' },
+    { id: 'useGpt4oOpus', label: 'use GPT-4o or Claude Opus' },
 ];
 
 function ProfileBuilderShell() {
@@ -78,47 +111,318 @@ function ProfileBuilderShell() {
     }) : null;
 }
 
-const NodeCard = ({ title, subtitle, accent, onClick, active, nodeRef }) => {
-    const [isHovered, setIsHovered] = useState(false);
+// Slider component
+const WeightSlider = ({ label, value, onChange, showWeight = true }) => {
+    return React.createElement('div', {
+        className: 'flex items-center justify-between gap-3'
+    }, [
+        React.createElement('span', {
+            key: 'label',
+            className: 'text-sm flex-1',
+            style: { color: '#2b1d14' }
+        }, label),
+        React.createElement('input', {
+            key: 'slider',
+            type: 'range',
+            min: '0',
+            max: '1',
+            step: '0.05',
+            value: value,
+            onChange: e => onChange(parseFloat(e.target.value)),
+            className: 'w-24 h-1 appearance-none rounded-full bg-[rgba(92,49,30,0.15)]',
+            style: { accentColor: '#b56747' }
+        }),
+        showWeight && React.createElement('span', {
+            key: 'value',
+            className: 'text-xs w-16 text-right',
+            style: { color: 'rgba(43, 29, 20, 0.6)' }
+        }, `Weight ${value.toFixed(2)}`)
+    ]);
+};
 
-    return React.createElement('button', {
+// Number input component
+const NumberInput = ({ label, value, onChange, step = 1 }) => {
+    return React.createElement('div', {
+        className: 'flex items-center justify-between gap-3'
+    }, [
+        React.createElement('span', {
+            key: 'label',
+            className: 'text-sm flex-1',
+            style: { color: '#2b1d14' }
+        }, label),
+        React.createElement('input', {
+            key: 'input',
+            type: 'number',
+            value: value,
+            step: step,
+            onChange: e => onChange(parseFloat(e.target.value) || 0),
+            className: 'w-20 px-2 py-1 text-sm text-right rounded-lg border bg-white',
+            style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+        })
+    ]);
+};
+
+// Toggle switch component
+const Toggle = ({ label, icon, enabled, onChange }) => {
+    return React.createElement('div', {
+        className: 'flex items-center justify-between gap-2'
+    }, [
+        React.createElement('div', {
+            key: 'label',
+            className: 'flex items-center gap-2'
+        }, [
+            icon && React.createElement('span', {
+                key: 'icon',
+                className: 'w-5 h-5 rounded text-xs flex items-center justify-center font-semibold',
+                style: { backgroundColor: 'rgba(92, 49, 30, 0.1)', color: '#5b2a1a' }
+            }, icon),
+            React.createElement('span', {
+                key: 'text',
+                className: 'text-sm',
+                style: { color: '#2b1d14' }
+            }, label)
+        ]),
+        React.createElement('button', {
+            key: 'toggle',
+            type: 'button',
+            onClick: () => onChange(!enabled),
+            className: 'w-10 h-5 rounded-full transition-colors relative',
+            style: { backgroundColor: enabled ? '#b56747' : 'rgba(92, 49, 30, 0.15)' }
+        }, React.createElement('span', {
+            className: 'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+            style: { left: enabled ? '22px' : '2px' }
+        }))
+    ]);
+};
+
+// Rule card component (simplified - just shows name)
+const RuleCard = ({ rule, onDelete }) => {
+    return React.createElement('div', {
+        className: 'rounded-xl border p-3 mb-2 flex items-center justify-between',
+        style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: 'rgba(92, 49, 30, 0.02)' }
+    }, [
+        React.createElement('span', {
+            key: 'name',
+            className: 'text-sm font-medium',
+            style: { color: '#2b1d14' }
+        }, rule.name),
+        React.createElement('button', {
+            key: 'delete',
+            type: 'button',
+            onClick: onDelete,
+            className: 'text-xs px-2 py-1 rounded transition hover:bg-[rgba(142,60,44,0.1)]',
+            style: { color: '#8e3c2c' }
+        }, '×')
+    ]);
+};
+
+// Rule editor modal
+const RuleEditorModal = ({ isOpen, onClose, onSave }) => {
+    const [name, setName] = useState('');
+    const [condition, setCondition] = useState('tokenCount');
+    const [operator, setOperator] = useState('>');
+    const [value, setValue] = useState('');
+    const [action, setAction] = useState('preferCheap');
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        if (!name.trim()) return;
+        onSave({ id: Date.now(), name, condition, operator, value, action });
+        setName('');
+        setCondition('tokenCount');
+        setOperator('>');
+        setValue('');
+        setAction('preferCheap');
+        onClose();
+    };
+
+    return React.createElement('div', {
+        className: 'fixed inset-0 z-50 flex items-center justify-center',
+        style: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+        onClick: onClose
+    }, React.createElement('div', {
+        className: 'bg-white rounded-2xl p-6 w-96 shadow-2xl',
+        style: { color: '#2b1d14' },
+        onClick: e => e.stopPropagation()
+    }, [
+        React.createElement('h3', {
+            key: 'title',
+            className: 'text-lg font-semibold mb-4',
+            style: { color: '#5b2a1a' }
+        }, 'Create New Rule'),
+        React.createElement('div', {
+            key: 'name-field',
+            className: 'mb-4'
+        }, [
+            React.createElement('label', {
+                key: 'label',
+                className: 'text-xs uppercase tracking-wider mb-2 block',
+                style: { color: 'rgba(43, 29, 20, 0.5)' }
+            }, 'Rule Name'),
+            React.createElement('input', {
+                key: 'input',
+                type: 'text',
+                value: name,
+                onChange: e => setName(e.target.value),
+                placeholder: 'e.g., Prefer cheap for long prompts',
+                className: 'w-full px-3 py-2 rounded-lg border text-sm',
+                style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+            })
+        ]),
+        React.createElement('div', {
+            key: 'condition-field',
+            className: 'mb-4'
+        }, [
+            React.createElement('label', {
+                key: 'label',
+                className: 'text-xs uppercase tracking-wider mb-2 block',
+                style: { color: 'rgba(43, 29, 20, 0.5)' }
+            }, 'Condition'),
+            React.createElement('div', {
+                key: 'inputs',
+                className: 'flex gap-2'
+            }, [
+                React.createElement('select', {
+                    key: 'condition',
+                    value: condition,
+                    onChange: e => setCondition(e.target.value),
+                    className: 'flex-1 text-sm px-2 py-2 rounded-lg border bg-white',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+                }, ruleConditions.map(c => React.createElement('option', { key: c.id, value: c.id }, c.label))),
+                React.createElement('select', {
+                    key: 'operator',
+                    value: operator,
+                    onChange: e => setOperator(e.target.value),
+                    className: 'w-16 text-sm px-2 py-2 rounded-lg border bg-white',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+                }, [
+                    React.createElement('option', { key: '>', value: '>' }, '>'),
+                    React.createElement('option', { key: '<', value: '<' }, '<'),
+                    React.createElement('option', { key: '=', value: '=' }, '='),
+                ]),
+                React.createElement('input', {
+                    key: 'value',
+                    type: 'text',
+                    value: value,
+                    onChange: e => setValue(e.target.value),
+                    placeholder: condition === 'promptContains' ? 'text' : '300',
+                    className: 'w-20 text-sm px-2 py-2 rounded-lg border bg-white',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+                })
+            ])
+        ]),
+        React.createElement('div', {
+            key: 'action-field',
+            className: 'mb-6'
+        }, [
+            React.createElement('label', {
+                key: 'label',
+                className: 'text-xs uppercase tracking-wider mb-2 block',
+                style: { color: 'rgba(43, 29, 20, 0.5)' }
+            }, 'Then'),
+            React.createElement('select', {
+                key: 'action',
+                value: action,
+                onChange: e => setAction(e.target.value),
+                className: 'w-full text-sm px-3 py-2 rounded-lg border bg-white',
+                style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+            }, ruleActions.map(a => React.createElement('option', { key: a.id, value: a.id }, a.label)))
+        ]),
+        React.createElement('div', {
+            key: 'buttons',
+            className: 'flex gap-3'
+        }, [
+            React.createElement('button', {
+                key: 'cancel',
+                type: 'button',
+                onClick: onClose,
+                className: 'flex-1 py-2 rounded-lg border text-sm',
+                style: { borderColor: 'rgba(92, 49, 30, 0.2)', color: 'rgba(43, 29, 20, 0.7)' }
+            }, 'Cancel'),
+            React.createElement('button', {
+                key: 'save',
+                type: 'button',
+                onClick: handleSave,
+                className: 'flex-1 py-2 rounded-lg text-sm font-semibold transition hover:opacity-90',
+                style: { background: 'linear-gradient(135deg, #c98454, #8e3c2c)', color: '#fffdf9' }
+            }, 'Create Rule')
+        ])
+    ]));
+};
+
+// Mini node card for graph
+const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle }) => {
+    return React.createElement('div', {
         ref: nodeRef,
-        type: 'button',
-        onClick,
-        onMouseEnter: () => setIsHovered(true),
-        onMouseLeave: () => setIsHovered(false),
-        className: `relative w-full overflow-hidden rounded-xl border px-3 py-1.5 text-left transition-all ${
-            active ? 'bg-white border-[#8e3c2c] shadow-lg' : 'bg-white border-[rgba(92,49,30,0.12)]'
-        }`,
-        style: {
-            boxShadow: active ? '0 6px 16px rgba(92, 49, 30, 0.12)' : '0 3px 8px rgba(92, 49, 30, 0.06)',
-            transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-            backgroundColor: '#ffffff',
-        }
+        className: `relative rounded-xl border px-3 py-2 transition-all cursor-pointer ${active ? 'border-[#8e3c2c] shadow-lg' : 'border-[rgba(92,49,30,0.12)]'}`,
+        style: { backgroundColor: '#ffffff', minWidth: '120px' },
+        onClick
     }, [
         React.createElement('div', {
             key: 'bg',
-            className: 'pointer-events-none absolute inset-0 opacity-15',
+            className: 'pointer-events-none absolute inset-0 rounded-xl opacity-15',
             style: { background: `radial-gradient(circle at top, ${accent}40, transparent)` }
         }),
         React.createElement('div', {
             key: 'content',
-            className: 'relative flex flex-col gap-0.5'
+            className: 'relative flex items-center justify-between gap-2'
         }, [
-            React.createElement('p', {
-                key: 'title',
-                className: 'text-sm font-semibold',
-                style: { color: '#2b1d14' }
-            }, title),
-            subtitle && React.createElement('p', {
-                key: 'subtitle',
-                className: 'text-xs',
-                style: { color: 'rgba(43, 29, 20, 0.6)' }
-            }, subtitle)
+            React.createElement('div', { key: 'text' }, [
+                React.createElement('p', {
+                    key: 'title',
+                    className: 'text-sm font-semibold',
+                    style: { color: '#2b1d14' }
+                }, title),
+                subtitle && React.createElement('p', {
+                    key: 'subtitle',
+                    className: 'text-xs',
+                    style: { color: 'rgba(43, 29, 20, 0.6)' }
+                }, subtitle)
+            ]),
+            hasToggle && React.createElement('button', {
+                key: 'toggle',
+                type: 'button',
+                onClick: e => { e.stopPropagation(); onToggle(!enabled); },
+                className: 'w-8 h-4 rounded-full transition-colors relative',
+                style: { backgroundColor: enabled ? '#b56747' : 'rgba(92, 49, 30, 0.15)' }
+            }, React.createElement('span', {
+                className: 'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform',
+                style: { left: enabled ? '17px' : '2px' }
+            }))
         ])
     ]);
 };
 
+// Weight bar chart for summary
+const WeightBarChart = ({ weights }) => {
+    const maxWeight = Math.max(...weights.map(w => w.weight));
+    const labels = ['Q', 'C', 'L'];
+
+    return React.createElement('div', {
+        className: 'flex items-end gap-1 h-16'
+    }, weights.map((w, i) => React.createElement('div', {
+        key: w.id,
+        className: 'flex flex-col items-center gap-1'
+    }, [
+        React.createElement('div', {
+            key: 'bar',
+            className: 'w-4 rounded-t',
+            style: {
+                height: `${(w.weight / maxWeight) * 48}px`,
+                backgroundColor: '#c98454',
+                minHeight: '4px'
+            }
+        }),
+        React.createElement('span', {
+            key: 'label',
+            className: 'text-xs',
+            style: { color: 'rgba(43, 29, 20, 0.5)' }
+        }, labels[i] || w.label[0])
+    ])));
+};
+
+// Mesh background
 const MeshLensBackground = () => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -148,7 +452,6 @@ const MeshLensBackground = () => {
         const resizeCanvas = () => {
             const rect = container.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
-
             canvas.width = rect.width;
             canvas.height = rect.height;
             initializeGrid();
@@ -157,26 +460,15 @@ const MeshLensBackground = () => {
         const initializeGrid = () => {
             pointsRef.current = [];
             originalPointsRef.current = [];
-
             const cols = Math.ceil(canvas.width / config.gridSize) + 1;
             const rows = Math.ceil(canvas.height / config.gridSize) + 1;
-
             gridDimensionsRef.current = { cols, rows };
 
             for (let i = 0; i < cols; i++) {
                 for (let j = 0; j < rows; j++) {
                     const x = i * config.gridSize;
                     const y = j * config.gridSize;
-
-                    pointsRef.current.push({
-                        x: x,
-                        y: y,
-                        vx: 0,
-                        vy: 0,
-                        originalX: x,
-                        originalY: y
-                    });
-
+                    pointsRef.current.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
                     originalPointsRef.current.push({ x, y });
                 }
             }
@@ -185,7 +477,6 @@ const MeshLensBackground = () => {
         const updatePoints = () => {
             pointsRef.current.forEach((point, index) => {
                 const original = originalPointsRef.current[index];
-
                 const dx = mouseRef.current.x - point.x;
                 const dy = mouseRef.current.y - point.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
@@ -193,20 +484,15 @@ const MeshLensBackground = () => {
                 if (mouseRef.current.isActive && distance < config.influenceRadius) {
                     const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
                     const angle = Math.atan2(dy, dx);
-
                     point.vx += Math.cos(angle) * force * 0.01;
                     point.vy += Math.sin(angle) * force * 0.01;
                 } else {
-                    const returnX = (original.x - point.x) * config.returnSpeed;
-                    const returnY = (original.y - point.y) * config.returnSpeed;
-
-                    point.vx += returnX;
-                    point.vy += returnY;
+                    point.vx += (original.x - point.x) * config.returnSpeed;
+                    point.vy += (original.y - point.y) * config.returnSpeed;
                 }
 
                 point.vx *= config.dampening;
                 point.vy *= config.dampening;
-
                 point.x += point.vx;
                 point.y += point.vy;
 
@@ -224,7 +510,6 @@ const MeshLensBackground = () => {
 
         const drawMesh = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             const { cols, rows } = gridDimensionsRef.current;
             if (!cols || !rows || pointsRef.current.length === 0) return;
 
@@ -237,12 +522,8 @@ const MeshLensBackground = () => {
                     const index = i * rows + j;
                     const point = pointsRef.current[index];
                     if (!point) continue;
-
-                    if (i === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
+                    if (i === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
                 }
                 ctx.stroke();
             }
@@ -253,12 +534,8 @@ const MeshLensBackground = () => {
                     const index = i * rows + j;
                     const point = pointsRef.current[index];
                     if (!point) continue;
-
-                    if (j === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
+                    if (j === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
                 }
                 ctx.stroke();
             }
@@ -272,11 +549,7 @@ const MeshLensBackground = () => {
 
         const handleMouseMove = (e) => {
             const rect = container.getBoundingClientRect();
-            mouseRef.current = {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-                isActive: true
-            };
+            mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
         };
 
         const handleMouseLeave = () => {
@@ -284,7 +557,6 @@ const MeshLensBackground = () => {
         };
 
         const parentElement = container.parentElement;
-
         const initTimeout = setTimeout(() => {
             resizeCanvas();
             rafRef.current = requestAnimationFrame(animate);
@@ -303,9 +575,7 @@ const MeshLensBackground = () => {
                 parentElement.removeEventListener('mousemove', handleMouseMove);
                 parentElement.removeEventListener('mouseleave', handleMouseLeave);
             }
-            if (rafRef.current) {
-                cancelAnimationFrame(rafRef.current);
-            }
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
         };
     }, [config]);
 
@@ -313,210 +583,114 @@ const MeshLensBackground = () => {
         ref: containerRef,
         className: 'absolute inset-0 overflow-hidden pointer-events-none',
         style: { zIndex: 0 }
-    },
-        React.createElement('canvas', {
-            ref: canvasRef,
-            className: 'absolute inset-0 w-full h-full'
-        })
-    );
-};
-
-const EdgePopover = ({ edge, position, onClose, onWeightUpdate, onToggleConnection }) => {
-    if (!edge) return null;
-
-    return React.createElement('div', {
-        className: 'absolute z-30 w-64 rounded-2xl border bg-white p-4 shadow-2xl',
-        style: {
-            left: position.x,
-            top: position.y,
-            transform: 'translate(-50%, -120%)',
-            borderColor: 'rgba(92, 49, 30, 0.2)',
-            color: '#2b1d14',
-        }
-    }, [
-        React.createElement('div', {
-            key: 'header',
-            className: 'mb-2 flex items-center justify-between text-sm font-semibold'
-        }, [
-            React.createElement('span', { key: 'label' }, edge.label),
-            React.createElement('button', {
-                key: 'close',
-                type: 'button',
-                className: 'transition',
-                style: { color: 'rgba(43, 29, 20, 0.6)' },
-                onClick: onClose
-            }, '✕')
-        ]),
-        edge.type === 'priority' ? [
-            React.createElement('p', {
-                key: 'weight-label',
-                className: 'mb-2 text-xs uppercase tracking-[0.3em]',
-                style: { color: 'rgba(43, 29, 20, 0.5)' }
-            }, 'Weight'),
-            React.createElement('div', {
-                key: 'weight-control',
-                className: 'flex items-center gap-2'
-            }, [
-                React.createElement('input', {
-                    key: 'slider',
-                    type: 'range',
-                    min: '0',
-                    max: '1',
-                    step: '0.05',
-                    value: edge.weight,
-                    onChange: e => onWeightUpdate(parseFloat(e.target.value)),
-                    className: 'h-1 flex-1 appearance-none rounded-full bg-[rgba(92,49,30,0.1)]',
-                    style: { accentColor: '#b56747' }
-                }),
-                React.createElement('span', {
-                    key: 'value',
-                    className: 'w-12 text-right text-sm font-semibold'
-                }, edge.weight.toFixed(2))
-            ])
-        ] : [
-            React.createElement('p', {
-                key: 'family-label',
-                className: 'mb-2 text-xs uppercase tracking-[0.3em]',
-                style: { color: 'rgba(43, 29, 20, 0.5)' }
-            }, 'Family Routing'),
-            React.createElement('div', {
-                key: 'family-control',
-                className: 'flex items-center justify-between'
-            }, [
-                React.createElement('span', { key: 'text', className: 'text-sm' }, 'Enable Path'),
-                React.createElement('button', {
-                    key: 'toggle',
-                    type: 'button',
-                    onClick: () => onToggleConnection(!edge.enabled),
-                    className: `rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        edge.enabled ? 'bg-[rgba(181,103,71,0.15)] text-[#5b2a1a]' : 'bg-[rgba(92,49,30,0.1)] text-[rgba(43,29,20,0.7)]'
-                    }`
-                }, edge.enabled ? 'Enabled' : 'Disabled')
-            ])
-        ]
-    ]);
-};
-
-const FamilyDrawer = ({ family, onClose, onToggle, onBlacklist }) => {
-    if (!family) return null;
-
-    return React.createElement('aside', {
-        className: 'absolute right-8 top-8 z-40 w-80 rounded-3xl border bg-white p-6 shadow-[0_20px_60px_rgba(92,49,30,0.2)]',
-        style: { borderColor: 'rgba(92, 49, 30, 0.12)', color: '#2b1d14' }
-    }, [
-        React.createElement('div', {
-            key: 'header',
-            className: 'mb-5 flex items-center justify-between'
-        }, [
-            React.createElement('div', { key: 'title' }, [
-                React.createElement('p', {
-                    key: 'label',
-                    className: 'text-xs uppercase tracking-[0.3em]',
-                    style: { color: 'rgba(43, 29, 20, 0.5)' }
-                }, 'Family'),
-                React.createElement('p', {
-                    key: 'name',
-                    className: 'text-xl font-semibold'
-                }, family.label)
-            ]),
-            React.createElement('button', {
-                key: 'close',
-                type: 'button',
-                onClick: onClose,
-                className: 'rounded-full border px-2 py-1 text-sm transition',
-                style: { borderColor: 'rgba(92, 49, 30, 0.2)', color: 'rgba(43, 29, 20, 0.7)' }
-            }, 'Close')
-        ]),
-        React.createElement('div', {
-            key: 'routing-toggle',
-            className: 'mb-5 flex items-center justify-between rounded-2xl border px-4 py-3',
-            style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'rgba(92, 49, 30, 0.04)' }
-        }, [
-            React.createElement('span', { key: 'label', className: 'text-sm' }, 'Routing Enabled'),
-            React.createElement('button', {
-                key: 'button',
-                type: 'button',
-                onClick: () => onToggle(!family.enabled),
-                className: `rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    family.enabled ? 'bg-[rgba(181,103,71,0.15)] text-[#5b2a1a]' : 'bg-[rgba(92,49,30,0.1)] text-[rgba(43,29,20,0.7)]'
-                }`
-            }, family.enabled ? 'On' : 'Off')
-        ]),
-        React.createElement('p', {
-            key: 'blacklist-label',
-            className: 'mb-3 text-xs uppercase tracking-[0.3em]',
-            style: { color: 'rgba(43, 29, 20, 0.5)' }
-        }, 'Blacklisted Models'),
-        React.createElement('div', {
-            key: 'models',
-            className: 'flex flex-col gap-3'
-        }, family.models.map(model => {
-            const blacklisted = family.blacklist.includes(model);
-            return React.createElement('label', {
-                key: model,
-                className: 'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm',
-                style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'rgba(92, 49, 30, 0.04)' }
-            }, [
-                React.createElement('span', { key: 'name' }, model),
-                React.createElement('button', {
-                    key: 'toggle',
-                    type: 'button',
-                    onClick: () => onBlacklist(model),
-                    className: `rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        blacklisted ? 'bg-[rgba(142,60,44,0.15)] text-[#8e3c2c]' : 'bg-[rgba(92,49,30,0.1)] text-[rgba(43,29,20,0.7)]'
-                    }`
-                }, blacklisted ? 'Blacklisted' : 'Allowed')
-            ]);
-        }))
-    ]);
+    }, React.createElement('canvas', { ref: canvasRef, className: 'absolute inset-0 w-full h-full' }));
 };
 
 function ProfileBuilder({ onDismiss, initialOptions }) {
-    const [leftNodes, setLeftNodes] = useState(defaultPriorities);
-    const [families, setFamilies] = useState(
-        familyPresets.map(f => ({ ...f, enabled: true, blacklist: [] }))
-    );
+    const [leftPanelMode, setLeftPanelMode] = useState('settings'); // 'settings' or 'rules'
     const [profileName, setProfileName] = useState('');
     const [description, setDescription] = useState('');
-    const [activeEdge, setActiveEdge] = useState(null);
-    const [edgePosition, setEdgePosition] = useState({ x: 0, y: 0 });
-    const [hoveredEdgeId, setHoveredEdgeId] = useState(null);
-    const [drawerFamilyId, setDrawerFamilyId] = useState(null);
+    const [weights, setWeights] = useState(defaultWeights);
+    const [hardLimits, setHardLimits] = useState(defaultHardLimits);
+    const [providers, setProviders] = useState(
+        providerPresets.map(p => ({ ...p, enabled: true }))
+    );
+    const [rules, setRules] = useState([]);
+    const [ruleModalOpen, setRuleModalOpen] = useState(false);
+    const [testPrompt, setTestPrompt] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [nodePositions, setNodePositions] = useState({});
-    const [zoom, setZoom] = useState(1);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
-    const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
+    const containerRef = useRef(null);
     const leftRefs = useRef({});
     const centerRef = useRef(null);
     const rightRefs = useRef({});
-    const containerRef = useRef(null);
+    const [nodePositions, setNodePositions] = useState({});
+
+    // Inject cursor styles
+    useEffect(() => {
+        const styleId = 'routing-lab-cursor-styles';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = cursorStyles;
+            document.head.appendChild(style);
+        }
+        return () => {
+            const style = document.getElementById(styleId);
+            if (style) style.remove();
+        };
+    }, []);
+
+    const updateWeight = (id, newWeight) => {
+        setWeights(prev => prev.map(w => w.id === id ? { ...w, weight: newWeight } : w));
+    };
+
+    const updateHardLimit = (key, value) => {
+        setHardLimits(prev => ({ ...prev, [key]: value }));
+    };
+
+    const toggleProvider = (id) => {
+        setProviders(prev => prev.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p));
+    };
+
+    const addRule = (newRule) => {
+        setRules(prev => [...prev, newRule]);
+    };
+
+    const deleteRule = (id) => {
+        setRules(prev => prev.filter(r => r.id !== id));
+    };
+
+    const handleSave = async () => {
+        if (!profileName.trim()) {
+            setError('Profile name is required');
+            return;
+        }
+        setIsSaving(true);
+        setError('');
+        setSuccess('');
+
+        const graphState = { weights, hardLimits, providers, rules };
+        const payload = { name: profileName, description, graph_state: graphState };
+
+        try {
+            const response = await fetch(`${window.API_URL}/profiles`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to save profile');
+            }
+            const saved = await response.json();
+            setSuccess('Profile saved successfully!');
+            window.dispatchEvent(new CustomEvent('routing-profile:created', { detail: { profile: saved.profile } }));
+            setTimeout(() => onDismiss(), 1500);
+        } catch (err) {
+            setError(err.message || 'Failed to save profile');
+        }
+        setIsSaving(false);
+    };
 
     useEffect(() => {
-        if (initialOptions.profile) {
-            const { name, description: desc, graph_state } = initialOptions.profile;
-            setProfileName(name || '');
-            setDescription(desc || '');
-            if (graph_state?.priorities) {
-                setLeftNodes(graph_state.priorities);
-            }
-            if (graph_state?.families) {
-                setFamilies(graph_state.families);
-            }
-        }
-    }, [initialOptions]);
+        const handleKey = event => {
+            if (event.key === 'Escape') onDismiss();
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [onDismiss]);
 
+    // Calculate node positions for graph edges
     useEffect(() => {
         const calculatePositions = () => {
             if (!containerRef.current) return;
             const containerRect = containerRef.current.getBoundingClientRect();
             const positions = {};
 
-            leftNodes.forEach(node => {
+            weights.forEach(node => {
                 const el = leftRefs.current[node.id];
                 if (el) {
                     const rect = el.getBoundingClientRect();
@@ -536,11 +710,11 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                 };
             }
 
-            families.forEach(family => {
-                const el = rightRefs.current[family.id];
+            providers.forEach(provider => {
+                const el = rightRefs.current[provider.id];
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    positions[family.id] = {
+                    positions[provider.id] = {
                         x: rect.left - containerRect.left,
                         y: rect.top + rect.height / 2 - containerRect.top
                     };
@@ -550,507 +724,490 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             setNodePositions(positions);
         };
 
-        calculatePositions();
-        window.addEventListener('resize', calculatePositions);
-        const timer = setTimeout(calculatePositions, 100);
+        // Run after layout settles
+        const runCalculation = () => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(calculatePositions);
+            });
+        };
+
+        runCalculation();
+        window.addEventListener('resize', runCalculation);
+        const timer1 = setTimeout(runCalculation, 50);
+        const timer2 = setTimeout(runCalculation, 200);
         return () => {
-            window.removeEventListener('resize', calculatePositions);
-            clearTimeout(timer);
+            window.removeEventListener('resize', runCalculation);
+            clearTimeout(timer1);
+            clearTimeout(timer2);
         };
-    }, [leftNodes, families]);
+    }, [weights, providers]);
 
-    const edges = useMemo(() => {
-        const result = [];
-        leftNodes.forEach(node => {
-            result.push({
-                id: `${node.id}-router`,
-                from: node.id,
-                to: 'router',
-                type: 'priority',
-                label: node.label,
-                weight: node.weight,
-                accent: node.accent,
-                visible: true
-            });
-        });
-        families.forEach(family => {
-            result.push({
-                id: `router-${family.id}`,
-                from: 'router',
-                to: family.id,
-                type: 'family',
-                label: family.label,
-                enabled: family.enabled,
-                accent: family.accent,
-                visible: true
-            });
-        });
-        return result;
-    }, [leftNodes, families]);
-
-    const handleEdgeClick = (edge, start, end) => {
-        const midX = (start.x + end.x) / 2;
-        const midY = (start.y + end.y) / 2;
-        setActiveEdge(edge);
-        setEdgePosition({ x: midX, y: midY });
-    };
-
-    const updateEdgeWeight = (newWeight) => {
-        if (activeEdge && activeEdge.type === 'priority') {
-            setLeftNodes(prev =>
-                prev.map(node =>
-                    node.id === activeEdge.from ? { ...node, weight: newWeight } : node
-                )
-            );
-            setActiveEdge(prev => prev ? { ...prev, weight: newWeight } : prev);
-        }
-    };
-
-    const updateEdgeEnabled = (enabled) => {
-        if (activeEdge && activeEdge.type === 'family') {
-            setFamilies(prev =>
-                prev.map(f =>
-                    f.id === activeEdge.to ? { ...f, enabled } : f
-                )
-            );
-            setActiveEdge(prev => prev ? { ...prev, enabled } : prev);
-        }
-    };
-
-    const openFamilyDrawer = (familyId) => {
-        setDrawerFamilyId(familyId);
-    };
-
-    const closeFamilyDrawer = () => {
-        setDrawerFamilyId(null);
-    };
-
-    const updateFamilyToggle = (enabled) => {
-        setFamilies(prev =>
-            prev.map(f =>
-                f.id === drawerFamilyId ? { ...f, enabled } : f
-            )
-        );
-    };
-
-    const updateBlacklist = (model) => {
-        setFamilies(prev =>
-            prev.map(f => {
-                if (f.id !== drawerFamilyId) return f;
-                const blacklisted = f.blacklist.includes(model);
-                return {
-                    ...f,
-                    blacklist: blacklisted
-                        ? f.blacklist.filter(m => m !== model)
-                        : [...f.blacklist, model]
-                };
-            })
-        );
-    };
-
-    const handleSave = async () => {
-        if (!profileName.trim()) {
-            setError('Profile name is required');
-            return;
-        }
-        setIsSaving(true);
-        setError('');
-        setSuccess('');
-
-        const graphState = { priorities: leftNodes, families };
-        const payload = {
-            name: profileName,
-            description,
-            graph_state: graphState
-        };
-
-        try {
-            const response = await fetch(`${window.API_URL}/profiles`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || 'Failed to save profile');
-            }
-            const saved = await response.json();
-            setSuccess('Profile saved successfully!');
-            window.dispatchEvent(new CustomEvent('routing-profile:created', { detail: { profile: saved.profile } }));
-            setTimeout(() => onDismiss(), 1500);
-        } catch (err) {
-            console.error('Save profile error:', err);
-            setError(err.message || 'Failed to save profile');
-        }
-        setIsSaving(false);
-    };
-
-    useEffect(() => {
-        const handleKey = event => {
-            if (event.key === 'Escape') {
-                onDismiss();
-            }
-        };
-        window.addEventListener('keydown', handleKey);
-        return () => window.removeEventListener('keydown', handleKey);
-    }, [onDismiss]);
-
-    const drawerFamily = families.find(f => f.id === drawerFamilyId);
+    const activeProviders = providers.filter(p => p.enabled);
+    const confidenceScore = (weights.reduce((sum, w) => sum + w.weight, 0) / weights.length * 100).toFixed(1);
 
     return React.createElement('div', {
         className: 'relative h-full w-full flex flex-col',
-        style: { opacity: 1, transition: 'opacity 0.3s' },
+        style: { backgroundColor: '#fffefb', cursor: defaultCursor },
         onClick: onDismiss
     }, [
+        // Header with tabs
         React.createElement('div', {
             key: 'header',
-            className: 'px-8 py-6 flex items-center justify-between gap-6',
-            style: {
-                background: 'linear-gradient(135deg, #f1e5d7, #f6efe7)',
-                color: '#2b1d14'
-            },
+            className: 'px-6 py-4 flex items-center justify-between border-b',
+            style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: '#fffefb' },
             onClick: e => e.stopPropagation()
         }, [
-            React.createElement('div', { key: 'title' }, [
-                React.createElement('p', {
-                    key: 'label',
-                    className: 'text-xs uppercase tracking-[0.35em]',
-                    style: { color: 'rgba(43, 29, 20, 0.5)' }
-                }, 'Routing Lab'),
-                React.createElement('h2', {
-                    key: 'heading',
-                    className: 'text-3xl font-semibold',
-                    style: { color: '#5b2a1a' }
-                }, 'Create Routing Profile'),
-                React.createElement('p', {
-                    key: 'desc',
-                    className: 'mt-1 text-sm',
-                    style: { color: 'rgba(43, 29, 20, 0.7)' }
-                }, 'Tune prompt priorities, route families, and persist to Supabase.')
-            ]),
-            React.createElement('div', {
-                key: 'inputs',
-                className: 'flex gap-4'
+            React.createElement('h1', {
+                key: 'title',
+                className: 'text-xl font-semibold flex items-center gap-2',
+                style: { color: '#5b2a1a' }
             }, [
-                React.createElement('label', {
-                    key: 'name',
-                    className: 'flex flex-col rounded-2xl border-2 px-4 py-3 w-56',
-                    style: { borderColor: '#8e3c2c', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(92, 49, 30, 0.08)' }
-                }, [
-                    React.createElement('span', {
-                        key: 'label',
-                        className: 'text-xs uppercase tracking-[0.35em]',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Profile Name'),
-                    React.createElement('input', {
-                        key: 'input',
-                        type: 'text',
-                        value: profileName,
-                        onChange: e => setProfileName(e.target.value),
-                        className: 'bg-transparent text-lg font-semibold focus:outline-none',
-                        style: { color: '#2b1d14' }
-                    })
-                ]),
-                React.createElement('label', {
-                    key: 'desc',
-                    className: 'flex flex-col rounded-2xl border-2 px-4 py-3 w-56',
-                    style: { borderColor: '#8e3c2c', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(92, 49, 30, 0.08)' }
-                }, [
-                    React.createElement('span', {
-                        key: 'label',
-                        className: 'text-xs uppercase tracking-[0.35em]',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Description'),
-                    React.createElement('input', {
-                        key: 'input',
-                        type: 'text',
-                        value: description,
-                        onChange: e => setDescription(e.target.value),
-                        className: 'bg-transparent text-lg font-semibold focus:outline-none',
-                        style: { color: '#2b1d14' }
-                    })
-                ])
+                React.createElement('img', {
+                    key: 'icon',
+                    src: 'assets/routing-controls-icon.png',
+                    alt: 'Routing Lab',
+                    className: 'w-6 h-6'
+                }),
+                'Routing Lab'
             ]),
             React.createElement('div', {
-                key: 'buttons',
+                key: 'right',
                 className: 'flex items-center gap-3'
             }, [
                 React.createElement('button', {
                     key: 'cancel',
                     type: 'button',
-                    className: 'rounded-full border px-4 py-2 text-sm transition',
-                    style: { borderColor: 'rgba(92, 49, 30, 0.2)', color: 'rgba(43, 29, 20, 0.7)' },
-                    onClick: onDismiss
+                    onClick: onDismiss,
+                    className: 'px-4 py-2 text-sm rounded-lg border transition hover:bg-[rgba(92,49,30,0.04)]',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.2)', color: 'rgba(43, 29, 20, 0.7)' }
                 }, 'Cancel'),
                 React.createElement('button', {
                     key: 'save',
                     type: 'button',
                     onClick: handleSave,
                     disabled: isSaving,
-                    className: 'rounded-full px-6 py-2 text-sm font-semibold shadow-[0_8px_20px_rgba(92,49,30,0.25)] transition hover:opacity-90 disabled:pointer-events-none disabled:opacity-60',
-                    style: { backgroundColor: '#8e3c2c', color: '#fffdf9' }
+                    className: 'px-5 py-2 text-sm font-semibold rounded-lg shadow-lg transition hover:opacity-90 disabled:opacity-60',
+                    style: { background: 'linear-gradient(135deg, #c98454, #8e3c2c)', color: '#fffdf9' }
                 }, isSaving ? 'Saving...' : 'Save Profile')
             ])
         ]),
+
+        // Main content
         React.createElement('div', {
-            key: 'graph',
-            className: 'relative flex-1 overflow-hidden flex',
-            style: { backgroundColor: '#fffefb', color: '#2b1d14' },
+            key: 'main',
+            className: 'flex-1 flex overflow-hidden',
             onClick: e => e.stopPropagation()
         }, [
+            // Left panel - Settings or Rules Engine
+            React.createElement('div', {
+                key: 'left-panel',
+                className: 'w-72 border-r p-5 flex-shrink-0 overflow-hidden',
+                style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'rgba(92, 49, 30, 0.02)' }
+            }, [
+                // Toggle between Settings and Rules
                 React.createElement('div', {
-                    key: 'sidebar',
-                    className: 'w-64 border-r p-6 flex flex-col gap-4',
+                    key: 'panel-toggle',
+                    className: 'flex items-center gap-1 p-1 rounded-xl mb-5',
+                    style: { backgroundColor: 'rgba(92, 49, 30, 0.08)' }
+                }, [
+                    React.createElement('button', {
+                        key: 'settings',
+                        type: 'button',
+                        onClick: () => setLeftPanelMode('settings'),
+                        className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === 'settings' ? 'bg-white shadow-sm' : ''}`,
+                        style: { color: leftPanelMode === 'settings' ? '#5b2a1a' : 'rgba(43, 29, 20, 0.6)' }
+                    }, 'Settings'),
+                    React.createElement('button', {
+                        key: 'rules',
+                        type: 'button',
+                        onClick: () => setLeftPanelMode('rules'),
+                        className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === 'rules' ? 'bg-white shadow-sm' : ''}`,
+                        style: { color: leftPanelMode === 'rules' ? '#5b2a1a' : 'rgba(43, 29, 20, 0.6)' }
+                    }, 'Rules')
+                ]),
+
+                // Settings content
+                leftPanelMode === 'settings' && [
+                    React.createElement('h3', {
+                        key: 'settings-title',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-4',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Weights'),
+                    React.createElement('div', {
+                        key: 'weights',
+                        className: 'space-y-3 mb-6'
+                    }, weights.map(w => React.createElement(WeightSlider, {
+                        key: w.id,
+                        label: w.label,
+                        value: w.weight,
+                        onChange: val => updateWeight(w.id, val)
+                    }))),
+
+                    React.createElement('h3', {
+                        key: 'limits-title',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-4 mt-6',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Hard Limits'),
+                    React.createElement('div', {
+                        key: 'limits',
+                        className: 'space-y-3 mb-6'
+                    }, [
+                        React.createElement(NumberInput, { key: 'maxCost', label: 'max cost per call', value: hardLimits.maxCostPerCall, onChange: v => updateHardLimit('maxCostPerCall', v) }),
+                        React.createElement(NumberInput, { key: 'maxTokens', label: 'max output tokens', value: hardLimits.maxOutputTokens, onChange: v => updateHardLimit('maxOutputTokens', v) }),
+                        React.createElement(NumberInput, { key: 'maxLatency', label: 'max latency (ms)', value: hardLimits.maxLatency, onChange: v => updateHardLimit('maxLatency', v), step: 0.01 }),
+                        React.createElement(NumberInput, { key: 'rateLimit', label: 'max rate limits', value: hardLimits.maxRateLimits, onChange: v => updateHardLimit('maxRateLimits', v) }),
+                    ]),
+
+                    React.createElement('h3', {
+                        key: 'toggles-title',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-4 mt-6',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Providers'),
+                    React.createElement('div', {
+                        key: 'toggles',
+                        className: 'space-y-3'
+                    }, providers.map(p => React.createElement(Toggle, {
+                        key: p.id,
+                        label: p.label,
+                        icon: p.icon,
+                        enabled: p.enabled,
+                        onChange: () => toggleProvider(p.id)
+                    })))
+                ],
+
+                // Rules content
+                leftPanelMode === 'rules' && [
+                    React.createElement('h3', {
+                        key: 'title',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-4',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Rules Engine'),
+                    React.createElement('div', {
+                        key: 'rules',
+                        className: 'mb-4'
+                    }, rules.length > 0 ? rules.map(rule => React.createElement(RuleCard, {
+                        key: rule.id,
+                        rule: rule,
+                        onDelete: () => deleteRule(rule.id)
+                    })) : React.createElement('p', {
+                        className: 'text-sm text-center py-4',
+                        style: { color: 'rgba(43, 29, 20, 0.4)' }
+                    }, 'No rules yet')),
+                    React.createElement('button', {
+                        key: 'add',
+                        type: 'button',
+                        onClick: () => setRuleModalOpen(true),
+                        className: 'w-full py-3 rounded-xl text-sm font-semibold transition hover:opacity-90',
+                        style: { background: 'linear-gradient(135deg, #c98454, #8e3c2c)', color: '#fffdf9' }
+                    }, 'Add Rule')
+                ]
+            ]),
+
+            // Center - Test Routing Graph
+            React.createElement('div', {
+                key: 'center-panel',
+                className: 'flex-1 flex flex-col overflow-hidden'
+            }, [
+                React.createElement('div', {
+                    key: 'test-header',
+                    className: 'p-4 border-b',
                     style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
                 }, [
                     React.createElement('h3', {
                         key: 'title',
-                        className: 'text-sm font-semibold uppercase tracking-[0.3em]',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-3',
                         style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Add Nodes'),
+                    }, 'Test Routing'),
                     React.createElement('div', {
-                        key: 'node-options',
-                        className: 'flex flex-col gap-3'
+                        key: 'prompt-label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Type a prompt to test routing...'),
+                    React.createElement('div', {
+                        key: 'input-container',
+                        className: 'flex gap-2'
                     }, [
-                        React.createElement('div', {
-                            key: 'special-rule',
-                            className: 'rounded-xl border-2 border-dashed px-4 py-3 cursor-move transition hover:border-[#8e3c2c] hover:bg-[rgba(142,60,44,0.05)]',
-                            style: { borderColor: 'rgba(92, 49, 30, 0.2)' }
-                        }, [
-                            React.createElement('p', {
-                                key: 'label',
-                                className: 'text-xs uppercase tracking-[0.25em]',
-                                style: { color: 'rgba(43, 29, 20, 0.5)' }
-                            }, 'Drag to Add'),
-                            React.createElement('p', {
-                                key: 'title',
-                                className: 'text-sm font-semibold mt-1',
-                                style: { color: '#2b1d14' }
-                            }, 'Special Rule')
-                        ])
+                        React.createElement('input', {
+                            key: 'input',
+                            type: 'text',
+                            value: testPrompt,
+                            onChange: e => setTestPrompt(e.target.value),
+                            placeholder: 'Write a complex Python script for data analysis.',
+                            className: 'flex-1 px-4 py-3 rounded-xl border text-sm',
+                            style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: '#fff', color: '#2b1d14' }
+                        }),
+                        React.createElement('button', {
+                            key: 'send',
+                            type: 'button',
+                            className: 'w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90',
+                            style: { background: 'linear-gradient(135deg, #c98454, #8e3c2c)', color: '#fffdf9', fontSize: '1.2rem', fontWeight: '700' }
+                        }, '↑')
                     ])
                 ]),
                 React.createElement('div', {
-                    key: 'graph-container',
+                    key: 'graph',
                     ref: containerRef,
-                    className: 'relative flex-1 overflow-hidden',
-                    style: { cursor: isPanning ? grabbingCursor : grabCursor },
-                    onClick: e => e.stopPropagation(),
-                    onWheel: e => {
-                        e.preventDefault();
-                        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                        setZoom(prev => Math.min(2, Math.max(0.3, prev + delta)));
-                    },
-                    onMouseDown: e => {
-                        if (e.button === 0) {
-                            setIsPanning(true);
-                            panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
-                        }
-                    },
-                    onMouseMove: e => {
-                        if (isPanning) {
-                            const dx = e.clientX - panStartRef.current.x;
-                            const dy = e.clientY - panStartRef.current.y;
-                            setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
-                        }
-                    },
-                    onMouseUp: () => setIsPanning(false),
-                    onMouseLeave: () => setIsPanning(false)
+                    className: 'flex-1 relative overflow-hidden'
                 }, [
-                    React.createElement('div', {
-                        key: 'bg',
-                        className: 'pointer-events-none absolute inset-0',
-                        style: { background: 'radial-gradient(circle at top, rgba(201, 132, 84, 0.08), transparent 55%)' }
-                    }),
                     React.createElement(MeshLensBackground, { key: 'mesh' }),
                     React.createElement('div', {
-                        key: 'grid-wrapper',
-                        className: 'relative h-full w-full flex items-center justify-end pr-8',
-                        style: { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.15s ease-out' }
-                    },
+                        key: 'nodes',
+                        className: 'absolute inset-0 flex items-center justify-center p-8'
+                    }, [
+                        // Left nodes (weights)
                         React.createElement('div', {
-                            key: 'grid',
-                            className: 'relative grid h-full grid-cols-3 gap-12 p-8',
-                            style: { width: '85%' }
-                        }, [
-                    React.createElement('div', {
-                        key: 'left',
-                        className: 'flex flex-col justify-around'
-                    }, leftNodes.map(node =>
+                            key: 'left',
+                            className: 'flex flex-col gap-4 mr-12'
+                        }, weights.map(w => React.createElement(MiniNodeCard, {
+                            key: w.id,
+                            title: w.label,
+                            subtitle: null,
+                            accent: siteColors.quality,
+                            nodeRef: el => leftRefs.current[w.id] = el
+                        }))),
+                        // Center router
                         React.createElement('div', {
-                            key: node.id,
-                            className: 'flex justify-start'
-                        },
-                            React.createElement('div', {
-                                className: 'w-44'
-                            },
-                                React.createElement(NodeCard, {
-                                    title: node.label,
-                                    subtitle: `Weight ${node.weight.toFixed(2)}`,
-                                    accent: node.accent,
-                                    active: activeEdge?.from === node.id,
-                                    onClick: () => {
-                                        const edge = edges.find(e => e.from === node.id && e.type === 'priority');
-                                        const nodePos = nodePositions[node.id];
-                                        const routerPos = nodePositions.router;
-                                        if (edge && nodePos && routerPos) {
-                                            const start = { x: nodePos.x, y: nodePos.y };
-                                            const end = { x: routerPos.left, y: routerPos.y };
-                                            handleEdgeClick(edge, start, end);
-                                        }
-                                    },
-                                    nodeRef: el => leftRefs.current[node.id] = el
-                                })
-                            )
-                        )
-                    )),
-                    React.createElement('div', {
-                        key: 'center',
-                        className: 'flex items-center justify-center'
-                    },
+                            key: 'center',
+                            className: 'mx-8'
+                        }, React.createElement(MiniNodeCard, {
+                            title: 'Restruct Router',
+                            subtitle: 'Weighted orchestration',
+                            accent: siteColors.router,
+                            active: true,
+                            nodeRef: centerRef
+                        })),
+                        // Right nodes (providers)
                         React.createElement('div', {
-                            className: 'w-44'
-                        },
-                            React.createElement(NodeCard, {
-                                title: 'Restruct Router',
-                                subtitle: 'Weighted orchestration',
-                                accent: siteColors.router,
-                                active: !drawerFamilyId,
-                                onClick: () => setDrawerFamilyId(null),
-                                nodeRef: centerRef
-                            })
-                        )
-                    ),
-                    React.createElement('div', {
-                        key: 'right',
-                        className: 'flex flex-col justify-around'
-                    }, families.map(family =>
-                        React.createElement('div', {
-                            key: family.id,
-                            className: 'flex justify-end'
-                        },
-                            React.createElement('div', {
-                                className: 'w-44'
-                            },
-                                React.createElement(NodeCard, {
-                                    title: family.label,
-                                    subtitle: family.enabled ? 'Active' : 'Disabled',
-                                    accent: family.accent,
-                                    active: drawerFamilyId === family.id,
-                                    onClick: () => openFamilyDrawer(family.id),
-                                    nodeRef: el => rightRefs.current[family.id] = el
-                                })
-                            )
-                        )
-                    ))
+                            key: 'right',
+                            className: 'flex flex-col gap-3 ml-12'
+                        }, providers.map(p => React.createElement(MiniNodeCard, {
+                            key: p.id,
+                            title: p.label,
+                            subtitle: p.enabled ? 'Active' : 'Disabled',
+                            accent: siteColors.cost,
+                            hasToggle: true,
+                            enabled: p.enabled,
+                            onToggle: () => toggleProvider(p.id),
+                            nodeRef: el => rightRefs.current[p.id] = el
+                        })))
+                    ]),
+                    // SVG edges
+                    React.createElement('svg', {
+                        key: 'svg',
+                        className: 'pointer-events-none absolute inset-0',
+                        width: '100%',
+                        height: '100%'
+                    }, (() => {
+                        const router = nodePositions.router;
+                        if (!router) return null;
+                        const edges = [];
+
+                        // Left to router edges
+                        weights.forEach(w => {
+                            const leftNode = nodePositions[w.id];
+                            if (!leftNode) return;
+                            const d = `M ${leftNode.x} ${leftNode.y} C ${leftNode.x + 60} ${leftNode.y}, ${router.left - 60} ${router.y}, ${router.left} ${router.y}`;
+                            edges.push(React.createElement('path', {
+                                key: `left-${w.id}`,
+                                d,
+                                fill: 'none',
+                                stroke: siteColors.edgeIdle,
+                                strokeWidth: 1.5,
+                                strokeDasharray: '6 6'
+                            }));
+                        });
+
+                        // Router to right edges
+                        providers.forEach(p => {
+                            const rightNode = nodePositions[p.id];
+                            if (!rightNode) return;
+                            const d = `M ${router.right} ${router.y} C ${router.right + 80} ${router.y}, ${rightNode.x - 80} ${rightNode.y}, ${rightNode.x} ${rightNode.y}`;
+                            edges.push(React.createElement('path', {
+                                key: `right-${p.id}`,
+                                d,
+                                fill: 'none',
+                                stroke: p.enabled ? siteColors.edgeIdle : 'rgba(92, 49, 30, 0.1)',
+                                strokeWidth: 1.5,
+                                strokeDasharray: '6 6'
+                            }));
+                        });
+
+                        return edges;
+                    })())
                 ])
-                ),
-                React.createElement('svg', {
-                    key: 'svg',
-                    className: 'pointer-events-none absolute inset-0',
-                    width: '100%',
-                    height: '100%',
-                    style: { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.15s ease-out' }
-                }, edges.map(edge => {
-                    const router = nodePositions.router;
-                    if (!router || !edge.visible) return null;
+            ]),
 
-                    let start, end;
-
-                    if (edge.type === 'priority') {
-                        const leftNode = nodePositions[edge.from];
-                        if (!leftNode) return null;
-                        start = { x: leftNode.x, y: leftNode.y };
-                        end = { x: router.left, y: router.y };
-                    } else {
-                        const rightNode = nodePositions[edge.to];
-                        if (!rightNode) return null;
-                        start = { x: router.right, y: router.y };
-                        end = { x: rightNode.x, y: rightNode.y };
-                    }
-
-                    const curvature = edge.type === 'priority' ? 70 : 120;
-                    const d = `M ${start.x} ${start.y} C ${start.x + curvature} ${start.y}, ${end.x - curvature} ${end.y}, ${end.x} ${end.y}`;
-                    const strokeColor = hoveredEdgeId === edge.id || activeEdge?.id === edge.id ? edge.accent : siteColors.edgeIdle;
-                    const opacity = edge.enabled === false ? 0.25 : 1;
-
-                    return React.createElement('path', {
-                        key: edge.id,
-                        d,
-                        fill: 'none',
-                        stroke: strokeColor,
-                        strokeWidth: hoveredEdgeId === edge.id || activeEdge?.id === edge.id ? 2.5 : 1.5,
-                        strokeDasharray: '6 6',
-                        strokeLinecap: 'round',
-                        className: 'cursor-pointer transition-all',
-                        style: { opacity, pointerEvents: 'all' },
-                        onClick: e => {
-                            e.stopPropagation();
-                            handleEdgeClick(edge, start, end);
-                        },
-                        onMouseEnter: () => setHoveredEdgeId(edge.id),
-                        onMouseLeave: () => setHoveredEdgeId(null)
-                    });
-                })),
-                React.createElement(EdgePopover, {
-                    key: 'popover',
-                    edge: activeEdge,
-                    position: edgePosition,
-                    onClose: () => setActiveEdge(null),
-                    onWeightUpdate: updateEdgeWeight,
-                    onToggleConnection: updateEdgeEnabled
+            // Right panel - Profile Summary
+            React.createElement('div', {
+                key: 'right-panel',
+                className: 'w-64 border-l p-5 overflow-hidden flex-shrink-0',
+                style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'rgba(92, 49, 30, 0.02)' }
+            }, [
+                React.createElement('h3', {
+                    key: 'title',
+                    className: 'text-xs font-semibold uppercase tracking-wider mb-4',
+                    style: { color: 'rgba(43, 29, 20, 0.5)' }
+                }, 'Profile Summary'),
+                React.createElement('input', {
+                    key: 'name',
+                    type: 'text',
+                    value: profileName,
+                    onChange: e => setProfileName(e.target.value),
+                    placeholder: 'Profile Name',
+                    className: 'w-full px-3 py-2 rounded-lg border text-sm mb-3',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: '#fff', color: '#2b1d14' }
                 }),
-                React.createElement(FamilyDrawer, {
-                    key: 'drawer',
-                    family: drawerFamily,
-                    onClose: closeFamilyDrawer,
-                    onToggle: updateFamilyToggle,
-                    onBlacklist: updateBlacklist
+                React.createElement('input', {
+                    key: 'desc',
+                    type: 'text',
+                    value: description,
+                    onChange: e => setDescription(e.target.value),
+                    placeholder: 'Description',
+                    className: 'w-full px-3 py-2 rounded-lg border text-sm mb-5',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: '#fff', color: '#2b1d14' }
                 }),
+
+                React.createElement('div', {
+                    key: 'weight-section',
+                    className: 'mb-5'
+                }, [
+                    React.createElement('p', {
+                        key: 'label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Current weight'),
+                    React.createElement(WeightBarChart, { key: 'chart', weights: weights })
+                ]),
+
+                React.createElement('div', {
+                    key: 'providers-section',
+                    className: 'mb-4'
+                }, [
+                    React.createElement('p', {
+                        key: 'label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Active Providers'),
+                    React.createElement('div', {
+                        key: 'list',
+                        className: 'text-sm',
+                        style: { color: '#2b1d14' }
+                    }, activeProviders.map(p => React.createElement('div', {
+                        key: p.id,
+                        className: 'mb-1'
+                    }, p.label)))
+                ]),
+
+                React.createElement('div', {
+                    key: 'rules-section',
+                    className: 'mb-4'
+                }, [
+                    React.createElement('p', {
+                        key: 'label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Active Rules'),
+                    React.createElement('div', {
+                        key: 'list',
+                        className: 'text-xs space-y-1',
+                        style: { color: '#2b1d14' }
+                    }, rules.length > 0 ? rules.map(r => React.createElement('div', { key: r.id }, r.name)) : React.createElement('span', { style: { color: 'rgba(43, 29, 20, 0.4)' } }, 'None'))
+                ]),
+
+                React.createElement('div', {
+                    key: 'limits-section',
+                    className: 'mb-4'
+                }, [
+                    React.createElement('p', {
+                        key: 'label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Hard Limit'),
+                    React.createElement('div', {
+                        key: 'values',
+                        className: 'text-xs space-y-1',
+                        style: { color: '#2b1d14' }
+                    }, [
+                        React.createElement('div', { key: 'max', className: 'flex justify-between' }, [
+                            React.createElement('span', { key: 'l' }, 'Max Limit'),
+                            React.createElement('span', { key: 'v' }, hardLimits.maxCostPerCall)
+                        ]),
+                        React.createElement('div', { key: 'tokens', className: 'flex justify-between' }, [
+                            React.createElement('span', { key: 'l' }, 'Max Limit'),
+                            React.createElement('span', { key: 'v' }, hardLimits.maxOutputTokens)
+                        ])
+                    ])
+                ]),
+
+                React.createElement('div', {
+                    key: 'fallback-section',
+                    className: 'mb-4'
+                }, [
+                    React.createElement('p', {
+                        key: 'label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Fallback Chain'),
+                    React.createElement('div', {
+                        key: 'chain',
+                        className: 'text-xs flex items-center gap-1 flex-wrap',
+                        style: { color: '#2b1d14' }
+                    }, activeProviders.slice(0, 4).map((p, i) => [
+                        React.createElement('span', { key: p.id }, p.label.split(' ')[0]),
+                        i < Math.min(activeProviders.length - 1, 3) && React.createElement('span', { key: `arrow-${i}`, style: { color: 'rgba(43, 29, 20, 0.3)' } }, '→')
+                    ]).flat().filter(Boolean))
+                ]),
+
+                React.createElement('div', {
+                    key: 'confidence',
+                    className: 'flex justify-between items-center mb-4'
+                }, [
+                    React.createElement('span', {
+                        key: 'label',
+                        className: 'text-xs',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Confidence Score'),
+                    React.createElement('span', {
+                        key: 'value',
+                        className: 'text-sm font-semibold',
+                        style: { color: '#b56747' }
+                    }, confidenceScore)
+                ]),
+
+                testPrompt && React.createElement('div', {
+                    key: 'explanation',
+                    className: 'p-3 rounded-lg text-xs',
+                    style: { backgroundColor: 'rgba(92, 49, 30, 0.04)', color: 'rgba(43, 29, 20, 0.7)' }
+                }, [
+                    React.createElement('p', {
+                        key: 'title',
+                        className: 'font-semibold mb-1',
+                        style: { color: '#2b1d14' }
+                    }, 'Routing explanation'),
+                    `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${activeProviders[0]?.label || 'available providers'} based on current weight configuration.`
+                ]),
+
                 error && React.createElement('div', {
                     key: 'error',
-                    className: 'absolute bottom-6 left-6 rounded-2xl border px-4 py-3',
-                    style: { borderColor: 'rgba(142, 60, 44, 0.3)', backgroundColor: 'rgba(142, 60, 44, 0.1)', color: '#8e3c2c' }
+                    className: 'mt-4 p-3 rounded-lg text-xs',
+                    style: { backgroundColor: 'rgba(142, 60, 44, 0.1)', color: '#8e3c2c' }
                 }, error),
+
                 success && React.createElement('div', {
                     key: 'success',
-                    className: 'absolute bottom-6 left-6 rounded-2xl border px-4 py-3',
-                    style: { borderColor: 'rgba(181, 103, 71, 0.3)', backgroundColor: 'rgba(181, 103, 71, 0.1)', color: '#b56747' }
-                }, success),
-                React.createElement('div', {
-                    key: 'zoom-controls',
-                    className: 'absolute bottom-6 right-6 flex items-center gap-2 rounded-2xl border bg-white px-3 py-2 shadow-lg',
-                    style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
-                }, [
-                    React.createElement('button', {
-                        key: 'zoom-out',
-                        type: 'button',
-                        className: 'w-8 h-8 rounded-full flex items-center justify-center text-lg font-semibold transition hover:bg-[rgba(92,49,30,0.08)]',
-                        style: { color: '#5b2a1a' },
-                        onClick: () => setZoom(prev => Math.max(0.3, prev - 0.1))
-                    }, '−'),
-                    React.createElement('span', {
-                        key: 'zoom-level',
-                        className: 'w-14 text-center text-sm font-medium',
-                        style: { color: '#2b1d14' }
-                    }, `${Math.round(zoom * 100)}%`),
-                    React.createElement('button', {
-                        key: 'zoom-in',
-                        type: 'button',
-                        className: 'w-8 h-8 rounded-full flex items-center justify-center text-lg font-semibold transition hover:bg-[rgba(92,49,30,0.08)]',
-                        style: { color: '#5b2a1a' },
-                        onClick: () => setZoom(prev => Math.min(2, prev + 0.1))
-                    }, '+'),
-                    React.createElement('button', {
-                        key: 'zoom-reset',
-                        type: 'button',
-                        className: 'ml-2 px-3 py-1 rounded-full text-xs font-medium transition hover:bg-[rgba(92,49,30,0.08)]',
-                        style: { color: 'rgba(43, 29, 20, 0.6)' },
-                        onClick: () => { setZoom(1); setPan({ x: 0, y: 0 }); }
-                    }, 'Reset')
-                ])
+                    className: 'mt-4 p-3 rounded-lg text-xs',
+                    style: { backgroundColor: 'rgba(181, 103, 71, 0.1)', color: '#b56747' }
+                }, success)
             ])
-        ])
+        ]),
+
+        // Rule Editor Modal
+        React.createElement(RuleEditorModal, {
+            key: 'rule-modal',
+            isOpen: ruleModalOpen,
+            onClose: () => setRuleModalOpen(false),
+            onSave: addRule
+        })
     ]);
 }
 
