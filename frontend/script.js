@@ -1,6 +1,66 @@
 const API_URL = 'http://localhost:8000';
 window.API_URL = API_URL;
 
+// =============================================================================
+// AUTHENTICATION HANDLING
+// =============================================================================
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('access_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+function getUserId() {
+    return localStorage.getItem('user_id') || null;
+}
+
+function getUserEmail() {
+    return localStorage.getItem('user_email') || null;
+}
+
+function isAuthenticated() {
+    return !!localStorage.getItem('access_token');
+}
+
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    window.location.href = 'signin.html';
+}
+
+// Check auth on page load - redirect to signin if not authenticated
+if (!isAuthenticated()) {
+    window.location.href = 'signin.html';
+}
+
+// Wire up logout button and display user email
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+
+    if (userEmailDisplay) {
+        const email = getUserEmail();
+        userEmailDisplay.textContent = email ? `Signed in as ${email}` : 'Not signed in';
+    }
+
+    // Update user indicator in main content
+    const userEmailIndicator = document.getElementById('userEmail');
+    if (userEmailIndicator) {
+        const email = getUserEmail();
+        userEmailIndicator.textContent = email || 'Not signed in';
+    }
+});
+
+// =============================================================================
+// END AUTHENTICATION HANDLING
+// =============================================================================
+
 // Conversation stats tracking
 const sessionStats = {
     inputTokens: 0,
@@ -719,9 +779,9 @@ if (chatForm) {
             if (!currentConversation.conversationId) {
                 const convResponse = await fetch(`${API_URL}/conversations`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({
-                        user_id: 'default-user',
+                        user_id: getUserId(),
                         title: 'New Chat'
                     })
                 });
@@ -735,10 +795,12 @@ if (chatForm) {
                 payload.conversation_id = currentConversation.conversationId;
             }
 
+            // Ensure user_id is set in payload
+            payload.user_id = getUserId();
 
             const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify(payload)
             });
 
@@ -1034,18 +1096,27 @@ function addMessage(role, content, metadata = null, attachments = []) {
             infoDiv.appendChild(modelSpan);
         }
 
-        if (metadata.routingTime) {
+        const routingTime = metadata.routingTime || metadata.routing_time_ms;
+        if (routingTime) {
             const routingSpan = document.createElement('span');
             routingSpan.className = 'routing-latency';
-            routingSpan.textContent = `Routing: ${metadata.routingTime}ms`;
+            routingSpan.textContent = `Routing: ${routingTime}ms`;
             infoDiv.appendChild(routingSpan);
         }
 
-        if (metadata.responseTime) {
+        const responseTime = metadata.responseTime || metadata.inference_time_ms;
+        if (responseTime) {
             const responseSpan = document.createElement('span');
             responseSpan.className = 'response-latency';
-            responseSpan.textContent = `Response: ${metadata.responseTime}ms`;
+            responseSpan.textContent = `Response: ${responseTime}ms`;
             infoDiv.appendChild(responseSpan);
+        }
+
+        if (metadata.input_tokens || metadata.output_tokens) {
+            const tokensSpan = document.createElement('span');
+            tokensSpan.className = 'token-count';
+            tokensSpan.textContent = `${metadata.input_tokens || 0}/${metadata.output_tokens || 0} tokens`;
+            infoDiv.appendChild(tokensSpan);
         }
 
         footerDiv.appendChild(infoDiv);
@@ -1343,26 +1414,26 @@ function renderConversations() {
     conversationsList.innerHTML = conversations
         .sort((a, b) => b.timestamp - a.timestamp)
         .map(conv => `
-            <div class="conversation-item" data-conversation-id="${conv.id}">
+            <div class="conversation-item" data-conversation-id="${conv.conversationId || conv.id}">
                 <div class="conversation-item-header">
                     <span class="conversation-timestamp">${formatTimestamp(conv.timestamp)}</span>
                 </div>
                 <div class="conversation-summary">
-                    ${conv.messages.length > 0 ? conv.messages[0].text : 'Empty conversation'}
+                    ${conv.title || (conv.messages.length > 0 ? conv.messages[0].text : 'Empty conversation')}
                 </div>
             </div>
         `).join('');
 
     document.querySelectorAll('.conversation-item').forEach(item => {
         item.addEventListener('click', () => {
-            const convId = parseInt(item.dataset.conversationId);
+            const convId = item.dataset.conversationId;
             loadConversation(convId);
         });
     });
 }
 
-function loadConversation(conversationId) {
-    const conversation = conversations.find(c => c.id === conversationId);
+async function loadConversation(conversationId) {
+    const conversation = conversations.find(c => c.id === conversationId || c.conversationId === conversationId);
     if (!conversation) return;
 
     // Remove all messages but keep chat-controls
@@ -1372,20 +1443,42 @@ function loadConversation(conversationId) {
     messages.forEach(msg => msg.remove());
     if (welcomeMsg) welcomeMsg.remove();
 
-    // Temporarily clear currentConversation messages to avoid duplication when addMessage is called
-    const tempConversation = currentConversation;
+    // Load messages from backend if we have a backend conversation ID
+    const backendId = conversation.conversationId || conversationId;
+    let messagesToLoad = conversation.messages;
+
+    if (backendId && typeof backendId === 'string' && backendId.includes('-')) {
+        // Looks like a UUID - fetch from backend
+        const backendMessages = await loadConversationMessagesFromBackend(backendId);
+        if (backendMessages.length > 0) {
+            messagesToLoad = backendMessages;
+        }
+    }
+
     currentConversation = {
         id: conversation.id,
-        conversationId: conversation.conversationId,  // Restore backend conversation ID
+        conversationId: backendId,
         messages: [],
         timestamp: conversation.timestamp
     };
 
-    conversation.messages.forEach(msg => {
+    // Reset stats and load from stored conversation stats
+    resetSessionStats();
+
+    // Use stored stats if available
+    if (conversation.stats) {
+        sessionStats.inputTokens = conversation.stats.input_tokens || 0;
+        sessionStats.outputTokens = conversation.stats.output_tokens || 0;
+        sessionStats.totalCost = conversation.stats.total_cost || 0;
+        (conversation.stats.models_used || []).forEach(m => sessionStats.modelsUsed.add(m));
+    }
+
+    messagesToLoad.forEach(msg => {
         addMessage(msg.role, msg.text, msg.metadata, msg.attachments || []);
     });
+    updateSessionStats();
 
-    conversations = conversations.filter(c => c.id !== conversationId);
+    conversations = conversations.filter(c => c.id !== conversationId && c.conversationId !== conversationId);
 
     conversationsModal.classList.remove('active');
 }
@@ -1466,6 +1559,58 @@ if (newConversationBtn) {
         startNewConversation();
     });
 }
+
+// =============================================================================
+// BACKEND CONVERSATION PERSISTENCE
+// =============================================================================
+
+async function loadConversationsFromBackend() {
+    const userId = getUserId();
+    if (!userId) return;
+
+    const response = await fetch(`${API_URL}/conversations?user_id=${userId}`, {
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+
+    // Convert backend conversations to frontend format
+    conversations = (data.conversations || []).map(conv => ({
+        id: conv.id,
+        conversationId: conv.id,  // Backend ID
+        messages: [],  // Messages loaded on demand
+        timestamp: new Date(conv.created_at),
+        title: conv.title || 'Untitled',
+        stats: conv.stats || null
+    }));
+}
+
+async function loadConversationMessagesFromBackend(conversationId) {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    return (data.messages || []).map(msg => ({
+        role: msg.role,
+        text: msg.content,
+        metadata: msg.model ? {
+            model: msg.model,
+            provider: msg.provider,
+            ...msg.metadata
+        } : null,
+        attachments: []
+    }));
+}
+
+// =============================================================================
+// END BACKEND CONVERSATION PERSISTENCE
+// =============================================================================
 
 // Profile Selector Modal
 const profileSelectorModal = document.getElementById('profileSelectorModal');
@@ -2290,6 +2435,7 @@ function init() {
     initCostComparisonChart();
     populateMarketplace();
     testConnection();
+    loadConversationsFromBackend();  // Load user's conversations from backend
     promptInput?.focus();
 
     // Add event listener for model sort dropdown

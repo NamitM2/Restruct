@@ -311,6 +311,101 @@
             color: var(--clay-700);
             text-decoration: underline;
         }
+
+        /* Email confirmation popup */
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(43, 29, 20, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(43, 29, 20, 0.3);
+            transform: scale(0.8) translateY(20px);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .popup-overlay.active .popup-card {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .popup-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            animation: popIn 0.5s ease 0.2s both;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .popup-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--white);
+            stroke-width: 2.5;
+            fill: none;
+        }
+
+        .popup-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 12px;
+        }
+
+        .popup-message {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .popup-button {
+            padding: 14px 32px;
+            background: var(--clay-600);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .popup-button:hover {
+            background: var(--clay-700);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -398,6 +493,20 @@
                     Already have an account? <a href="signin.html">Sign in</a>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Email Confirmation Popup -->
+    <div class="popup-overlay" id="emailPopup">
+        <div class="popup-card">
+            <div class="popup-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="popup-title">Check Your Email</h2>
+            <p class="popup-message">Account created successfully! Please check your email to confirm your account, then sign in.</p>
+            <button class="popup-button" onclick="window.location.href='signin.html'">Go to Sign In</button>
         </div>
     </div>
 
@@ -542,7 +651,7 @@
         })();
 
         // Form submit handler
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
@@ -550,6 +659,8 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             const passwordError = document.getElementById('passwordError');
             const confirmInput = document.getElementById('confirmPassword');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
 
             // Reset error state
             passwordError.style.display = 'none';
@@ -562,11 +673,39 @@
                 return;
             }
 
-            // TODO: Add actual registration logic here
-            console.log('Sign up attempt:', { email, password });
+            // Check password length
+            if (password.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters';
+                passwordError.style.display = 'block';
+                return;
+            }
 
-            // For now, just redirect to main app
-            window.location.href = 'index.html';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+
+            const response = await fetch('/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                if (data.session && data.session.access_token) {
+                    localStorage.setItem('access_token', data.session.access_token);
+                    localStorage.setItem('refresh_token', data.session.refresh_token);
+                    localStorage.setItem('user_id', data.user.id);
+                    localStorage.setItem('user_email', data.user.email);
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('emailPopup').classList.add('active');
+                }
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                alert(data.detail || 'Sign up failed. Email may already be registered.');
+            }
         });
     </script>
 </body>

@@ -360,6 +360,27 @@
         .remember-forgot a:hover {
             text-decoration: underline;
         }
+
+        .error-banner {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #991b1b;
+            font-size: 14px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error-banner.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -422,6 +443,8 @@
                     </div>
                     <p>Sign in to your account</p>
                 </div>
+
+                <div class="error-banner" id="errorBanner"></div>
 
                 <form id="signinForm">
                     <div class="form-group">
@@ -593,17 +616,59 @@
         })();
 
         // Form submit handler
-        document.getElementById('signinForm').addEventListener('submit', function(e) {
+        const errorBanner = document.getElementById('errorBanner');
+
+        function showError(msg) {
+            errorBanner.textContent = msg;
+            errorBanner.classList.add('show');
+        }
+
+        function hideError() {
+            errorBanner.classList.remove('show');
+        }
+
+        document.getElementById('signinForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            hideError();
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
 
-            // TODO: Add actual authentication logic here
-            console.log('Sign in attempt:', { email, password });
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
 
-            // For now, just redirect to main app
-            window.location.href = 'index.html';
+            fetch('/auth/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    localStorage.setItem('access_token', data.session.access_token);
+                    localStorage.setItem('refresh_token', data.session.refresh_token);
+                    localStorage.setItem('user_id', data.user.id);
+                    localStorage.setItem('user_email', data.user.email);
+                    window.location.href = 'index.html';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    const msg = data.detail || '';
+                    if (msg.toLowerCase().includes('email not confirmed')) {
+                        showError('Please confirm your email before signing in. Check your inbox for a confirmation link.');
+                    } else {
+                        showError(msg || 'Sign in failed. Please check your credentials.');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Sign in error:', err);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                showError('Could not connect to server. Is the backend running?');
+            });
         });
     </script>
 </body>
