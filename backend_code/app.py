@@ -3,7 +3,7 @@ FastAPI app: orchestrates routing + inference.
 Minimal endpoints, no error handling (errors will bubble up).
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Optional, List
@@ -19,6 +19,7 @@ import atexit
 import httpx
 from dotenv import load_dotenv
 from supabase import Client, ClientOptions, create_client
+from supabase_auth.errors import AuthApiError
 
 load_dotenv()
 
@@ -57,12 +58,19 @@ def get_conversation_messages(conversation_id: str) -> list:
     )
     messages = []
     for message in result.data:
-        role = message.get("role") or "user"
-        content = message.get("content") or ""
-        messages.append({
-            "role": role,
-            "content": content
-        })
+        msg = {
+            "role": message.get("role") or "user",
+            "content": message.get("content") or ""
+        }
+        if message.get("model"):
+            msg["model"] = message["model"]
+        if message.get("provider"):
+            msg["provider"] = message["provider"]
+        if message.get("metadata"):
+            msg["metadata"] = message["metadata"]
+        if message.get("created_at"):
+            msg["created_at"] = message["created_at"]
+        messages.append(msg)
     return messages
 
 
@@ -83,7 +91,33 @@ def add_message(conversation_id: str, role: str, content: str, model: str = None
         message_data["metadata"] = metadata
 
     result = supabase.table("messages").insert(message_data).execute()
+
+    # Update conversation stats for assistant messages
+    if role == "assistant" and metadata:
+        update_conversation_stats(conversation_id, model, metadata)
+
     return result.data[0]
+
+
+def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
+    """Update aggregated stats on the conversation."""
+    conv = supabase.table("conversations").select("stats").eq("id", conversation_id).execute()
+    current_stats = (conv.data[0].get("stats") if conv.data else None) or {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_cost": 0,
+        "models_used": [],
+        "message_count": 0
+    }
+
+    current_stats["input_tokens"] += metadata.get("input_tokens", 0)
+    current_stats["output_tokens"] += metadata.get("output_tokens", 0)
+    current_stats["total_cost"] += metadata.get("cost", 0)
+    current_stats["message_count"] += 1
+    if model and model not in current_stats["models_used"]:
+        current_stats["models_used"].append(model)
+
+    supabase.table("conversations").update({"stats": current_stats}).eq("id", conversation_id).execute()
 
 
 def update_conversation_title(conversation_id: str, title: str) -> dict:
@@ -164,6 +198,22 @@ app.add_middleware(
 )
 
 
+# Handle Supabase auth errors and return them as proper HTTP responses
+@app.exception_handler(AuthApiError)
+async def auth_error_handler(request, exc: AuthApiError):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+def get_user_from_token(authorization: str) -> dict:
+    """Extract user from JWT token in Authorization header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ", 1)[1]
+    response = supabase.auth.get_user(token)
+    return response.user
+
+
 @app.get("/")
 def root():
     """Health check."""
@@ -175,7 +225,7 @@ def root():
 
 
 @app.post("/chat")
-async def chat(body: dict):
+async def chat(body: dict, authorization: str = Header(None)):
     """Main chat endpoint."""
     import time
 
@@ -183,7 +233,8 @@ async def chat(body: dict):
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
     conversation_id = body.get("conversation_id")
-    user_id = body.get("user_id", DEFAULT_USER_ID)
+    user = get_user_from_token(authorization)
+    user_id = user.id if user else DEFAULT_USER_ID
     profile = body.get("profile", "default")
 
     if not conversation_id:
@@ -211,7 +262,12 @@ async def chat(body: dict):
     input_tokens = response_data.get("input_tokens", 0)
     output_tokens = response_data.get("output_tokens", 0)
 
-    # Save assistant message to database
+    # Calculate cost
+    input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
+    output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
+    total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+    # Save assistant message to database with full stats
     add_message(
         conversation_id=conversation_id,
         role="assistant",
@@ -221,14 +277,14 @@ async def chat(body: dict):
         profile_name=profile,
         metadata={
             "score": model_choice.get("score", 0),
-            "router_mode": router_mode
+            "router_mode": router_mode,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": total_cost,
+            "routing_time_ms": round(routing_time * 1000, 2),
+            "inference_time_ms": round(inference_time * 1000, 2)
         }
     )
-
-    # Calculate cost
-    input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
-    output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
-    total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
 
     # Build response
     return {
@@ -257,7 +313,9 @@ async def chat(body: dict):
 
 
 @app.get("/conversations")
-def list_conversations(user_id: str = DEFAULT_USER_ID):
+def list_conversations(authorization: str = Header(None)):
+    user = get_user_from_token(authorization)
+    user_id = user.id if user else DEFAULT_USER_ID
     conversations = get_user_conversations(user_id)
     return {"conversations": conversations}
 
@@ -269,19 +327,23 @@ def get_messages(conversation_id: str):
 
 
 @app.post("/conversations")
-def new_conversation(user_id: str = DEFAULT_USER_ID, title: str = "New Chat"):
+def new_conversation(authorization: str = Header(None), title: str = "New Chat"):
+    user = get_user_from_token(authorization)
+    user_id = user.id if user else DEFAULT_USER_ID
     conversation = create_conversation(user_id=user_id, title=title)
     return {"conversation": conversation}
 
 
 @app.get("/profiles")
-def list_profiles(user_id: str = DEFAULT_USER_ID):
+def list_profiles(authorization: str = Header(None)):
+    user = get_user_from_token(authorization)
+    user_id = user.id if user else DEFAULT_USER_ID
     profiles = get_routing_profiles(user_id)
     return {"profiles": profiles}
 
 
 @app.post("/profiles")
-def create_profile(body: dict):
+def create_profile(body: dict, authorization: str = Header(None)):
     name = body.get("name")
     graph_state = body.get("graph_state")
     if not name:
@@ -290,18 +352,15 @@ def create_profile(body: dict):
         raise HTTPException(status_code=400, detail="Graph state is required for routing profiles")
 
     description = body.get("description")
-    user_id = body.get("user_id", DEFAULT_USER_ID)
+    user = get_user_from_token(authorization)
+    user_id = user.id if user else DEFAULT_USER_ID
 
-    try:
-        profile = create_routing_profile(
-            user_id=user_id,
-            name=name,
-            description=description,
-            graph_state=graph_state
-        )
-    except Exception as exc:
-        print(f"Error creating routing profile: {exc}")
-        raise HTTPException(status_code=500, detail=f"Failed to save routing profile: {str(exc)}") from exc
+    profile = create_routing_profile(
+        user_id=user_id,
+        name=name,
+        description=description,
+        graph_state=graph_state
+    )
 
     return {"profile": profile}
 
@@ -367,6 +426,121 @@ def list_available_models():
         "success": True,
         "models": models_list
     }
+
+
+# =============================================================================
+# AUTHENTICATION ENDPOINTS (New functionality for sign in / sign up)
+# =============================================================================
+
+from pydantic import BaseModel, EmailStr
+
+
+class SignUpRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class SignInRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@app.post("/auth/signup")
+def auth_signup(body: SignUpRequest):
+    """Create a new user account."""
+    response = supabase.auth.sign_up({
+        "email": body.email,
+        "password": body.password
+    })
+
+    if response.user is None:
+        raise HTTPException(status_code=400, detail="Signup failed - email is already registered")
+
+    return {
+        "success": True,
+        "user": {
+            "id": response.user.id,
+            "email": response.user.email
+        },
+        "session": {
+            "access_token": response.session.access_token if response.session else None,
+            "refresh_token": response.session.refresh_token if response.session else None
+        }
+    }
+
+
+@app.post("/auth/signin")
+def auth_signin(body: SignInRequest):
+    """Sign in an existing user."""
+    response = supabase.auth.sign_in_with_password({
+        "email": body.email,
+        "password": body.password
+    })
+
+    if response.user is None:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    return {
+        "success": True,
+        "user": {
+            "id": response.user.id,
+            "email": response.user.email
+        },
+        "session": {
+            "access_token": response.session.access_token,
+            "refresh_token": response.session.refresh_token
+        }
+    }
+
+
+@app.post("/auth/signout")
+def auth_signout(authorization: str = Header(None)):
+    """Sign out the current user."""
+    if authorization and authorization.startswith("Bearer "):
+        supabase.auth.sign_out()
+    return {"success": True}
+
+
+@app.get("/auth/me")
+def auth_me(authorization: str = Header(None)):
+    """Get the currently authenticated user."""
+    user = get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    return {
+        "success": True,
+        "user": {
+            "id": user.id,
+            "email": user.email
+        }
+    }
+
+
+@app.post("/auth/refresh")
+def auth_refresh(body: dict):
+    """Refresh an access token using a refresh token."""
+    refresh_token = body.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="refresh_token is required")
+
+    response = supabase.auth.refresh_session(refresh_token)
+
+    if response.session is None:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    return {
+        "success": True,
+        "session": {
+            "access_token": response.session.access_token,
+            "refresh_token": response.session.refresh_token
+        }
+    }
+
+
+# =============================================================================
+# END AUTHENTICATION ENDPOINTS
+# =============================================================================
 
 
 # Mount frontend static files (go up one directory)
