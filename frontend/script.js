@@ -30,10 +30,43 @@ function logout() {
     window.location.href = 'signin.html';
 }
 
-// Check auth on page load - redirect to signin if not authenticated
-if (!isAuthenticated()) {
-    window.location.href = 'signin.html';
+async function refreshSession() {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) return false;
+
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+    });
+
+    if (!response.ok) {
+        logout();
+        return false;
+    }
+
+    const data = await response.json();
+    localStorage.setItem('access_token', data.session.access_token);
+    localStorage.setItem('refresh_token', data.session.refresh_token);
+    return true;
 }
+
+// Check auth on page load - try refresh if token exists
+(async () => {
+    if (!isAuthenticated()) {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+            const refreshed = await refreshSession();
+            if (!refreshed) return;
+        } else {
+            window.location.href = 'signin.html';
+            return;
+        }
+    }
+
+    // Refresh token every 50 minutes (tokens expire after 1 hour)
+    setInterval(refreshSession, 50 * 60 * 1000);
+})()
 
 // Wire up logout button and display user email
 document.addEventListener('DOMContentLoaded', () => {
@@ -1110,13 +1143,6 @@ function addMessage(role, content, metadata = null, attachments = []) {
             responseSpan.className = 'response-latency';
             responseSpan.textContent = `Response: ${responseTime}ms`;
             infoDiv.appendChild(responseSpan);
-        }
-
-        if (metadata.input_tokens || metadata.output_tokens) {
-            const tokensSpan = document.createElement('span');
-            tokensSpan.className = 'token-count';
-            tokensSpan.textContent = `${metadata.input_tokens || 0}/${metadata.output_tokens || 0} tokens`;
-            infoDiv.appendChild(tokensSpan);
         }
 
         footerDiv.appendChild(infoDiv);
