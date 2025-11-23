@@ -27,7 +27,34 @@ function logout() {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_email');
-    window.location.href = 'signin.html';
+    showSigninSection();
+}
+
+function showSigninSection() {
+    const signinSection = document.getElementById('signinSection');
+    const appShell = document.getElementById('appShell');
+    if (signinSection) signinSection.classList.add('active');
+    if (appShell) appShell.style.display = 'none';
+
+    // Reset sign-in form state
+    const form = document.getElementById('signinForm');
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    const errorBanner = document.getElementById('signinErrorBanner');
+    if (form) form.reset();
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+    }
+    if (errorBanner) errorBanner.classList.remove('show');
+
+    initMeshAnimation();
+}
+
+function showAppSection() {
+    const signinSection = document.getElementById('signinSection');
+    const appShell = document.getElementById('appShell');
+    if (signinSection) signinSection.classList.remove('active');
+    if (appShell) appShell.style.display = '';
 }
 
 async function refreshSession() {
@@ -57,12 +84,18 @@ async function refreshSession() {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
             const refreshed = await refreshSession();
-            if (!refreshed) return;
+            if (!refreshed) {
+                showSigninSection();
+                return;
+            }
         } else {
-            window.location.href = 'signin.html';
+            showSigninSection();
             return;
         }
     }
+
+    // User is authenticated, show app
+    showAppSection();
 
     // Refresh token every 50 minutes (tokens expire after 1 hour)
     setInterval(refreshSession, 50 * 60 * 1000);
@@ -71,11 +104,22 @@ async function refreshSession() {
 // Wire up logout button and display user email
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
+    const navSignOutBtn = document.getElementById('navSignOutBtn');
+    const navSignInBtn = document.getElementById('navSignInBtn');
     const userEmailDisplay = document.getElementById('userEmailDisplay');
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
     }
+
+    if (navSignOutBtn) {
+        navSignOutBtn.addEventListener('click', logout);
+    }
+
+    // Show/hide auth buttons based on login state
+    const authenticated = isAuthenticated();
+    if (navSignInBtn) navSignInBtn.style.display = authenticated ? 'none' : 'block';
+    if (navSignOutBtn) navSignOutBtn.style.display = authenticated ? 'block' : 'none';
 
     if (userEmailDisplay) {
         const email = getUserEmail();
@@ -88,7 +132,241 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = getUserEmail();
         userEmailIndicator.textContent = email || 'Not signed in';
     }
+
+    // Set up sign-in form handler
+    setupSigninForm();
 });
+
+// Mesh animation for sign-in page
+function initMeshAnimation() {
+    const canvas = document.getElementById('meshCanvas');
+    const container = document.getElementById('meshBackground');
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext('2d');
+    const config = {
+        gridSize: 35,
+        gravityStrength: 18,
+        influenceRadius: 100,
+        dampening: 0.95,
+        returnSpeed: 0.05,
+        lineColor: 'rgba(142, 60, 44, 0.15)',
+        maxDisplacement: 20
+    };
+
+    let points = [];
+    let originalPoints = [];
+    let gridDimensions = { cols: 0, rows: 0 };
+    let mouse = { x: -1000, y: -1000, isActive: false };
+    let animationId = null;
+
+    function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        initializeGrid();
+    }
+
+    function initializeGrid() {
+        points = [];
+        originalPoints = [];
+        const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+        const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+        gridDimensions = { cols, rows };
+
+        for (let i = 0; i < cols; i++) {
+            for (let j = 0; j < rows; j++) {
+                const x = i * config.gridSize;
+                const y = j * config.gridSize;
+                points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
+                originalPoints.push({ x, y });
+            }
+        }
+    }
+
+    function updatePoints() {
+        points.forEach((point, index) => {
+            const original = originalPoints[index];
+            const dx = mouse.x - point.x;
+            const dy = mouse.y - point.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (mouse.isActive && distance < config.influenceRadius) {
+                const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                const angle = Math.atan2(dy, dx);
+                point.vx += Math.cos(angle) * force * 0.01;
+                point.vy += Math.sin(angle) * force * 0.01;
+            } else {
+                point.vx += (original.x - point.x) * config.returnSpeed;
+                point.vy += (original.y - point.y) * config.returnSpeed;
+            }
+
+            point.vx *= config.dampening;
+            point.vy *= config.dampening;
+            point.x += point.vx;
+            point.y += point.vy;
+
+            const dispX = point.x - original.x;
+            const dispY = point.y - original.y;
+            const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+
+            if (displacement > config.maxDisplacement) {
+                const scale = config.maxDisplacement / displacement;
+                point.x = original.x + dispX * scale;
+                point.y = original.y + dispY * scale;
+            }
+        });
+    }
+
+    function drawMesh() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const { cols, rows } = gridDimensions;
+        if (!cols || !rows || points.length === 0) return;
+
+        ctx.strokeStyle = config.lineColor;
+        ctx.lineWidth = 1;
+
+        for (let j = 0; j < rows; j++) {
+            ctx.beginPath();
+            for (let i = 0; i < cols; i++) {
+                const index = i * rows + j;
+                const point = points[index];
+                if (!point) continue;
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            }
+            ctx.stroke();
+        }
+
+        for (let i = 0; i < cols; i++) {
+            ctx.beginPath();
+            for (let j = 0; j < rows; j++) {
+                const index = i * rows + j;
+                const point = points[index];
+                if (!point) continue;
+                if (j === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            }
+            ctx.stroke();
+        }
+    }
+
+    function animate() {
+        updatePoints();
+        drawMesh();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    const parentElement = container.parentElement;
+
+    window.addEventListener('resize', resizeCanvas);
+    if (parentElement) {
+        parentElement.addEventListener('mousemove', (e) => {
+            const rect = container.getBoundingClientRect();
+            mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
+        });
+        parentElement.addEventListener('mouseleave', () => {
+            mouse.isActive = false;
+        });
+    }
+
+    setTimeout(() => {
+        resizeCanvas();
+        requestAnimationFrame(animate);
+    }, 50);
+}
+
+// Sign-in form handler
+function setupSigninForm() {
+    const form = document.getElementById('signinForm');
+    const errorBanner = document.getElementById('signinErrorBanner');
+    if (!form) return;
+
+    function showError(msg) {
+        if (errorBanner) {
+            errorBanner.textContent = msg;
+            errorBanner.classList.add('show');
+        }
+    }
+
+    function hideError() {
+        if (errorBanner) {
+            errorBanner.classList.remove('show');
+        }
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideError();
+
+        const email = document.getElementById('signinEmail').value;
+        const password = document.getElementById('signinPassword').value;
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing in...';
+
+        fetch(`${API_URL}/auth/signin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (ok && data.success) {
+                localStorage.setItem('access_token', data.session.access_token);
+                localStorage.setItem('refresh_token', data.session.refresh_token);
+                localStorage.setItem('user_id', data.user.id);
+                localStorage.setItem('user_email', data.user.email);
+
+                // Show wave transition
+                const wave = document.getElementById('waveTransition');
+                wave.classList.add('active');
+
+                // After wave covers screen, switch to app view
+                setTimeout(() => {
+                    showAppSection();
+                    // Update user displays
+                    const userEmailDisplay = document.getElementById('userEmailDisplay');
+                    const userEmailIndicator = document.getElementById('userEmail');
+                    const navSignInBtn = document.getElementById('navSignInBtn');
+                    const navSignOutBtn = document.getElementById('navSignOutBtn');
+
+                    if (userEmailDisplay) userEmailDisplay.textContent = `Signed in as ${data.user.email}`;
+                    if (userEmailIndicator) userEmailIndicator.textContent = data.user.email;
+                    if (navSignInBtn) navSignInBtn.style.display = 'none';
+                    if (navSignOutBtn) navSignOutBtn.style.display = 'block';
+
+                    // Continue wave animation to exit
+                    wave.classList.remove('active');
+                    wave.classList.add('exit');
+
+                    // Remove exit class after animation completes
+                    setTimeout(() => {
+                        wave.classList.remove('exit');
+                    }, 1200);
+                }, 600);
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                const msg = data.detail || '';
+                if (msg.toLowerCase().includes('email not confirmed')) {
+                    showError('Please confirm your email before signing in. Check your inbox for a confirmation link.');
+                } else {
+                    showError(msg || 'Sign in failed. Please check your credentials.');
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Sign in error:', err);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showError('Could not connect to server. Is the backend running?');
+        });
+    });
+}
 
 // =============================================================================
 // END AUTHENTICATION HANDLING
@@ -1497,6 +1775,8 @@ async function loadConversation(conversationId) {
         sessionStats.outputTokens = conversation.stats.output_tokens || 0;
         sessionStats.totalCost = conversation.stats.total_cost || 0;
         (conversation.stats.models_used || []).forEach(m => sessionStats.modelsUsed.add(m));
+        sessionStats.routingTimes = conversation.stats.routing_times || [];
+        sessionStats.responseTimes = conversation.stats.response_times || [];
     }
 
     messagesToLoad.forEach(msg => {
@@ -1545,7 +1825,6 @@ function startNewConversation() {
     welcomeDiv.innerHTML = `
         <img src="assets/logo.png" alt="" class="logo-mark ghost">
         <h3>Welcome to Restruct</h3>
-        <p>The right model, every time. Intelligent routing out of the box, fully customizable when you need it.</p>
     `;
 
     if (chatControls) {
