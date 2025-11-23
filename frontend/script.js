@@ -1089,12 +1089,13 @@ if (chatForm) {
         try {
             // Create conversation first if this is a new chat
             if (!currentConversation.conversationId) {
+                const title = truncateTitle(prompt);
                 const convResponse = await fetch(`${API_URL}/conversations`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({
                         user_id: getUserId(),
-                        title: 'New Chat'
+                        title: title
                     })
                 });
 
@@ -1104,6 +1105,7 @@ if (chatForm) {
 
                 const convData = await convResponse.json();
                 currentConversation.conversationId = convData.conversation.id;
+                currentConversation.title = title;
                 payload.conversation_id = currentConversation.conversationId;
             }
 
@@ -1679,8 +1681,24 @@ let currentConversation = {
     id: Date.now(),
     conversationId: null,  // Backend conversation ID
     messages: [],
-    timestamp: new Date()
+    timestamp: new Date(),
+    title: null
 };
+
+function truncateTitle(text, maxLength = 40) {
+    const cleaned = text.trim().replace(/^(hey|hi|hello|can you|could you|please|i need|help me|i want to)\s*/i, '');
+    if (cleaned.length <= maxLength) return cleaned;
+    return cleaned.substring(0, maxLength).trim() + '...';
+}
+
+async function updateConversationTitle(conversationId, title) {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ title })
+    });
+    return response.ok;
+}
 
 const conversationsModal = document.getElementById('conversationsModal');
 const previousConversationsBtn = document.getElementById('previousConversationsBtn');
@@ -1806,7 +1824,8 @@ function startNewConversation() {
         id: Date.now(),
         conversationId: null,  // Reset backend conversation ID
         messages: [],
-        timestamp: new Date()
+        timestamp: new Date(),
+        title: null
     };
 
     // Reset conversation stats

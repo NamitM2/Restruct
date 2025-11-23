@@ -362,6 +362,21 @@ def new_conversation(authorization: str = Header(None), title: str = "New Chat")
     return {"conversation": conversation}
 
 
+@app.patch("/conversations/{conversation_id}")
+def update_conversation(conversation_id: str, body: dict, authorization: str = Header(None)):
+    user = get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    conv = supabase.table("conversations").select("user_id").eq("id", conversation_id).execute()
+    if not conv.data or conv.data[0]["user_id"] != user.id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    title = body.get("title")
+    if title:
+        updated = update_conversation_title(conversation_id, title)
+        return {"conversation": updated}
+    return {"conversation": conv.data[0]}
+
+
 @app.get("/profiles")
 def list_profiles(authorization: str = Header(None)):
     user = get_user_from_token(authorization)
