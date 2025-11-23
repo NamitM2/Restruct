@@ -346,8 +346,8 @@ function setupSigninForm() {
                     // Remove exit class after animation completes
                     setTimeout(() => {
                         wave.classList.remove('exit');
-                    }, 1200);
-                }, 600);
+                    }, 1400);
+                }, 800);
             } else {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;

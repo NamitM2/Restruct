@@ -103,15 +103,15 @@ body {
 }
 
 .wave-transition.active .wave {
-    animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: waveSweep 1.75s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .wave-transition.active .wave-2 {
-    animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+    animation: waveSweep 1.75s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
 }
 
 .wave-transition.active .wave-3 {
-    animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
+    animation: waveSweep 1.75s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
 }
 
 @keyframes waveSweep {
@@ -137,6 +137,46 @@ body {
 .wave-transition.exit .wave-3 {
     left: -25%;
     animation: waveExit 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+
+.wave-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wave-transition.active .wave-logo {
+    animation: logoFadeInOut 1.0s ease 0.5s forwards;
+}
+
+.wave-transition.exit .wave-logo {
+    animation: logoFadeInOut 0.9s ease 0.2s forwards;
+}
+
+@keyframes logoFadeInOut {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.wave-logo img {
+    width: 64px;
+    height: 64px;
+}
+
+.wave-logo span {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -1px;
 }
 
 /* Sign-in section styles */
