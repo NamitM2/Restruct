@@ -43,8 +43,8 @@
         router: "#5b2a1a",
         edgeIdle: "rgba(92, 49, 30, 0.25)"
       };
-      var defaultCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
-      var activeCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%235b2a1a' stroke='%235b2a1a' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
+      var defaultCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%238e3c2c' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
+      var activeCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%238e3c2c' stroke='%238e3c2c' stroke-width='2'/%3E%3C/svg%3E") 10 10, auto`;
       var cursorStyles = `
   * { cursor: ${defaultCursor} !important; }
   *:active { cursor: ${activeCursor} !important; }
@@ -52,7 +52,7 @@
   input:focus, textarea:focus, select:focus {
     outline: none !important;
     border-color: #b56747 !important;
-    box-shadow: 0 0 0 2px rgba(181, 103, 71, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(92, 49, 30, 0.15) !important;
   }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -325,7 +325,7 @@
               type: "button",
               onClick: handleSave,
               className: "flex-1 py-2 rounded-lg text-sm font-semibold transition hover:opacity-90",
-              style: { background: "linear-gradient(135deg, #c98454, #8e3c2c)", color: "#fffdf9" }
+              style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
             }, "Create Rule")
           ])
         ]));
@@ -374,6 +374,96 @@
           ])
         ]);
       };
+      var Toast = ({ message, type, onClose }) => {
+        const [particles, setParticles] = useState([]);
+        const toastRef = useRef(null);
+        useEffect(() => {
+          if (type === "success") {
+            const newParticles = [];
+            for (let i = 0; i < 20; i++) {
+              newParticles.push({
+                id: i,
+                x: Math.random() * 100,
+                y: Math.random() * 100,
+                size: Math.random() * 4 + 2,
+                speedX: (Math.random() - 0.5) * 3,
+                speedY: (Math.random() - 0.5) * 3 - 1,
+                opacity: 1,
+                color: ["#dbc4a0", "#c98454", "#b56747"][Math.floor(Math.random() * 3)]
+              });
+            }
+            setParticles(newParticles);
+          }
+          const timer = setTimeout(onClose, 3e3);
+          return () => clearTimeout(timer);
+        }, [type, onClose]);
+        useEffect(() => {
+          if (particles.length === 0) return;
+          const interval = setInterval(() => {
+            setParticles((prev) => prev.map((p) => ({
+              ...p,
+              x: p.x + p.speedX,
+              y: p.y + p.speedY,
+              opacity: p.opacity - 0.02
+            })).filter((p) => p.opacity > 0));
+          }, 30);
+          return () => clearInterval(interval);
+        }, [particles.length]);
+        const bgColor = type === "success" ? "linear-gradient(135deg, rgba(92, 49, 30, 0.97), rgba(94, 52, 42, 0.97))" : type === "error" ? "linear-gradient(135deg, rgba(139, 79, 63, 0.97), rgba(94, 52, 42, 0.97))" : "linear-gradient(135deg, rgba(92, 49, 30, 0.95), rgba(139, 79, 63, 0.95))";
+        return React.createElement("div", {
+          ref: toastRef,
+          className: "fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto",
+          style: { animation: "toastSlideUp 0.3s ease-out" }
+        }, [
+          // Particles container
+          type === "success" && React.createElement("div", {
+            key: "particles",
+            className: "absolute inset-0 overflow-visible pointer-events-none",
+            style: { width: "300px", height: "60px", left: "-50px", top: "-20px" }
+          }, particles.map((p) => React.createElement("div", {
+            key: p.id,
+            className: "absolute rounded-full",
+            style: {
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              backgroundColor: p.color,
+              opacity: p.opacity,
+              transform: "translate(-50%, -50%)",
+              boxShadow: `0 0 ${p.size * 2}px ${p.color}`
+            }
+          }))),
+          // Toast body
+          React.createElement("div", {
+            key: "body",
+            className: "px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3",
+            style: {
+              background: bgColor,
+              color: "#fffdf9",
+              minWidth: "200px",
+              backdropFilter: "blur(8px)"
+            }
+          }, [
+            // Icon
+            React.createElement("span", {
+              key: "icon",
+              className: "text-lg"
+            }, type === "success" ? "\u2713" : type === "error" ? "\u2715" : "\u2139"),
+            // Message
+            React.createElement("span", {
+              key: "message",
+              className: "text-sm font-medium"
+            }, message)
+          ])
+        ]);
+      };
+      var toastStyles = `
+@keyframes toastSlideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+`;
       var WeightBarChart = ({ weights }) => {
         const maxWeight = Math.max(...weights.map((w) => w.weight));
         const labels = ["Q", "C", "L"];
@@ -413,7 +503,7 @@
           influenceRadius: 100,
           dampening: 0.95,
           returnSpeed: 0.05,
-          lineColor: "rgba(142, 60, 44, 0.15)",
+          lineColor: "rgba(92, 49, 30, 0.15)",
           maxDisplacement: 20
         }), []);
         useEffect(() => {
@@ -553,8 +643,7 @@
         const [ruleModalOpen, setRuleModalOpen] = useState(false);
         const [testPrompt, setTestPrompt] = useState("");
         const [isSaving, setIsSaving] = useState(false);
-        const [error, setError] = useState("");
-        const [success, setSuccess] = useState("");
+        const [toast, setToast] = useState(null);
         const containerRef = useRef(null);
         const leftRefs = useRef({});
         const centerRef = useRef(null);
@@ -565,7 +654,7 @@
           if (!document.getElementById(styleId)) {
             const style = document.createElement("style");
             style.id = styleId;
-            style.textContent = cursorStyles;
+            style.textContent = cursorStyles + toastStyles;
             document.head.appendChild(style);
           }
           return () => {
@@ -588,20 +677,25 @@
         const deleteRule = (id) => {
           setRules((prev) => prev.filter((r) => r.id !== id));
         };
+        const showToast = (message, type) => {
+          setToast({ message, type });
+        };
         const handleSave = async () => {
           if (!profileName.trim()) {
-            setError("Profile name is required");
+            showToast("Please enter a profile name", "warning");
             return;
           }
           setIsSaving(true);
-          setError("");
-          setSuccess("");
           const graphState = { weights, hardLimits, providers, rules };
           const payload = { name: profileName, description, graph_state: graphState };
           try {
+            const token = localStorage.getItem("access_token");
             const response = await fetch(`${window.API_URL}/profiles`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                ...token && { "Authorization": `Bearer ${token}` }
+              },
               body: JSON.stringify(payload)
             });
             if (!response.ok) {
@@ -609,11 +703,11 @@
               throw new Error(errorData.detail || "Failed to save profile");
             }
             const saved = await response.json();
-            setSuccess("Profile saved successfully!");
+            showToast("Profile saved successfully!", "success");
             window.dispatchEvent(new CustomEvent("routing-profile:created", { detail: { profile: saved.profile } }));
-            setTimeout(() => onDismiss(), 1500);
+            setTimeout(() => onDismiss(), 500);
           } catch (err) {
-            setError(err.message || "Failed to save profile");
+            showToast(err.message || "Failed to save profile", "error");
           }
           setIsSaving(false);
         };
@@ -718,7 +812,7 @@
                 onClick: handleSave,
                 disabled: isSaving,
                 className: "px-5 py-2 text-sm font-semibold rounded-lg shadow-lg transition hover:opacity-90 disabled:opacity-60",
-                style: { background: "linear-gradient(135deg, #c98454, #8e3c2c)", color: "#fffdf9" }
+                style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
               }, isSaving ? "Saving..." : "Save Profile")
             ])
           ]),
@@ -824,7 +918,7 @@
                   type: "button",
                   onClick: () => setRuleModalOpen(true),
                   className: "w-full py-3 rounded-xl text-sm font-semibold transition hover:opacity-90",
-                  style: { background: "linear-gradient(135deg, #c98454, #8e3c2c)", color: "#fffdf9" }
+                  style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
                 }, "Add Rule")
               ]
             ]),
@@ -865,7 +959,7 @@
                     key: "send",
                     type: "button",
                     className: "w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90",
-                    style: { background: "linear-gradient(135deg, #c98454, #8e3c2c)", color: "#fffdf9", fontSize: "1.2rem", fontWeight: "700" }
+                    style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8", fontSize: "1.2rem", fontWeight: "700" }
                   }, "\u2191")
                 ])
               ]),
@@ -1097,17 +1191,7 @@
                   style: { color: "#2b1d14" }
                 }, "Routing explanation"),
                 `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${((_a = activeProviders[0]) == null ? void 0 : _a.label) || "available providers"} based on current weight configuration.`
-              ]),
-              error && React.createElement("div", {
-                key: "error",
-                className: "mt-4 p-3 rounded-lg text-xs",
-                style: { backgroundColor: "rgba(142, 60, 44, 0.1)", color: "#8e3c2c" }
-              }, error),
-              success && React.createElement("div", {
-                key: "success",
-                className: "mt-4 p-3 rounded-lg text-xs",
-                style: { backgroundColor: "rgba(181, 103, 71, 0.1)", color: "#b56747" }
-              }, success)
+              ])
             ])
           ]),
           // Rule Editor Modal
@@ -1116,6 +1200,13 @@
             isOpen: ruleModalOpen,
             onClose: () => setRuleModalOpen(false),
             onSave: addRule
+          }),
+          // Toast notification
+          toast && React.createElement(Toast, {
+            key: "toast",
+            message: toast.message,
+            type: toast.type,
+            onClose: () => setToast(null)
           })
         ]);
       }

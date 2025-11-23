@@ -339,7 +339,16 @@ def list_conversations(authorization: str = Header(None)):
 
 
 @app.get("/conversations/{conversation_id}/messages")
-def get_messages(conversation_id: str):
+def get_messages(conversation_id: str, authorization: str = Header(None)):
+    user = get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Verify conversation belongs to this user
+    conv = supabase.table("conversations").select("user_id").eq("id", conversation_id).execute()
+    if not conv.data or conv.data[0]["user_id"] != user.id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
     messages = get_conversation_messages(conversation_id)
     return {"messages": messages}
 
