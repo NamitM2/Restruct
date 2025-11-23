@@ -1,15 +1,20 @@
 ﻿:root {
-    --sand-50: #f6efe7;
-    --sand-100: #f1e5d7;
-    --sand-200: #e6d5c0;
-    --sand-400: #d0b190;
-    --clay-400: #c98454;
-    --clay-500: #b56747;
-    --clay-600: #8e3c2c;
-    --clay-700: #5b2a1a;
-    --ink: #2b1d14;
-    --muted: rgba(43, 29, 20, 0.7);
-    --white: #fffaf5;
+    /* Off-white / cream backgrounds */
+    --sand-50: #faf7f2;
+    --sand-100: #f5efe6;
+    --sand-200: #ebe3d6;
+    --sand-400: #dbc4a0;
+
+    /* Terracotta / warm red-brown from logo */
+    --clay-400: #c4836a;
+    --clay-500: #a5634f;
+    --clay-600: #8b4f3f;
+    --clay-700: #5e342a;
+
+    /* Text colors */
+    --ink: #3d2a1f;
+    --muted: rgba(61, 42, 31, 0.65);
+    --white: #fffcf8;
 }
 
 * {
