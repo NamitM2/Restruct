@@ -328,6 +328,7 @@ function setupSigninForm() {
                 // After wave covers screen, switch to app view
                 setTimeout(() => {
                     showAppSection();
+                    loadConversationsFromBackend();  // Load user's conversations after login
                     // Update user displays
                     const userEmailDisplay = document.getElementById('userEmailDisplay');
                     const userEmailIndicator = document.getElementById('userEmail');
