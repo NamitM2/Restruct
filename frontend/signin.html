@@ -11,6 +11,7 @@
         rel="stylesheet"
     >
     <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="prefetch" href="index.html">
     <style>
         :root {
             --sand-50: #f6efe7;
@@ -429,6 +430,80 @@
             width: 20px;
             height: 20px;
         }
+
+        /* Wave transition */
+        .wave-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .wave-transition .wave {
+            position: absolute;
+            top: -10%;
+            left: -320%;
+            width: 300%;
+            height: 120%;
+            background: var(--clay-600);
+            transform: skewX(-15deg);
+            transition: none;
+        }
+
+        .wave-transition .wave-2 {
+            background: var(--clay-500);
+            left: -325%;
+        }
+
+        .wave-transition .wave-3 {
+            background: var(--clay-700);
+            left: -315%;
+        }
+
+        .wave-transition.active .wave {
+            animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .wave-transition.active .wave-2 {
+            animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+        }
+
+        .wave-transition.active .wave-3 {
+            animation: waveSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
+        }
+
+        @keyframes waveSweep {
+            0% {
+                left: -320%;
+            }
+            100% {
+                left: 150%;
+            }
+        }
+
+        @keyframes waveExit {
+            0% { left: -30%; }
+            100% { left: 150%; }
+        }
+
+        .wave-transition.exit .wave {
+            left: -30%;
+            animation: waveExit 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .wave-transition.exit .wave-2 {
+            left: -35%;
+            animation: waveExit 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
+        }
+
+        .wave-transition.exit .wave-3 {
+            left: -25%;
+            animation: waveExit 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.02s forwards;
+        }
     </style>
 </head>
 <body>
@@ -535,8 +610,19 @@
         </div>
     </div>
 
+    <!-- Wave transition -->
+    <div class="wave-transition" id="waveTransition">
+        <div class="wave wave-3"></div>
+        <div class="wave"></div>
+        <div class="wave wave-2"></div>
+    </div>
+
     <script>
-        // Mesh Animation
+        // Redirect to index.html - sign-in is now integrated there
+        window.location.replace('index.html');
+    </script>
+    <script>
+        // Mesh Animation (kept for fallback if redirect fails)
         (function() {
             const canvas = document.getElementById('meshCanvas');
             const container = document.getElementById('meshBackground');
@@ -711,7 +797,16 @@
                     localStorage.setItem('refresh_token', data.session.refresh_token);
                     localStorage.setItem('user_id', data.user.id);
                     localStorage.setItem('user_email', data.user.email);
-                    window.location.href = 'index.html';
+
+                    // Show wave transition
+                    sessionStorage.setItem('waveTransition', 'true');
+                    const wave = document.getElementById('waveTransition');
+                    wave.classList.add('active');
+
+                    // Redirect when wave is halfway across
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 600);
                 } else {
                     submitBtn.disabled = false;
                     submitBtn.textContent = originalText;
@@ -730,6 +825,13 @@
                 showError('Could not connect to server. Is the backend running?');
             });
         });
+
+        // Check for incoming wave transition
+        if (sessionStorage.getItem('waveTransition')) {
+            sessionStorage.removeItem('waveTransition');
+            const wave = document.getElementById('waveTransition');
+            wave.classList.add('exit');
+        }
     </script>
 </body>
 </html>

@@ -107,7 +107,9 @@ def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
         "output_tokens": 0,
         "total_cost": 0,
         "models_used": [],
-        "message_count": 0
+        "message_count": 0,
+        "routing_times": [],
+        "response_times": []
     }
 
     current_stats["input_tokens"] += metadata.get("input_tokens", 0)
@@ -116,6 +118,17 @@ def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
     current_stats["message_count"] += 1
     if model and model not in current_stats["models_used"]:
         current_stats["models_used"].append(model)
+
+    # Track routing and response times
+    if "routing_times" not in current_stats:
+        current_stats["routing_times"] = []
+    if "response_times" not in current_stats:
+        current_stats["response_times"] = []
+
+    if metadata.get("routing_time_ms"):
+        current_stats["routing_times"].append(metadata["routing_time_ms"])
+    if metadata.get("inference_time_ms"):
+        current_stats["response_times"].append(metadata["inference_time_ms"])
 
     supabase.table("conversations").update({"stats": current_stats}).eq("id", conversation_id).execute()
 
@@ -211,7 +224,9 @@ def get_user_from_token(authorization: str) -> dict:
         return None
     token = authorization.split(" ", 1)[1]
     response = supabase.auth.get_user(token)
-    return response.user
+    if response and response.user:
+        return response.user
+    return None
 
 
 @app.get("/")
@@ -234,7 +249,9 @@ async def chat(body: dict, authorization: str = Header(None)):
     model_override = body.get("model_override")
     conversation_id = body.get("conversation_id")
     user = get_user_from_token(authorization)
-    user_id = user.id if user else DEFAULT_USER_ID
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = user.id
     profile = body.get("profile", "default")
 
     if not conversation_id:
@@ -315,8 +332,9 @@ async def chat(body: dict, authorization: str = Header(None)):
 @app.get("/conversations")
 def list_conversations(authorization: str = Header(None)):
     user = get_user_from_token(authorization)
-    user_id = user.id if user else DEFAULT_USER_ID
-    conversations = get_user_conversations(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    conversations = get_user_conversations(user.id)
     return {"conversations": conversations}
 
 
@@ -329,16 +347,18 @@ def get_messages(conversation_id: str):
 @app.post("/conversations")
 def new_conversation(authorization: str = Header(None), title: str = "New Chat"):
     user = get_user_from_token(authorization)
-    user_id = user.id if user else DEFAULT_USER_ID
-    conversation = create_conversation(user_id=user_id, title=title)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    conversation = create_conversation(user_id=user.id, title=title)
     return {"conversation": conversation}
 
 
 @app.get("/profiles")
 def list_profiles(authorization: str = Header(None)):
     user = get_user_from_token(authorization)
-    user_id = user.id if user else DEFAULT_USER_ID
-    profiles = get_routing_profiles(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    profiles = get_routing_profiles(user.id)
     return {"profiles": profiles}
 
 
@@ -353,10 +373,11 @@ def create_profile(body: dict, authorization: str = Header(None)):
 
     description = body.get("description")
     user = get_user_from_token(authorization)
-    user_id = user.id if user else DEFAULT_USER_ID
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
     profile = create_routing_profile(
-        user_id=user_id,
+        user_id=user.id,
         name=name,
         description=description,
         graph_state=graph_state
