@@ -1545,6 +1545,7 @@ function startNewConversation() {
     welcomeDiv.innerHTML = `
         <img src="assets/logo.png" alt="" class="logo-mark ghost">
         <h3>Welcome to Restruct</h3>
+        <p>The right model, every time. Intelligent routing out of the box, fully customizable when you need it.</p>
     `;
 
     if (chatControls) {
