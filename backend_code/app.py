@@ -354,10 +354,11 @@ def get_messages(conversation_id: str, authorization: str = Header(None)):
 
 
 @app.post("/conversations")
-def new_conversation(authorization: str = Header(None), title: str = "New Chat"):
+def new_conversation(body: dict, authorization: str = Header(None)):
     user = get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    title = body.get("title") or "New Chat"
     conversation = create_conversation(user_id=user.id, title=title)
     return {"conversation": conversation}
 
