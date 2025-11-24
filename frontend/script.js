@@ -1686,9 +1686,9 @@ let currentConversation = {
 };
 
 function truncateTitle(text, maxLength = 40) {
-    const cleaned = text.trim().replace(/^(hey|hi|hello|can you|could you|please|i need|help me|i want to)\s*/i, '');
-    if (cleaned.length <= maxLength) return cleaned;
-    return cleaned.substring(0, maxLength).trim() + '...';
+    const trimmed = text.trim();
+    if (trimmed.length <= maxLength) return trimmed;
+    return trimmed.substring(0, maxLength).trim() + '...';
 }
 
 async function updateConversationTitle(conversationId, title) {
