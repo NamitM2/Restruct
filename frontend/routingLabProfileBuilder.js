@@ -702,6 +702,9 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         providerPresets.map(p => ({ ...p, enabled: true }))
     );
     const [rules, setRules] = useState([]);
+    const [systemPrompt, setSystemPrompt] = useState('');
+    const [systemPromptModalOpen, setSystemPromptModalOpen] = useState(false);
+    const [systemPromptDraft, setSystemPromptDraft] = useState('');
     const [ruleModalOpen, setRuleModalOpen] = useState(false);
     const [testPrompt, setTestPrompt] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -746,6 +749,21 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
 
     const deleteRule = (id) => {
         setRules(prev => prev.filter(r => r.id !== id));
+    };
+
+    const openSystemPromptModal = () => {
+        setSystemPromptDraft(systemPrompt || '');
+        setSystemPromptModalOpen(true);
+    };
+
+    const saveSystemPrompt = () => {
+        if (!systemPromptDraft.trim()) {
+            showToast('System prompt cannot be empty', 'warning');
+            return;
+        }
+        setSystemPrompt(systemPromptDraft.trim());
+        setSystemPromptModalOpen(false);
+        showToast('System prompt saved', 'success');
     };
 
     const showToast = (message, type) => {
@@ -1010,7 +1028,59 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                         onClick: () => setRuleModalOpen(true),
                         className: 'w-full py-3 rounded-xl text-sm font-semibold transition hover:opacity-90',
                         style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
-                    }, 'Add Rule')
+                    }, 'Add Rule'),
+                    React.createElement('div', {
+                        key: 'roles-section',
+                        className: 'mt-6 p-4 rounded-xl',
+                        style: { background: 'rgba(142, 60, 44, 0.05)', border: '1px dashed rgba(142, 60, 44, 0.2)' }
+                    }, [
+                        React.createElement('div', {
+                            key: 'roles-header',
+                            className: 'flex flex-col items-center gap-2 mb-3'
+                        }, [
+                            React.createElement('div', { key: 'titles', style: { textAlign: 'center' } }, [
+                                React.createElement('div', {
+                                    key: 'label',
+                                    className: 'text-xs font-semibold uppercase tracking-wider',
+                                    style: { color: 'rgba(43, 29, 20, 0.6)' }
+                                }, 'System Prompt'),
+                                React.createElement('div', {
+                                    key: 'desc',
+                                    className: 'text-xs',
+                                    style: { color: 'rgba(43, 29, 20, 0.55)' }
+                                }, 'Define a system prompt for all models.')
+                            ]),
+                            React.createElement('button', {
+                                key: 'add-role',
+                                type: 'button',
+                                onClick: openSystemPromptModal,
+                                className: 'py-3 px-6 rounded-xl text-sm font-semibold transition hover:opacity-90',
+                                style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                            }, 'Add System Prompt')
+                        ]),
+                        React.createElement('div', {
+                            key: 'roles-list',
+                            className: 'space-y-2 text-center'
+                        }, systemPrompt ? React.createElement('div', {
+                            key: 'role',
+                            className: 'p-3 rounded-lg inline-block text-left',
+                            style: { background: '#fff', border: '1px solid rgba(92, 49, 30, 0.12)' }
+                        }, [
+                            React.createElement('div', {
+                                key: 'role-name',
+                                className: 'text-sm font-semibold',
+                                style: { color: '#2b1d14' }
+                            }, 'System Prompt'),
+                            React.createElement('div', {
+                                key: 'role-prompt',
+                                className: 'text-xs mt-1',
+                                style: { color: 'rgba(43, 29, 20, 0.65)' }
+                            }, systemPrompt)
+                        ]) : React.createElement('p', {
+                            className: 'text-xs',
+                            style: { color: 'rgba(43, 29, 20, 0.45)' }
+                        }, 'No system prompt set.'))
+                    ])
                 ]
             ]),
 
@@ -1307,6 +1377,56 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             onClose: () => setRuleModalOpen(false),
             onSave: addRule
         }),
+
+        systemPromptModalOpen && React.createElement('div', {
+            key: 'system-prompt-modal',
+            className: 'fixed inset-0 flex items-center justify-center',
+            style: { backgroundColor: 'rgba(0,0,0,0.45)' },
+            onClick: () => setSystemPromptModalOpen(false)
+        }, React.createElement('div', {
+            className: 'bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl',
+            style: { color: '#2b1d14' },
+            onClick: e => e.stopPropagation()
+        }, [
+            React.createElement('h3', {
+                key: 'title',
+                className: 'text-lg font-semibold mb-3',
+                style: { color: '#5b2a1a' }
+            }, 'Define a system prompt for all models'),
+            React.createElement('p', {
+                key: 'subtitle',
+                className: 'text-sm mb-3',
+                style: { color: 'rgba(43,29,20,0.65)' }
+            }, 'This prompt will be applied as the system message for every model in this profile.'),
+            React.createElement('textarea', {
+                key: 'input',
+                value: systemPromptDraft,
+                onChange: e => setSystemPromptDraft(e.target.value),
+                rows: 5,
+                    className: 'w-full p-3 rounded-lg border text-sm',
+                    style: { borderColor: 'rgba(92,49,30,0.15)', color: '#2b1d14', resize: 'vertical' },
+                    placeholder: 'ex: Act as a lawyer and cite every prompt.'
+                }),
+            React.createElement('div', {
+                key: 'actions',
+                className: 'flex justify-end gap-2 mt-4'
+            }, [
+                React.createElement('button', {
+                    key: 'cancel',
+                    type: 'button',
+                    onClick: () => setSystemPromptModalOpen(false),
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold',
+                    style: { background: 'rgba(92,49,30,0.08)', color: '#5b2a1a' }
+                }, 'Cancel'),
+                React.createElement('button', {
+                    key: 'save',
+                    type: 'button',
+                    onClick: saveSystemPrompt,
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold',
+                    style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                }, 'Save')
+            ])
+        ])),
 
         // Toast notification
         toast && React.createElement(Toast, {
