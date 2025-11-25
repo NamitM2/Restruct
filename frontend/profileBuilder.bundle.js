@@ -63,7 +63,8 @@
         { id: "anthropic", label: "Anthropic", icon: "A", models: ["Claude 3 Opus", "Claude 3 Haiku", "Claude 3.5 Sonnet"] },
         { id: "google", label: "Google", icon: "G", models: ["Gemini 2.5 Pro", "Gemini 1.5 Flash", "Gemini Nano"] },
         { id: "mistral", label: "Mistral", icon: "M", models: ["Mistral Large", "Mistral Small", "Mixtral 8x7b"] },
-        { id: "qwen", label: "Qwen", icon: "Q", models: ["Qwen 2.5", "Qwen 2"] }
+        { id: "qwen", label: "Qwen", icon: "Q", models: ["Qwen 2.5", "Qwen 2"] },
+        { id: "local", label: "Local Models", icon: "L", models: ["Local"], color: "#8e3c2c", isLocal: true }
       ];
       var defaultWeights = [
         { id: "quality", label: "Quality", weight: 0.45 },
@@ -330,17 +331,173 @@
           ])
         ]));
       };
-      var MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle }) => {
+      var LocalModelsInfoModal = ({ isOpen, onClose, onEnable }) => {
+        const [searchQuery, setSearchQuery] = useState("");
+        if (!isOpen) return null;
+        const localModels = [
+          // Llama Family
+          { name: "Llama 3.3 70B", desc: "Latest Llama model with enhanced capabilities" },
+          { name: "Llama 3.2 1B", desc: "Ultra-lightweight for mobile and edge devices" },
+          { name: "Llama 3.2 3B", desc: "Compact model with strong performance" },
+          { name: "Llama 3.2 11B Vision", desc: "Vision-enabled model for image understanding" },
+          { name: "Llama 3.2 90B Vision", desc: "Large vision model for complex image reasoning" },
+          { name: "Llama 3.1 8B", desc: "Efficient model for general tasks and coding" },
+          { name: "Llama 3.1 70B", desc: "Powerful model for complex reasoning" },
+          { name: "Llama 3.1 405B", desc: "Massive model for enterprise workloads" },
+          // Mistral Family
+          { name: "Mistral 7B v0.3", desc: "Fast 7B model with strong performance" },
+          { name: "Mistral Large 2", desc: "Advanced reasoning with 128k context window" },
+          { name: "Mistral Small 3", desc: "New benchmarks in sub-70B category" },
+          { name: "Codestral", desc: "Specialized for code generation tasks" },
+          { name: "Mixtral 8x7B", desc: "Mixture of experts for efficient scaling" },
+          // Phi Family
+          { name: "Phi-4 14B", desc: "Latest reasoning model from Microsoft" },
+          { name: "Phi-4 Mini", desc: "Enhanced multilingual and function calling" },
+          { name: "Phi-3 3B Mini", desc: "Lightweight state-of-the-art model" },
+          { name: "Phi-3 14B Medium", desc: "Medium-sized model with strong capabilities" },
+          // Gemma Family
+          { name: "Gemma 2 2B", desc: "High-performing compact model" },
+          { name: "Gemma 2 9B", desc: "Efficient mid-size model" },
+          { name: "Gemma 2 27B", desc: "Large model with strong performance" },
+          { name: "CodeGemma", desc: "Code completion and generation specialist" },
+          // DeepSeek Family
+          { name: "DeepSeek-R1 671B", desc: "Advanced reasoning model" },
+          { name: "DeepSeek-V3.1", desc: "Hybrid thinking and non-thinking modes" },
+          { name: "DeepSeek Coder", desc: "Trained on 2 trillion code tokens" },
+          // Qwen Family
+          { name: "Qwen 3 4B", desc: "Small efficient model from latest generation" },
+          { name: "Qwen 3 235B", desc: "Massive model with exceptional capabilities" },
+          { name: "Qwen 2.5 7B", desc: "Trained on 18 trillion tokens, 128k context" },
+          { name: "Qwen 2.5 14B", desc: "Mid-size with multilingual support" },
+          { name: "Qwen 2.5 72B", desc: "Large model with strong performance" },
+          { name: "QwQ", desc: "Reasoning-focused model from Qwen series" },
+          // Code Specialists
+          { name: "CodeLlama 7B", desc: "Everyday coding help for 20+ languages" },
+          { name: "CodeLlama 13B", desc: "Balanced code generation model" },
+          { name: "CodeLlama 34B", desc: "Complex debugging and code generation" },
+          // Other Notable Models
+          { name: "Dolphin 2.9 8B", desc: "Uncensored Llama 3 based model" },
+          { name: "Dolphin 2.9 70B", desc: "Large uncensored model" },
+          { name: "TinyLlama 1.1B", desc: "Compact model trained on 3T tokens" },
+          { name: "Vicuna 7B", desc: "Open-source chatbot trained by fine-tuning LLaMA" },
+          { name: "Orca 2", desc: "Microsoft research model with strong reasoning" },
+          { name: "Nous Hermes 2", desc: "General purpose instruct model" },
+          { name: "Solar 10.7B", desc: "Depth upscaled Llama-based model" }
+        ];
+        const filteredModels = localModels.filter(
+          (m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.desc.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        return React.createElement("div", {
+          className: "fixed inset-0 z-50 flex items-center justify-center",
+          style: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
+          onClick: onClose
+        }, React.createElement("div", {
+          className: "bg-white rounded-2xl p-6 w-[500px] shadow-2xl max-h-[80vh] overflow-hidden flex flex-col",
+          style: { color: "#2b1d14" },
+          onClick: (e) => e.stopPropagation()
+        }, [
+          React.createElement("h3", {
+            key: "title",
+            className: "text-xl font-semibold mb-2",
+            style: { color: "#5b2a1a" }
+          }, "Use Your Own Local Models"),
+          React.createElement("p", {
+            key: "desc",
+            className: "text-sm mb-4",
+            style: { color: "rgba(43, 29, 20, 0.65)" }
+          }, "Connect your locally-hosted models to Restruct. These models run on your hardware, giving you full control over latency, privacy, and cost."),
+          React.createElement("div", {
+            key: "instructions",
+            className: "mb-4 p-3 rounded-lg",
+            style: { backgroundColor: "rgba(92, 49, 30, 0.04)", borderLeft: "3px solid #8e3c2c" }
+          }, [
+            React.createElement("p", {
+              key: "title",
+              className: "text-xs font-semibold uppercase tracking-wider mb-2",
+              style: { color: "#8e3c2c" }
+            }, "Setup Instructions"),
+            React.createElement("ol", {
+              key: "list",
+              className: "text-sm space-y-1 ml-4",
+              style: { color: "rgba(43, 29, 20, 0.7)", listStyleType: "decimal" }
+            }, [
+              React.createElement("li", { key: "1" }, "Install Ollama or similar local inference server"),
+              React.createElement("li", { key: "2" }, "Pull your desired model (e.g., ollama pull llama3.1)"),
+              React.createElement("li", { key: "3" }, "Ensure server is running on http://localhost:11434"),
+              React.createElement("li", { key: "4" }, "Enable Local Models in this profile")
+            ])
+          ]),
+          React.createElement("div", {
+            key: "search",
+            className: "mb-3"
+          }, [
+            React.createElement("label", {
+              key: "label",
+              className: "text-xs uppercase tracking-wider mb-2 block",
+              style: { color: "rgba(43, 29, 20, 0.5)" }
+            }, "Supported Models"),
+            React.createElement("input", {
+              key: "input",
+              type: "text",
+              value: searchQuery,
+              onChange: (e) => setSearchQuery(e.target.value),
+              placeholder: "Search models...",
+              className: "w-full px-3 py-2 rounded-lg border text-sm",
+              style: { borderColor: "rgba(92, 49, 30, 0.15)", color: "#2b1d14" }
+            })
+          ]),
+          React.createElement("div", {
+            key: "model-list",
+            className: "flex-1 overflow-y-auto mb-4 space-y-2",
+            style: { maxHeight: "240px" }
+          }, filteredModels.map((model) => React.createElement("div", {
+            key: model.name,
+            className: "p-3 rounded-lg border",
+            style: { borderColor: "rgba(92, 49, 30, 0.12)", backgroundColor: "rgba(92, 49, 30, 0.02)" }
+          }, [
+            React.createElement("div", {
+              key: "name",
+              className: "text-sm font-semibold mb-1",
+              style: { color: "#2b1d14" }
+            }, model.name),
+            React.createElement("div", {
+              key: "desc",
+              className: "text-xs",
+              style: { color: "rgba(43, 29, 20, 0.6)" }
+            }, model.desc)
+          ]))),
+          React.createElement("div", {
+            key: "buttons",
+            className: "flex gap-3"
+          }, [
+            React.createElement("button", {
+              key: "cancel",
+              type: "button",
+              onClick: onClose,
+              className: "flex-1 py-2 rounded-lg border text-sm",
+              style: { borderColor: "rgba(92, 49, 30, 0.2)", color: "rgba(43, 29, 20, 0.7)" }
+            }, "Cancel"),
+            React.createElement("button", {
+              key: "enable",
+              type: "button",
+              onClick: onEnable,
+              className: "flex-1 py-2 rounded-lg text-sm font-semibold transition hover:opacity-90",
+              style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
+            }, "Enable Local Models")
+          ])
+        ]));
+      };
+      var MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal }) => {
         return React.createElement("div", {
           ref: nodeRef,
-          className: `relative rounded-xl border px-3 py-2 transition-all cursor-pointer ${active ? "border-[#8e3c2c] shadow-lg" : "border-[rgba(92,49,30,0.12)]"}`,
-          style: { backgroundColor: "#ffffff", minWidth: "120px" },
+          className: `relative rounded-xl border px-3 py-2 transition-all cursor-pointer ${active ? "border-[#8e3c2c] shadow-lg" : isLocal ? "border-[#8e3c2c]" : "border-[rgba(92,49,30,0.12)]"}`,
+          style: { backgroundColor: isLocal ? "#8e3c2c" : "#ffffff", minWidth: "120px" },
           onClick
         }, [
           React.createElement("div", {
             key: "bg",
-            className: "pointer-events-none absolute inset-0 rounded-xl opacity-15",
-            style: { background: `radial-gradient(circle at top, ${accent}40, transparent)` }
+            className: "pointer-events-none absolute inset-0 rounded-xl",
+            style: { background: isLocal ? "radial-gradient(circle at top, rgba(0, 0, 0, 0.1), transparent)" : `radial-gradient(circle at top, ${accent}40, transparent)`, opacity: isLocal ? 1 : 0.15 }
           }),
           React.createElement("div", {
             key: "content",
@@ -350,12 +507,12 @@
               React.createElement("p", {
                 key: "title",
                 className: "text-sm font-semibold",
-                style: { color: "#2b1d14" }
+                style: { color: isLocal ? "#fffcf8" : "#2b1d14" }
               }, title),
               subtitle && React.createElement("p", {
                 key: "subtitle",
                 className: "text-xs",
-                style: { color: "rgba(43, 29, 20, 0.6)" }
+                style: { color: isLocal ? "rgba(255, 252, 248, 0.8)" : "rgba(43, 29, 20, 0.6)" }
               }, subtitle)
             ]),
             hasToggle && React.createElement("button", {
@@ -366,10 +523,10 @@
                 onToggle(!enabled);
               },
               className: "w-8 h-4 rounded-full transition-colors relative",
-              style: { backgroundColor: enabled ? "#b56747" : "rgba(92, 49, 30, 0.15)" }
+              style: { backgroundColor: isLocal ? enabled ? "rgba(255, 252, 248, 0.9)" : "rgba(255, 252, 248, 0.2)" : enabled ? "#b56747" : "rgba(92, 49, 30, 0.15)" }
             }, React.createElement("span", {
-              className: "absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform",
-              style: { left: enabled ? "17px" : "2px" }
+              className: "absolute top-0.5 w-3 h-3 rounded-full shadow transition-transform",
+              style: { left: enabled ? "17px" : "2px", backgroundColor: isLocal ? enabled ? "#8e3c2c" : "#fffcf8" : "#ffffff" }
             }))
           ])
         ]);
@@ -637,13 +794,15 @@
         const [weights, setWeights] = useState(defaultWeights);
         const [hardLimits, setHardLimits] = useState(defaultHardLimits);
         const [providers, setProviders] = useState(
-          providerPresets.map((p) => ({ ...p, enabled: true }))
+          providerPresets.map((p) => ({ ...p, enabled: p.id === "local" ? false : true }))
         );
         const [rules, setRules] = useState([]);
         const [systemPrompt, setSystemPrompt] = useState("");
         const [systemPromptModalOpen, setSystemPromptModalOpen] = useState(false);
         const [systemPromptDraft, setSystemPromptDraft] = useState("");
         const [ruleModalOpen, setRuleModalOpen] = useState(false);
+        const [localModelsModalOpen, setLocalModelsModalOpen] = useState(false);
+        const [hasSeenLocalModelsInfo, setHasSeenLocalModelsInfo] = useState(false);
         const [testPrompt, setTestPrompt] = useState("");
         const [isSaving, setIsSaving] = useState(false);
         const [toast, setToast] = useState(null);
@@ -672,7 +831,20 @@
           setHardLimits((prev) => ({ ...prev, [key]: value }));
         };
         const toggleProvider = (id) => {
+          if (id === "local") {
+            const localProvider = providers.find((p) => p.id === "local");
+            if (!localProvider.enabled && !hasSeenLocalModelsInfo) {
+              setLocalModelsModalOpen(true);
+              return;
+            }
+          }
           setProviders((prev) => prev.map((p) => p.id === id ? { ...p, enabled: !p.enabled } : p));
+        };
+        const handleEnableLocalModels = () => {
+          setProviders((prev) => prev.map((p) => p.id === "local" ? { ...p, enabled: true } : p));
+          setHasSeenLocalModelsInfo(true);
+          setLocalModelsModalOpen(false);
+          showToast("Local Models enabled", "success");
         };
         const addRule = (newRule) => {
           setRules((prev) => [...prev, newRule]);
@@ -1070,12 +1242,13 @@
                   }, providers.map((p) => React.createElement(MiniNodeCard, {
                     key: p.id,
                     title: p.label,
-                    subtitle: p.enabled ? "Active" : "Disabled",
-                    accent: siteColors.cost,
+                    subtitle: p.isLocal ? p.enabled ? "Local \u2022 Active" : "Local \u2022 Disabled" : p.enabled ? "Active" : "Disabled",
+                    accent: p.color || siteColors.cost,
                     hasToggle: true,
                     enabled: p.enabled,
                     onToggle: () => toggleProvider(p.id),
-                    nodeRef: (el) => rightRefs.current[p.id] = el
+                    nodeRef: (el) => rightRefs.current[p.id] = el,
+                    isLocal: p.isLocal
                   })))
                 ]),
                 // SVG edges
@@ -1269,6 +1442,13 @@
             onClose: () => setRuleModalOpen(false),
             onSave: addRule
           }),
+          // Local Models Info Modal
+          React.createElement(LocalModelsInfoModal, {
+            key: "local-models-modal",
+            isOpen: localModelsModalOpen,
+            onClose: () => setLocalModelsModalOpen(false),
+            onEnable: handleEnableLocalModels
+          }),
           systemPromptModalOpen && React.createElement("div", {
             key: "system-prompt-modal",
             className: "fixed inset-0 flex items-center justify-center",
@@ -1296,7 +1476,7 @@
               rows: 5,
               className: "w-full p-3 rounded-lg border text-sm",
               style: { borderColor: "rgba(92,49,30,0.15)", color: "#2b1d14", resize: "vertical" },
-            placeholder: "ex: Act as a lawyer and cite every prompt."
+              placeholder: "ex: Act as a lawyer and cite every prompt."
             }),
             React.createElement("div", {
               key: "actions",
