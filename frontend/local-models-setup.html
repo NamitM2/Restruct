@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Models Setup - Restruct</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #faf7f2 0%, #f5efe6 100%);
+            color: #2b1d14;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 4px 6px rgba(92, 49, 30, 0.1);
+        }
+
+        h1 {
+            color: #5b2a1a;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .subtitle {
+            color: rgba(43, 29, 20, 0.65);
+            font-size: 1.125rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        h2 {
+            color: #8e3c2c;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(92, 49, 30, 0.1);
+        }
+
+        h3 {
+            color: #5b2a1a;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            line-height: 1.7;
+            margin-bottom: 16px;
+            color: rgba(43, 29, 20, 0.8);
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            margin: 24px 0;
+        }
+
+        .step {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 32px;
+        }
+
+        .step::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #c4836a, #8b4f3f);
+            color: #fffcf8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .step h3 {
+            margin-top: 0;
+        }
+
+        code {
+            background: rgba(92, 49, 30, 0.06);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            color: #8e3c2c;
+            font-size: 0.9em;
+        }
+
+        .code-block {
+            background: rgba(92, 49, 30, 0.04);
+            border-left: 3px solid #8e3c2c;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            background: none;
+            padding: 0;
+            display: block;
+            white-space: pre;
+        }
+
+        .info-box {
+            background: rgba(142, 60, 44, 0.05);
+            border-left: 4px solid #8e3c2c;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+        }
+
+        .info-box h4 {
+            color: #8e3c2c;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .model-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .model-item {
+            background: rgba(92, 49, 30, 0.02);
+            border: 1px solid rgba(92, 49, 30, 0.12);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: #2b1d14;
+        }
+
+        ul {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            color: rgba(43, 29, 20, 0.8);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #c4836a, #8b4f3f);
+            color: #fffcf8;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .back-button:hover {
+            opacity: 0.9;
+        }
+
+        a {
+            color: #8e3c2c;
+            text-decoration: underline;
+        }
+
+        a:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Local Models Setup Guide</h1>
+        <p class="subtitle">
+            Connect your locally-hosted AI models to Restruct. Run models on your own hardware for full control over
+            latency, privacy, and cost. This guide will walk you through setting up local model inference with Ollama.
+        </p>
+
+        <h2>Getting Started with Ollama</h2>
+        <p>
+            Ollama is the recommended local inference server for Restruct. It's easy to install, supports a wide range
+            of models, and provides a simple API for model interaction.
+        </p>
+
+        <div class="steps">
+            <div class="step">
+                <h3>Install Ollama</h3>
+                <p>Download and install Ollama for your operating system:</p>
+                <ul>
+                    <li><strong>macOS/Linux:</strong> Run <code>curl -fsSL https://ollama.ai/install.sh | sh</code></li>
+                    <li><strong>Windows:</strong> Download the installer from <a href="https://ollama.ai" target="_blank">ollama.ai</a></li>
+                </ul>
+                <p>After installation, verify Ollama is running with:</p>
+                <div class="code-block"><code>ollama --version</code></div>
+            </div>
+
+            <div class="step">
+                <h3>Pull Your First Model</h3>
+                <p>Download a model to your local machine. We recommend starting with Llama 3.1 8B for a good balance of performance and resource usage:</p>
+                <div class="code-block"><code>ollama pull llama3.1</code></div>
+                <p>Other popular starter models:</p>
+                <div class="code-block"><code>ollama pull mistral
+ollama pull phi3
+ollama pull gemma2</code></div>
+            </div>
+
+            <div class="step">
+                <h3>Start the Ollama Server</h3>
+                <p>Ollama typically starts automatically, but you can manually start it with:</p>
+                <div class="code-block"><code>ollama serve</code></div>
+                <p>By default, Ollama runs on <code>http://localhost:11434</code>. Verify it's running by visiting this URL in your browser or running:</p>
+                <div class="code-block"><code>curl http://localhost:11434</code></div>
+            </div>
+
+            <div class="step">
+                <h3>Test Your Model</h3>
+                <p>Try running a simple inference to ensure everything works:</p>
+                <div class="code-block"><code>ollama run llama3.1 "Hello, how are you?"</code></div>
+                <p>If you see a response, your local model is working correctly!</p>
+            </div>
+
+            <div class="step">
+                <h3>Enable in Restruct</h3>
+                <p>Return to the Restruct routing lab and toggle the "Local Models" node to ON. Your local models will now be available for routing!</p>
+            </div>
+        </div>
+
+        <h2>Supported Models</h2>
+        <p>
+            Restruct supports any model available through Ollama. Here are some of the most popular options organized by family:
+        </p>
+
+        <h3>Llama Family</h3>
+        <div class="model-list">
+            <div class="model-item">Llama 3.3 70B</div>
+            <div class="model-item">Llama 3.2 1B</div>
+            <div class="model-item">Llama 3.2 3B</div>
+            <div class="model-item">Llama 3.2 11B Vision</div>
+            <div class="model-item">Llama 3.2 90B Vision</div>
+            <div class="model-item">Llama 3.1 8B</div>
+            <div class="model-item">Llama 3.1 70B</div>
+            <div class="model-item">Llama 3.1 405B</div>
+        </div>
+
+        <h3>Mistral Family</h3>
+        <div class="model-list">
+            <div class="model-item">Mistral 7B v0.3</div>
+            <div class="model-item">Mistral Large 2</div>
+            <div class="model-item">Mistral Small 3</div>
+            <div class="model-item">Codestral</div>
+            <div class="model-item">Mixtral 8x7B</div>
+        </div>
+
+        <h3>Phi Family (Microsoft)</h3>
+        <div class="model-list">
+            <div class="model-item">Phi-4 14B</div>
+            <div class="model-item">Phi-4 Mini</div>
+            <div class="model-item">Phi-3 3B Mini</div>
+            <div class="model-item">Phi-3 14B Medium</div>
+        </div>
+
+        <h3>Gemma Family (Google)</h3>
+        <div class="model-list">
+            <div class="model-item">Gemma 2 2B</div>
+            <div class="model-item">Gemma 2 9B</div>
+            <div class="model-item">Gemma 2 27B</div>
+            <div class="model-item">CodeGemma</div>
+        </div>
+
+        <h3>DeepSeek Family</h3>
+        <div class="model-list">
+            <div class="model-item">DeepSeek-R1 671B</div>
+            <div class="model-item">DeepSeek-V3.1</div>
+            <div class="model-item">DeepSeek Coder</div>
+        </div>
+
+        <h3>Qwen Family</h3>
+        <div class="model-list">
+            <div class="model-item">Qwen 3 4B</div>
+            <div class="model-item">Qwen 3 235B</div>
+            <div class="model-item">Qwen 2.5 7B</div>
+            <div class="model-item">Qwen 2.5 14B</div>
+            <div class="model-item">Qwen 2.5 72B</div>
+            <div class="model-item">QwQ</div>
+        </div>
+
+        <h3>Code Specialists</h3>
+        <div class="model-list">
+            <div class="model-item">CodeLlama 7B</div>
+            <div class="model-item">CodeLlama 13B</div>
+            <div class="model-item">CodeLlama 34B</div>
+        </div>
+
+        <h3>Other Notable Models</h3>
+        <div class="model-list">
+            <div class="model-item">Dolphin 2.9 8B</div>
+            <div class="model-item">Dolphin 2.9 70B</div>
+            <div class="model-item">TinyLlama 1.1B</div>
+            <div class="model-item">Vicuna 7B</div>
+            <div class="model-item">Orca 2</div>
+            <div class="model-item">Nous Hermes 2</div>
+            <div class="model-item">Solar 10.7B</div>
+        </div>
+
+        <div class="info-box">
+            <h4>Performance Tips</h4>
+            <ul>
+                <li>Start with smaller models (1B-8B parameters) if you have limited RAM</li>
+                <li>Larger models (70B+) require significant GPU memory (24GB+ VRAM recommended)</li>
+                <li>Use quantized versions (Q4, Q5) for faster inference with minimal quality loss</li>
+                <li>Keep Ollama updated: <code>ollama update</code></li>
+            </ul>
+        </div>
+
+        <h2>Advanced Configuration</h2>
+
+        <h3>Custom Model Parameters</h3>
+        <p>You can customize model behavior with Ollama's Modelfile system. Create a Modelfile to set temperature, context length, and system prompts:</p>
+        <div class="code-block"><code>FROM llama3.1
+PARAMETER temperature 0.8
+PARAMETER num_ctx 8192
+SYSTEM You are a helpful AI assistant.</code></div>
+        <p>Then create a custom model:</p>
+        <div class="code-block"><code>ollama create my-custom-model -f Modelfile</code></div>
+
+        <h3>GPU Acceleration</h3>
+        <p>Ollama automatically uses GPU acceleration when available. Supported GPUs:</p>
+        <ul>
+            <li>NVIDIA GPUs with CUDA support</li>
+            <li>Apple Silicon (M1, M2, M3, M4) with Metal</li>
+            <li>AMD GPUs with ROCm (Linux only)</li>
+        </ul>
+
+        <h3>Connecting Multiple Ollama Instances</h3>
+        <p>If you have multiple machines running Ollama, you can configure Restruct to route to different servers by setting custom endpoints in your routing profile.</p>
+
+        <div class="info-box">
+            <h4>Troubleshooting</h4>
+            <ul>
+                <li><strong>Model not responding:</strong> Ensure Ollama is running with <code>ollama serve</code></li>
+                <li><strong>Out of memory:</strong> Try a smaller model or use quantized versions</li>
+                <li><strong>Slow performance:</strong> Check if GPU acceleration is working with <code>nvidia-smi</code> (NVIDIA) or Activity Monitor (Mac)</li>
+                <li><strong>Connection refused:</strong> Verify Ollama is listening on port 11434</li>
+            </ul>
+        </div>
+
+        <h2>Resources</h2>
+        <ul>
+            <li><a href="https://ollama.ai" target="_blank">Ollama Official Website</a></li>
+            <li><a href="https://github.com/ollama/ollama" target="_blank">Ollama GitHub Repository</a></li>
+            <li><a href="https://ollama.ai/library" target="_blank">Ollama Model Library</a></li>
+        </ul>
+
+        <a href="javascript:window.close();" class="back-button">Close This Window</a>
+    </div>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-(() => {
+var ProfileBuilder = (() => {
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -392,7 +392,7 @@
           style: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
           onClick: onClose
         }, React.createElement("div", {
-          className: "bg-white rounded-2xl p-6 w-[500px] shadow-2xl max-h-[80vh] overflow-hidden flex flex-col",
+          className: "bg-white rounded-2xl p-6 w-[1000px] shadow-2xl max-h-[80vh] overflow-hidden flex flex-col",
           style: { color: "#2b1d14" },
           onClick: (e) => e.stopPropagation()
         }, [
@@ -406,27 +406,6 @@
             className: "text-sm mb-4",
             style: { color: "rgba(43, 29, 20, 0.65)" }
           }, "Connect your locally-hosted models to Restruct. These models run on your hardware, giving you full control over latency, privacy, and cost."),
-          React.createElement("div", {
-            key: "instructions",
-            className: "mb-4 p-3 rounded-lg",
-            style: { backgroundColor: "rgba(92, 49, 30, 0.04)", borderLeft: "3px solid #8e3c2c" }
-          }, [
-            React.createElement("p", {
-              key: "title",
-              className: "text-xs font-semibold uppercase tracking-wider mb-2",
-              style: { color: "#8e3c2c" }
-            }, "Setup Instructions"),
-            React.createElement("ol", {
-              key: "list",
-              className: "text-sm space-y-1 ml-4",
-              style: { color: "rgba(43, 29, 20, 0.7)", listStyleType: "decimal" }
-            }, [
-              React.createElement("li", { key: "1" }, "Install Ollama or similar local inference server"),
-              React.createElement("li", { key: "2" }, "Pull your desired model (e.g., ollama pull llama3.1)"),
-              React.createElement("li", { key: "3" }, "Ensure server is running on http://localhost:11434"),
-              React.createElement("li", { key: "4" }, "Enable Local Models in this profile")
-            ])
-          ]),
           React.createElement("div", {
             key: "search",
             className: "mb-3"
@@ -477,6 +456,13 @@
               className: "flex-1 py-2 rounded-lg border text-sm",
               style: { borderColor: "rgba(92, 49, 30, 0.2)", color: "rgba(43, 29, 20, 0.7)" }
             }, "Cancel"),
+            React.createElement("button", {
+              key: "setup",
+              type: "button",
+              onClick: () => window.open("local-models-setup.html", "_blank"),
+              className: "flex-1 py-2 rounded-lg border text-sm font-semibold transition hover:opacity-90",
+              style: { borderColor: "#8e3c2c", color: "#8e3c2c" }
+            }, "Setup Instructions"),
             React.createElement("button", {
               key: "enable",
               type: "button",
@@ -787,7 +773,6 @@
         }, React.createElement("canvas", { ref: canvasRef, className: "absolute inset-0 w-full h-full" }));
       };
       function ProfileBuilder({ onDismiss, initialOptions }) {
-        var _a;
         const [leftPanelMode, setLeftPanelMode] = useState("settings");
         const [profileName, setProfileName] = useState("");
         const [description, setDescription] = useState("");
@@ -1431,7 +1416,7 @@
                   className: "font-semibold mb-1",
                   style: { color: "#2b1d14" }
                 }, "Routing explanation"),
-                `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${((_a = activeProviders[0]) == null ? void 0 : _a.label) || "available providers"} based on current weight configuration.`
+                `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${activeProviders[0]?.label || "available providers"} based on current weight configuration.`
               ])
             ])
           ]),
@@ -1514,5 +1499,5 @@
       }
     }
   });
-  require_routingLabProfileBuilder();
+  return require_routingLabProfileBuilder();
 })();
