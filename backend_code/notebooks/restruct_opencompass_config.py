@@ -3,29 +3,25 @@
 from mmengine.config import read_base
 from restruct_oc_model import RestructAPIModel, api_meta_template
 
-
-
+# Make sure workers can import your model wrapper
 custom_imports = dict(
     imports=['restruct_oc_model'],  # module name, not a path
     allow_failed_imports=False,
 )
 
-# 1. Use a guaranteed-working demo dataset first.
-#    This ships with all OpenCompass wheels.
+# 1. Use the built-in GSM8K demo chat dataset
 with read_base():
     from opencompass.configs.datasets.demo.demo_gsm8k_chat_gen import gsm8k_datasets
 
+# Just take the provided dataset list as-is
 datasets = gsm8k_datasets
 
-# 2. Define your restruct-backed models.
-#    `path` will be passed into call_restruct_pipeline as `backend`.
-
-
+# 2. Define your Restruct-backed models
 models = [
     dict(
         abbr='restruct_gpt5',
-        type=RestructAPIModel,      # ✅ class, not string "module.Class"
-        route_name='gpt5',          # whatever your router uses
+        type=RestructAPIModel,
+        route_name='gpt5',          # your router route name
         max_seq_len=4096,
         max_out_len=512,
         batch_size=1,

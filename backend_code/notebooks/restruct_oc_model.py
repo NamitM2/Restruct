@@ -37,7 +37,11 @@ class RestructAPIModel(BaseAPIModel):
     def generate(self, inputs, max_out_len: int = 512, temperature: float = 0.7):
         # `inputs` is usually a list of formatted prompt strings
         prompts = [x if isinstance(x, str) else str(x) for x in inputs]
-        return f"route name: {self.route_name}"
+        outputs = []
+        for prompt in prompts:
+            output = f"route name: {self.route_name}"
+            outputs.append(output)
+        return outputs
 
     def get_token_len(self, prompt: str) -> int:
         # Simple fallback; you can plug in tiktoken or your router’s estimator
