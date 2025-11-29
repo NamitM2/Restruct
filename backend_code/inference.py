@@ -3,6 +3,9 @@ Inference: calls the appropriate provider API.
 No classes, just functions.
 """
 
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, List, Union
 from openai import OpenAI
 from google import genai
@@ -54,11 +57,21 @@ def call_openai(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Call OpenAI API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
+    logs_dir = Path(__file__).resolve().parents[1] / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    normalized_conv = _normalize_conversation(conversation)
+    log_path = logs_dir / f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    log_payload = {
+        "model": model_name,
+        "vendor": model.get("vendor"),
+        "conversation": normalized_conv,
+    }
+    log_path.write_text(json.dumps(log_payload, ensure_ascii=True, indent=2))
 
     client = OpenAI(api_key=api_key)
     response = client.responses.create(
         model=model_name,
-        input=_normalize_conversation(conversation)
+        input=normalized_conv
     )
 
     return {
