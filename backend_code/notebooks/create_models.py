@@ -19,7 +19,7 @@ def render_entry(vendor: str, model_name: str, model_cfg: dict) -> str:
     max_seq_len = model_cfg.get("max_tokens", 4096)
     return (
         "    dict(\n"
-        f"        abbr='{abbr}',\n"
+        f"        abbr='{model_name}',\n"
         "        type=RestructAPIModel,\n"
         f"        route_name='{model_name}',\n"
         f"        max_seq_len={max_seq_len},\n"

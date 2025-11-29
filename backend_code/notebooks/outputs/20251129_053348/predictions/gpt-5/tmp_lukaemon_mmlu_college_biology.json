@@ -1,0 +1,62 @@
+{
+    "0": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nBased on the characteristic population curves that result from plotting population growth of a species, the most effective means of controlling the mosquito population is to\n\nA) maintain the population at a point corresponding to the midpoint of its logistic curve\nB) opt for zero population control once the K value of the curve has been reached\nC) reduce the carrying capacity cif the environment to lower the K value\nD) increase the mortality rate"
+            }
+        ],
+        "prediction": "- Logistic growth: dN/dt = rN(1 − N/K); growth is fastest at N = K/2, so maintaining the population at the midpoint (A) would maximize growth, not control it.\n- At K, growth rate is zero but the population is at its maximum size; doing nothing then (B) doesn’t reduce the population.\n- Increasing mortality (D) can temporarily reduce N but often leads to compensatory growth and requires continual input.\n- Reducing carrying capacity (C) lowers K, thereby reducing the equilibrium population and overall potential for growth, which is the most effective long-term control (e.g., removing breeding sites).\n\nANSWER: C",
+        "gold": "C"
+    },
+    "1": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nA frameshift mutation is created when\n\nA) telomeric sequences are removed from DNA\nB) a codon's nucleotide sequence changes so that it calls for production of a different amino acid than the original one\nC) a base pair is either inserted or deleted in a gene\nD) a codon's nucleotide sequence is changed so that instead of coding for a given amino acid it acts to terminate translation"
+            }
+        ],
+        "prediction": "- Frameshift mutations occur when the reading frame of the mRNA is altered.\n- This happens when nucleotides are inserted or deleted in numbers not divisible by three, shifting how codons are read.\n- Option B describes a missense mutation; option D describes a nonsense mutation; option A relates to telomere biology, not frameshifts.\n\nANSWER: C",
+        "gold": "C"
+    },
+    "2": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nTo prevent desiccation and injury, the embryos of terrestrial vertebrates are encased within a fluid secreted by the\n\nA) amnion\nB) chorion\nC) allantois\nD) yolk sac"
+            }
+        ],
+        "prediction": "The amnion forms the amniotic sac around the embryo and contains amniotic fluid, which cushions the embryo and prevents desiccation. The chorion is mainly for gas exchange, the allantois for waste and gas exchange, and the yolk sac for nutrition.\n\nANSWER: A",
+        "gold": "A"
+    },
+    "3": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nWhich of the following is a second messenger that stimulates release of calcium ions into the cytoplasm?\n\nA) Prostaglandins\nB) Inositol triphosphate\nC) Cyclic AMP\nD) Calmodulin"
+            }
+        ],
+        "prediction": "- Prostaglandins are paracrine/autocrine lipid mediators, not classic second messengers for Ca2+ release.\n- Inositol triphosphate (IP3) is produced by phospholipase C and binds IP3 receptors on the ER, releasing Ca2+ into the cytoplasm.\n- Cyclic AMP is a second messenger mainly activating PKA, not directly triggering ER Ca2+ release.\n- Calmodulin is a Ca2+-binding protein mediator, not a second messenger.\n\nANSWER: B",
+        "gold": "B"
+    },
+    "4": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nSynthesis of an RNA/DNA hybrid from a single-stranded RNA template requires\n\nA) a DNA or RNA primer and reverse transcriptase\nB) a DNA or RNA primer and DNA polymerase\nC) RNase only\nD) reverse transcriptase only"
+            }
+        ],
+        "prediction": "- The goal is to synthesize a DNA strand using an RNA template, producing an RNA/DNA hybrid (as in cDNA synthesis).\n- Reverse transcriptase can copy RNA into DNA but, like all DNA polymerases, it requires a primer to initiate synthesis.\n- The primer can be DNA (e.g., oligo-dT) or RNA (e.g., tRNA in retroviruses).\n\nANSWER: A",
+        "gold": "A"
+    },
+    "5": {
+        "origin_prompt": [
+            {
+                "role": "HUMAN",
+                "prompt": "Answer the following multiple choice question. The last line of your response should be of the following format: 'ANSWER: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.\n\nIn order for the Hardy-Weinberg law to operate with respect to a population of organisms, each of the following conditions must be met EXCEPT:\n\nA) Genes are exchanged with other populations.\nB) Population size is large.\nC) Natural selection does not take place.\nD) Matings are random."
+            }
+        ],
+        "prediction": "Hardy-Weinberg equilibrium requires: very large population size, random mating, no natural selection, no mutation, and no migration (no gene flow). Exchanging genes with other populations (migration) violates these conditions.\n\nANSWER: A",
+        "gold": "A"
+    }
+}
