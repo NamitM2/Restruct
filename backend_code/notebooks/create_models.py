@@ -25,8 +25,8 @@ def render_entry(vendor: str, model_name: str, model_cfg: dict) -> str:
         f"        max_seq_len={max_seq_len},\n"
         "        max_out_len=512,\n"
         "        batch_size=1,\n"
-        "        query_per_second=1,\n"
-        "        run_cfg=dict(num_gpus=0, num_procs=1),\n"
+        "        query_per_second=32,\n"
+        "        run_cfg=dict(num_gpus=0, num_procs=32),\n"
         "    ),"
     )
 
