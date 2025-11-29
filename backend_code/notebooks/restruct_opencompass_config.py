@@ -21,14 +21,14 @@ custom_imports = dict(
 
 # 1. Use built-in GSM8K demo dataset
 with read_base():
-    from opencompass.configs.datasets.demo.demo_gsm8k_chat_gen import gsm8k_datasets
+    from opencompass.configs.datasets.mmlu.mmlu_gen import mmlu_datasets
 
-datasets = gsm8k_datasets
+datasets = mmlu_datasets
 
 # 2. Define the specific routes you want to benchmark BY HAND
 models = [
     dict(
-        abbr='restruct_openai_gpt_5',
+        abbr='gpt-5',
         type=RestructAPIModel,
         route_name='gpt-5',
         max_seq_len=128000,
@@ -38,7 +38,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_openai_gpt_5_mini',
+        abbr='gpt-5-mini',
         type=RestructAPIModel,
         route_name='gpt-5-mini',
         max_seq_len=128000,
@@ -48,7 +48,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_openai_gpt_5_nano',
+        abbr='gpt-5-nano',
         type=RestructAPIModel,
         route_name='gpt-5-nano',
         max_seq_len=128000,
@@ -58,7 +58,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_google_gemini_2.5_pro',
+        abbr='gemini-2.5-pro',
         type=RestructAPIModel,
         route_name='gemini-2.5-pro',
         max_seq_len=1000000,
@@ -68,7 +68,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_google_gemini_2.5_flash',
+        abbr='gemini-2.5-flash',
         type=RestructAPIModel,
         route_name='gemini-2.5-flash',
         max_seq_len=1000000,
@@ -78,7 +78,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_google_gemini_2.5_flash_lite',
+        abbr='gemini-2.5-flash-lite',
         type=RestructAPIModel,
         route_name='gemini-2.5-flash-lite',
         max_seq_len=1000000,
@@ -88,7 +88,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_google_gemini_2.0_flash',
+        abbr='gemini-2.0-flash',
         type=RestructAPIModel,
         route_name='gemini-2.0-flash',
         max_seq_len=512000,
@@ -98,7 +98,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_google_gemini_2.0_flash_lite',
+        abbr='gemini-2.0-flash-lite',
         type=RestructAPIModel,
         route_name='gemini-2.0-flash-lite',
         max_seq_len=512000,
@@ -108,7 +108,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_anthropic_claude_opus_4_1',
+        abbr='claude-opus-4-1',
         type=RestructAPIModel,
         route_name='claude-opus-4-1',
         max_seq_len=200000,
@@ -118,7 +118,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_anthropic_claude_sonnet_4_5',
+        abbr='claude-sonnet-4-5',
         type=RestructAPIModel,
         route_name='claude-sonnet-4-5',
         max_seq_len=200000,
@@ -128,7 +128,7 @@ models = [
         run_cfg=dict(num_gpus=0, num_procs=1),
     ),
     dict(
-        abbr='restruct_anthropic_claude_haiku_4_5',
+        abbr='claude-haiku-4-5',
         type=RestructAPIModel,
         route_name='claude-haiku-4-5',
         max_seq_len=200000,
