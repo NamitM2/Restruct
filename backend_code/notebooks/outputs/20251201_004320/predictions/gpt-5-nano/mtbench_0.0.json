@@ -1,0 +1,602 @@
+{
+    "0": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Imagine you are participating in a race with a group of people. If you have just overtaken the second person, what's your current position? Where is the person you just overtook?",
+                "assistant": "You’re in second place. The person you just passed is now in third place (behind you and behind the current first). \n\nNote: If there were only two runners, you’d be first and the other person second. The usual case assumes at least three runners."
+            },
+            {
+                "round": 2,
+                "user": "If the \"second person\" is changed to \"last person\" in the above question, what would the answer be?",
+                "assistant": "Impossible to overtake the last person. You can only pass someone who is ahead of you; the last-placed person has no one behind them to pass. So the scenario “overtake the last person” cannot occur, and there is no valid new position to state."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "1": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "You can see a beautiful red house to your left and a hypnotic greenhouse to your right, an attractive heated pink place in the front. So, where is the White House?",
+                "assistant": "The White House is in Washington, D.C., United States—specifically at 1600 Pennsylvania Avenue NW. The red house, greenhouse, and pink place you mentioned aren’t where the actual White House is located."
+            },
+            {
+                "round": 2,
+                "user": "Does the original question contain any clues to definitively determine the location of the White House?",
+                "assistant": "No. The original line doesn’t contain a clue that uniquely determines the White House’s location. It’s vague and color/location descriptions (red house left, greenhouse right, pink place in front) don’t map to a specific place in a way that pins down Washington, D.C., or any other location.\n\nWhat fixes the real location is external knowledge: the White House is the U.S. presidential residence at 1600 Pennsylvania Avenue NW in Washington, D.C. If you want the riddle to be solvable from the text alone, you’d need a clue that directly ties to that fact (e.g., a street name, country, or landmark)."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "2": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Thomas is very healthy, but he has to go to the hospital every day. What could be the reasons?",
+                "assistant": "Possible reasons:\n\n- He works at the hospital (doctor, nurse, technician, administrator, janitor, etc.) and goes there every day for his job.\n- He’s a medical student or resident doing rounds.\n- He volunteers at the hospital.\n- He visits a friend or family member who is in the hospital every day.\n- He’s part of a medical study or routine checkups that require daily visits.\n\nIf you had a specific twist in mind, tell me and I’ll tailor the answer."
+            },
+            {
+                "round": 2,
+                "user": "Can you explain why the above question is interesting?",
+                "assistant": "It's interesting because it starts with a seeming contradiction and invites abductive (best-explanation) reasoning. People tend to assume “healthy” means no need for a hospital, so the prompt pings curiosity and asks you to generate plausible explanations that fit the unusual clue.\n\nWhy it works as a thinking prompt:\n- It challenges assumptions and shows how context matters.\n- It encourages generating multiple hypotheses rather than jumping to a single conclusion.\n- It’s a good test of abductive reasoning: what is the most likely explanation given the clue?\n- It’s flexible and real-world: there are believable explanations (work, study, volunteering, visiting someone, participating in a trial, or daily therapy) that don’t require Thomas to be ill.\n- It’s a useful teaching/example for how to ask clarifying questions to narrow down possibilities.\n\nIf you want, I can categorize explanations into groups (work/education, care/visits, research/therapy, and other) or come up with a short list of the most plausible scenarios."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "3": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "David has three sisters. Each of them has one brother. How many brothers does David have?",
+                "assistant": "0\n\nReason: David is the brother of his three sisters. If each sister has exactly one brother, and David is male, that one brother must be David. There aren’t any other brothers in the family, so David has no brothers."
+            },
+            {
+                "round": 2,
+                "user": "If we change the previous question and assume that each sister of David has two brothers, how many brothers would David have?",
+                "assistant": "1\n\nReason: If each of the three sisters has exactly two brothers, there must be exactly two male children who are siblings to the sisters. Since one of these brothers is David, there is one other brother. Therefore, David has 1 brother."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "4": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Read the below passage carefully and answer the questions with an explanation:\nAt a small company, parking spaces are reserved for the top executives: CEO, president, vice president, secretary, and treasurer with the spaces lined up in that order. The parking lot guard can tell at a glance if the cars are parked correctly by looking at the color of the cars. The cars are yellow, green, purple, red, and blue, and the executives' names are Alice, Bert, Cheryl, David, and Enid.\n* The car in the first space is red.\n* A blue car is parked between the red car and the green car.\n* The car in the last space is purple.\n* The secretary drives a yellow car.\n* Alice's car is parked next to David's.\n* Enid drives a green car.\n* Bert's car is parked between Cheryl's and Enid's.\n* David's car is parked in the last space.\nQuestion: What is the name of the secretary?",
+                "assistant": "Alice.\n\nReasoning:\n- There are five spaces in order: CEO, President, Vice President, Secretary, Treasurer (spaces 1–5).\n- Space 1 is red; Space 5 is purple.\n- A blue car is between the red and green cars, and Enid drives green. The only way with Space 1 red is: Space 1 = red, Space 2 = blue, Space 3 = green. So Enid is in Space 3.\n- The secretary drives a yellow car, so Space 4 must be yellow and thus the Secretary is in Space 4.\n- David’s car is in the last space, i.e., Space 5, and Space 5 is purple, so David is in Space 5.\n- Alice’s car is parked next to David’s, so Alice must be in Space 4 (the only neighbor of Space 5). Hence Alice is the Secretary.\n- For Bert’s clue (Bert’s car is between Cheryl’s and Enid’s), with Enid in Space 3, Bert must be in Space 2 and Cheryl in Space 1. This also fits the color pattern (Space 2 blue between Space 1 red and Space 3 green).\n\nThus the secretary is Alice."
+            },
+            {
+                "round": 2,
+                "user": "List car colors in order from last to first.",
+                "assistant": "Purple, Yellow, Green, Blue, Red."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "5": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.\n1. Oranges cost more than apples.\n2. Oranges cost less than bananas.\n3. Bananas cost more than apples and bananas cost more than orange.\nIf the first two statements are true, then the third statement is",
+                "assistant": "True.\n\nReason: From (1) O > A and (2) O < B, we get B > O > A. This implies B > A and B > O, so statement (3) is true."
+            },
+            {
+                "round": 2,
+                "user": "If the third statement is true. Is the first statement true, false, or uncertain? Please explain.",
+                "assistant": "Uncertain.\n\nReason:\n- If statement 3 is true, then B > A and B > O. In particular, B > O makes statement 2 true as well.\n- However, statement 1 says O > A. The fact that B is larger than both does not tell us whether O is larger than A or not. O could be greater than A (true for statement 1) or less than A (false for statement 1), depending on the actual prices.\n\nExamples:\n- O = 3, A = 2, B = 5: 3 true, 2 true, 1 true.\n- O = 2, A = 3, B = 5: 3 true, 2 true, 1 false.\n\nThus, given 3 is true, statement 1 could be true or false."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "6": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "A is the father of B. B is the father of C. What is the relationship between A and C?",
+                "assistant": "A is the grandfather of C (specifically the paternal grandfather).  \nReason: A is B’s father, and B is C’s father, so A is C’s grandfather."
+            },
+            {
+                "round": 2,
+                "user": "Building on the previous question, if C is the son of D, D is the father of E, E is the son of X, and X is the father of Y, and Y is the father of Z, what's the relationship between A and Z in terms of generations and also the familial relationship in words?",
+                "assistant": "Note: The statements imply C has two fathers (B and D), which isn’t biologically consistent. If we treat the chain as a single line for the purpose of counting generations, there are seven steps from A to Z: A → B → C → D → E → X → Y → Z.\n\n- Generations: A is seven generations older than Z (i.e., Z is seven generations younger than A).\n- In words: A is Z’s fifth great-grandfather (often said as “A is the fifth great-grandfather of Z”)."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "7": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Which word does not belong with the others?\ntyre, steering wheel, car, engine",
+                "assistant": "car\n\nReason: tyre, steering wheel, and engine are all parts/components of a car, while \"car\" is the whole object itself."
+            },
+            {
+                "round": 2,
+                "user": "Could you replace it with a word that belongs with the others?",
+                "assistant": "Replacement word: brake\n\nNew set: tyre, steering wheel, brake, engine\n\nExplanation: All are parts/components of a car; the original outlier (car) was replaced with another component. If you'd like alternatives, we could use \"gearbox,\" \"dashboard,\" or \"seat\" as well."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "8": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right. Can you tell me the direction towards which the shadow was pointing - east, south, west, or north? Explain your reasoning steps.",
+                "assistant": "West.\n\nReasoning:\n- In the morning, the Sun is in the east. Shadows from objects point away from the Sun, i.e., toward the west.\n- The pole’s shadow is described as falling exactly to Suresh’s right.\n- If the shadow is to his right and the shadow direction is west, then his right-hand side must be west. This happens when he is facing south (since when you face south, your right is west).\n- Regardless of his exact facing, the shadow direction itself is west.\n\nSo the shadow was pointing west."
+            },
+            {
+                "round": 2,
+                "user": "To which direction was Suresh facing? How do you solve this?",
+                "assistant": "South.\n\nReasoning:\n- In the morning, the Sun is in the east, so shadows point away from the Sun, i.e., toward the west.\n- The pole’s shadow is exactly to Suresh’s right. So Suresh’s right-hand direction is west.\n- The only facing direction whose right side is west is facing south (because:\n  - if you face north, your right is east;\n  - if you face east, your right is south;\n  - if you face south, your right is west;\n  - if you face west, your right is north).\nThus Suresh was facing south."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "9": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Parents have complained to the principal about bullying during recess. The principal wants to quickly resolve this, instructing recess aides to be vigilant. Which situation should the aides report to the principal?\na) An unengaged girl is sitting alone on a bench, engrossed in a book and showing no interaction with her peers.\nb) Two boys engaged in a one-on-one basketball game are involved in a heated argument regarding the last scored basket.\nc) A group of four girls has surrounded another girl and appears to have taken possession of her backpack.\nd) Three boys are huddled over a handheld video game, which is against the rules and not permitted on school grounds.",
+                "assistant": "c) A group of four girls has surrounded another girl and appears to have taken possession of her backpack.\n\nRationale: This shows clear bullying—group intimidation and coercion aimed at another student and involving taking her belongings. The other options describe isolation (a), a normal sports dispute (b), or a rule violation without bullying (d)."
+            },
+            {
+                "round": 2,
+                "user": "If the aides confront the group of girls from situation (c) and they deny bullying, stating that they were merely playing a game, what specific evidence should the aides look for to determine if this is a likely truth or a cover-up for bullying?",
+                "assistant": "Key: look for evidence that confirms or contradicts the “playing a game” claim and shows whether the group’s behavior amounts to bullying.\n\nSpecific evidence to gather and observe:\n- Consistency of the victim’s account vs. the others’ statements\n  - What exactly happened, who was involved, where and when it started, and what each person did.\n  - Do the accounts align or are there major contradictions (e.g., “we were playing” vs. “they surrounded and grabbed her backpack”).\n- Physical and material evidence\n  - Was the backpack taken or moved? Is it returned, damaged, or altered?\n  - Any visible injuries, marks, torn clothing, or fear-induced physical responses on the victim.\n  - Are there any items in the possession of the four girls that belong to the victim?\n- Emotional and behavioral cues\n  - Victim’s reaction during and after the incident (distress, fear, withdrawal, reluctance to participate in recess activities, crying).\n  - Bystanders’ and the victim’s body language (avoiding eye contact, flinching, stepping back).\n- Witness accounts\n  - Names and statements of classmates who were nearby or saw part of the incident.\n  - Whether any student intervened or asked for the incident to stop.\n- Pattern and history\n  - Has this victim been targeted before by the same students or others? Any prior complaints about these four girls?\n  - Is similar behavior observed in other recesses or contexts (lunch, hallway)?\n- Context and plausibility of the “game” claim\n  - Are there any school-approved games or activities that involve surrounding someone or taking belongings in a playful way? If not, the claim is less plausible.\n  - Do the four girls have a history of exclusion, teasing, or coercion with this student?\n- Digital or social evidence (if appropriate and allowed)\n  - Any group chats, messages, or posts suggesting pressure, threat, or coercion.\n- Immediate safety indicators\n  - Is the victim still at risk? Has she asked for help or shown signs of fear about recess?\n  - Are the four girls still together or acting normally after the incident?\n\nWhat to do with the evidence:\n- Document meticulously using a standardized incident report: date/time, location, people involved, witnesses, their statements, and any physical/digital evidence.\n- Interview separately and use open-ended questions; avoid leading or blaming language.\n- Preserve and label any physical items (backpack, clothing) as needed.\n- If evidence suggests bullying, escalate to the principal and counselor, inform parents as appropriate, and implement safety steps (separate students, monitor closely, follow bullying/discipline policies).\n- If evidence remains inconclusive, continue to monitor, provide support to the victim, and consider a restorative approach or guidance counseling to address peer dynamics.\n\nBottom line: look for consistency between the “playing a game” explanation and what actually happened (surrounding, taking belongings, coercion), plus corroborating signs from witnesses, physical evidence, and the victim’s behavior."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "10": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "The vertices of a triangle are at points (0, 0), (-1, 1), and (3, 3). What is the area of the triangle?",
+                "assistant": "3\n\nReason: Let A = (0,0), B = (-1,1), C = (3,3). Vectors AB = (-1,1) and AC = (3,3). The area is 1/2 |AB_x·AC_y − AB_y·AC_x| = 1/2 |(-1)(3) − (1)(3)| = 1/2 · 6 = 3."
+            },
+            {
+                "round": 2,
+                "user": "What's area of the circle circumscribing the triangle?",
+                "assistant": "5π\n\nBriefly: Sides are AB = √2, BC = 2√5, CA = 3√2. Area Δ = 3. Circumradius R = (abc)/(4Δ) = (√2)(2√5)(3√2) / 12 = 12√5/12 = √5. Circle area = πR^2 = π(√5)^2 = 5π."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "11": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "A tech startup invests $8000 in software development in the first year, and then invests half of that amount in software development in the second year.\nWhat's the total amount the startup invested in software development over the two years?",
+                "assistant": "$12{,}000.\n\nReason: Year 1 = $8,000. Year 2 = half of that = $8,000 / 2 = $4,000. Total = $8,000 + $4,000 = $12,000."
+            },
+            {
+                "round": 2,
+                "user": "If the startup maintains the same strategy for the third year, investing half of the previous year's amount into software development, how much will they invest in the third year?",
+                "assistant": "$2,000.\n\nReason: Year 2 investment was $4,000. Half of that for Year 3 is $4,000 / 2 = $2,000."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "12": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "In a survey conducted at a local high school, preferences for a new school color were measured: 58% of students liked the color blue, 45% preferred green, and 22% liked both colors. If we randomly pick a student from the school, what's the probability that they would like neither blue nor green?",
+                "assistant": "0.19 (19%)\n\nExplanation:\n- Let B = likes blue, G = likes green.\n- P(B) = 0.58, P(G) = 0.45, P(B ∩ G) = 0.22.\n- P(B ∪ G) = P(B) + P(G) − P(B ∩ G) = 0.58 + 0.45 − 0.22 = 0.81.\n- Therefore, P(neither blue nor green) = 1 − P(B ∪ G) = 1 − 0.81 = 0.19."
+            },
+            {
+                "round": 2,
+                "user": "If we select a student liked green, what's the probability that he or she would dislike both colors?",
+                "assistant": "0 (0%)\n\nReason: Let B = likes blue, G = likes green. We want P(not B and not G | G). But (not B and not G) requires not G, which is incompatible with G being true. Therefore the intersection given G is empty, so the probability is 0."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "13": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "When rolling two dice, what is the probability that you roll a total number that is at least 3?",
+                "assistant": "35/36\n\nReason: with two fair six-sided dice there are 36 equally likely outcomes. The only way to get a total less than 3 is (1,1) with sum 2. So 36 − 1 = 35 favorable outcomes, giving P(sum ≥ 3) = 35/36 ≈ 0.9722."
+            },
+            {
+                "round": 2,
+                "user": "Continue from previous question. What's the probability that you roll a number which is even or at least 3?",
+                "assistant": "Answer: 1 (certain)\n\nReason: Let A = “sum is even” and B = “sum ≥ 3”.\n- The sums are 2–12. If a sum is not even, it would be odd, but the only way to fail B is sum ≤ 2, and the only sum ≤ 2 is 2, which is even. So every outcome satisfies A or B.\n- Alternatively, by inclusion–exclusion: P(A ∪ B) = P(A) + P(B) − P(A ∩ B) = 18/36 + 35/36 − 17/36 = 36/36 = 1."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "14": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Some people got on a bus at the terminal. At the first bus stop, half of the people got down and 4 more people got in. Then at the second bus stop, 6 people got down and 8 more got in. If there were a total of 25 people heading to the third stop, how many people got on the bus at the terminal?",
+                "assistant": "38\n\nReasoning:\n- Let initial number on the bus be N.\n- After stop 1: half get off → N/2 remain; +4 get in → N/2 + 4.\n- After stop 2: 6 get off → N/2 - 2 remain; +8 get in → N/2 + 6.\n- This equals 25 heading to the third stop: N/2 + 6 = 25 → N/2 = 19 → N = 38."
+            },
+            {
+                "round": 2,
+                "user": "If the ticket is $2 per person, how much is the total money earned by the bus?",
+                "assistant": "$76\n\nReason: 38 people boarded at the terminal. If each ticket costs $2, total earnings = 38 × 2 = $76."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "15": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "x+y = 4z, x*y = 4z^2, express x-y in z",
+                "assistant": "x - y = 0.\n\nReason: Let S = x + y = 4z and P = xy = 4z^2. Then\n(x - y)^2 = (x + y)^2 - 4xy = S^2 - 4P = (4z)^2 - 4(4z^2) = 16z^2 - 16z^2 = 0,\nso x - y = 0 (hence x = y = 2z)."
+            },
+            {
+                "round": 2,
+                "user": "Express z-x in y",
+                "assistant": "From (x - y)^2 = (x + y)^2 - 4xy = (4z)^2 - 4(4z^2) = 0, we get x = y. Then x + y = 4z gives 2y = 4z, so z = y/2.\n\nThus z - x = (y/2) - y = -y/2."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "16": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "How many integers are in the solution of the inequality |x + 5| < 10",
+                "assistant": "19\n\nReason:\n|x+5| < 10 implies -10 < x+5 < 10. Subtract 5: -15 < x < 5. The integers strictly between -15 and 5 are -14, -13, ..., 4, which is 4 - (-14) + 1 = 19."
+            },
+            {
+                "round": 2,
+                "user": "What about |x + 10| < 5",
+                "assistant": "9\n\nReason:\n|x+10| < 5 implies -5 < x+10 < 5. Subtract 10: -15 < x < -5. The integers strictly between -15 and -5 are -14, -13, ..., -6, which is (-6) - (-14) + 1 = 9."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "17": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "When a number is divided by 10, the remainder is 4. What is the remainder when twice the number is divided by 4?",
+                "assistant": "0\n\nReason: Let the number be n = 10k + 4 (since remainder is 4 when divided by 10). Then 2n = 20k + 8, which is divisible by 4. Therefore the remainder when 2n is divided by 4 is 0."
+            },
+            {
+                "round": 2,
+                "user": "What about when twice the number is divided by 5?",
+                "assistant": "3\n\nReason: If n ≡ 4 (mod 10), then n = 10k + 4. Then 2n = 20k + 8. When divided by 5, 20k is 0 mod 5 and 8 ≡ 3 mod 5, so the remainder is 3. (Equivalently, n ≡ 4 (mod 5) ⇒ 2n ≡ 8 ≡ 3 (mod 5).)"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "18": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Benjamin went to a bookstore and purchased a variety of books. He bought 5 copies of a sci-fi novel, each priced at $20, 3 copies of a history book priced at $30 each, and 2 copies of a philosophy book for $45 each.\nWhat was the total cost of his purchases?",
+                "assistant": "Total cost = (5 × $20) + (3 × $30) + (2 × $45) = $100 + $90 + $90 = $280."
+            },
+            {
+                "round": 2,
+                "user": "Suppose Benjamin decides to sell each of these books at a 25% markup from the price he purchased them. What would be his total revenue if he sold all the books he bought?",
+                "assistant": "Total revenue = 1.25 × total cost = 1.25 × $280 = $350.\n\nBreakdown:\n- Sci-fi: 5 × (20 × 1.25) = 5 × 25 = $125\n- History: 3 × (30 × 1.25) = 3 × 37.5 = $112.50\n- Philosophy: 2 × (45 × 1.25) = 2 × 56.25 = $112.50\n\nTotal = $125 + $112.50 + $112.50 = $350."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "19": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Given that f(x) = 4x^3 - 9x - 14, find the value of f(2).",
+                "assistant": "0\n\nExplanation:\nf(2) = 4(2)^3 - 9(2) - 14 = 4(8) - 18 - 14 = 32 - 32 = 0."
+            },
+            {
+                "round": 2,
+                "user": "Find x such that f(x) = 0.",
+                "assistant": "f(x) = 4x^3 - 9x - 14.\n\n- Check x = 2: f(2) = 4(8) - 18 - 14 = 0, so x = 2 is a root.\n- Factor: f(x) = (x - 2)(4x^2 + 8x + 7).\n- Solve 4x^2 + 8x + 7 = 0: discriminant Δ = 64 - 112 = -48 < 0, so no real roots.\n\nConclusion:\n- The only real solution is x = 2.\n- If complex roots are allowed: x = -1 ± i√3/2."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "20": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Develop a Python program that reads all the text files under a directory and returns top-5 words with the most number of occurrences.",
+                "assistant": "Here's a concise Python program that traverses a directory recursively, reads text files (by extension), tokenizes the text into words, counts occurrences, and prints the top-5 most frequent words. It processes files line-by-line to be memory-efficient and is robust to common text encodings.\n\nUsage:\n- Run: python top_words.py /path/to/directory\n- Optional: adjust top N with --top, and specify extensions with --ext\n\nCode:\n\n```python\nimport os\nimport re\nimport argparse\nfrom collections import Counter\n\n# Simple word tokenizer: lowercases and keeps sequences of alphanumeric characters\ndef tokenize(text):\n    return re.findall(r'[a-z0-9]+', text.lower())\n\ndef process_file(path, counter):\n    try:\n        with open(path, 'r', encoding='utf-8', errors='ignore') as f:\n            for line in f:\n                words = tokenize(line)\n                counter.update(words)\n    except Exception:\n        # If a file can't be read, skip it quietly\n        pass\n\ndef main():\n    default_extensions = {\n        '.txt', '.md', '.markdown', '.log', '.csv', '.tsv',\n        '.json', '.yaml', '.yml', '.xml', '.html', '.htm'\n    }\n\n    parser = argparse.ArgumentParser(\n        description=\"Find top-5 most frequent words across all text files in a directory.\"\n    )\n    parser.add_argument('directory', help='Path to the directory to scan')\n    parser.add_argument('--top', type=int, default=5, help='Number of top words to display (default: 5)')\n    parser.add_argument('--ext', nargs='*',\n                        help='Optional list of file extensions to include (e.g. .txt .md). '\n                             'If omitted, a default set of common text extensions is used.')\n\n    args = parser.parse_args()\n\n    directory = args.directory\n    top_n = max(1, args.top)\n\n    # Determine which extensions to include\n    if args.ext and len(args.ext) > 0:\n        allowed_exts = set(e.lower() if e.startswith('.') else f'.{e.lower()}' for e in args.ext)\n    else:\n        allowed_exts = default_extensions\n\n    # Collect word counts\n    counter = Counter()\n\n    for root, _, files in os.walk(directory, topdown=True, onerror=None, followlinks=False):\n        for fname in files:\n            ext = os.path.splitext(fname)[1].lower()\n            if ext not in allowed_exts:\n                continue\n            path = os.path.join(root, fname)\n            process_file(path, counter)\n\n    # Get top N words\n    top_words = counter.most_common(top_n)\n\n    if not top_words:\n        print(\"No words found in the specified directory with the chosen extensions.\")\n        return\n\n    print(f\"Top {top_n} words by frequency:\")\n    for word, count in top_words:\n        print(f\"{word}: {count}\")\n\nif __name__ == '__main__':\n    main()\n```\n\nNotes:\n- Words are detected as sequences of lowercase letters and digits (a-z, 0-9). Punctuation and case are ignored.\n- By default, the program considers common text extensions (e.g., .txt, .md, .log, .csv, .json, .yaml, etc.). You can override with --ext, e.g. --ext .txt .md.\n- The file-reading uses UTF-8 with errors ignored to handle diverse encodings gracefully. If a file can’t be read, it is skipped."
+            },
+            {
+                "round": 2,
+                "user": "Can you parallelize it?",
+                "assistant": "Yes. Here’s a parallelized version using multiple processes. It splits the work by file: each worker reads one or more text files, counts word occurrences in that file, and returns a Counter. The main process then merges all per-file counters into a final top-N result.\n\nKey points:\n- Uses ProcessPoolExecutor for parallel processing (CPU-bound tokenization and counting).\n- Falls back to sequential processing when there’s only a few files or you set --jobs=1.\n- Keeps the same tokenization and extension-filter behavior as before.\n- You can control the number of workers with --jobs.\n\nUsage:\n- Run: python top_words_parallel.py /path/to/directory\n- Optional: adjust top N with --top, specify extensions with --ext, and set --jobs (default: number of CPUs)\n\nCode:\n\n```python\nimport os\nimport re\nimport argparse\nfrom collections import Counter\nfrom typing import List\nimport concurrent.futures\n\n# Simple word tokenizer: lowercases and keeps sequences of alphanumeric characters\ndef tokenize(text: str):\n    return re.findall(r'[a-z0-9]+', text.lower())\n\ndef process_file_path(path: str) -> Counter:\n    \"\"\"\n    Reads a single file and returns a Counter of word frequencies in that file.\n    If the file can't be read, returns an empty Counter.\n    \"\"\"\n    counter = Counter()\n    try:\n        with open(path, 'r', encoding='utf-8', errors='ignore') as f:\n            for line in f:\n                words = tokenize(line)\n                counter.update(words)\n    except Exception:\n        # Skip unreadable files quietly\n        pass\n    return counter\n\ndef merge_counters(counters: List[Counter]) -> Counter:\n    total = Counter()\n    for c in counters:\n        total.update(c)\n    return total\n\ndef collect_file_paths(directory: str, allowed_exts: set) -> List[str]:\n    paths = []\n    for root, _, files in os.walk(directory, topdown=True, onerror=None, followlinks=False):\n        for fname in files:\n            ext = os.path.splitext(fname)[1].lower()\n            if ext in allowed_exts:\n                paths.append(os.path.join(root, fname))\n    return paths\n\ndef main():\n    default_extensions = {\n        '.txt', '.md', '.markdown', '.log', '.csv', '.tsv',\n        '.json', '.yaml', '.yml', '.xml', '.html', '.htm'\n    }\n\n    parser = argparse.ArgumentParser(\n        description=\"Find top-5 most frequent words across all text files in a directory (parallelized).\"\n    )\n    parser.add_argument('directory', help='Path to the directory to scan')\n    parser.add_argument('--top', type=int, default=5, help='Number of top words to display (default: 5)')\n    parser.add_argument('--ext', nargs='*',\n                        help='Optional list of file extensions to include (e.g. .txt .md). '\n                             'If omitted, a default set of common text extensions is used.')\n    parser.add_argument('--jobs', type=int, default=None,\n                        help='Number of worker processes. Default: number of CPU cores')\n\n    args = parser.parse_args()\n\n    directory = args.directory\n    top_n = max(1, args.top)\n\n    # Determine which extensions to include\n    if args.ext and len(args.ext) > 0:\n        allowed_exts = set(e.lower() if e.startswith('.') else f'.{e.lower()}' for e in args.ext)\n    else:\n        allowed_exts = default_extensions\n\n    # Collect file paths to process\n    file_paths = collect_file_paths(directory, allowed_exts)\n\n    if not file_paths:\n        print(\"No files found in the specified directory with the chosen extensions.\")\n        return\n\n    # Decide on parallel vs sequential processing\n    jobs = args.jobs\n    counters: List[Counter] = []\n\n    if not jobs or jobs <= 1 or len(file_paths) < 2:\n        # Sequential processing for small workloads\n        for p in file_paths:\n            counters.append(process_file_path(p))\n    else:\n        max_workers = min(jobs, len(file_paths))\n        # Parallel processing: submit per-file work to the pool\n        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:\n            futures = [executor.submit(process_file_path, p) for p in file_paths]\n            for fut in concurrent.futures.as_completed(futures):\n                counters.append(fut.result())\n\n    # Merge all per-file counters\n    total_counter = merge_counters(counters)\n\n    top_words = total_counter.most_common(top_n)\n    if not top_words:\n        print(\"No words found in the specified directory with the chosen extensions.\")\n        return\n\n    print(f\"Top {top_n} words by frequency:\")\n    for word, count in top_words:\n        print(f\"{word}: {count}\")\n\nif __name__ == '__main__':\n    main()\n```\n\nNotes:\n- The tokenization uses only lowercase alphanumeric sequences, matching the previous behavior.\n- By default, it scans common text extensions. Use --ext to override, e.g. --ext .txt .md\n- If you have many small files, a larger --jobs value can speed things up; for CPU-bound work with many files, this parallel approach helps. For IO-bound scenarios, results may vary.\n- This script includes a guard to ensure it works on Windows as well, since the worker function is defined at the module level."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "21": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Write a C++ program to find the nth Fibonacci number using recursion.",
+                "assistant": "Here's a simple C++ program that computes the nth Fibonacci number using naive recursion (fib(0)=0, fib(1)=1). Note: this approach is exponential in time and not efficient for large n.\n\n```cpp\n#include <iostream>\n\nlong long fib(int n) {\n    if (n <= 1) return n;\n    return fib(n - 1) + fib(n - 2);\n}\n\nint main() {\n    int n;\n    std::cout << \"Enter n (non-negative): \";\n    if (!(std::cin >> n) || n < 0) {\n        std::cerr << \"Invalid input. Please enter a non-negative integer.\\n\";\n        return 1;\n    }\n\n    std::cout << \"Fibonacci(\" << n << \") = \" << fib(n) << std::endl;\n    return 0;\n}\n```\n\nIf you need to handle larger n efficiently, consider memoized recursion or an iterative approach."
+            },
+            {
+                "round": 2,
+                "user": "Now we define a sequence of numbers in which each number is the sum of the three preceding ones. The first three numbers are 0, -1, -1. Write a program to find the nth number.",
+                "assistant": "Here’s a C++ program that computes the nth term of the sequence defined by:\nt0 = 0, t1 = -1, t2 = -1, and t_n = t_{n-1} + t_{n-2} + t_{n-3} for n >= 3.\nIt uses an iterative approach (O(n) time, O(1) space) with 0-based indexing.\n\n```cpp\n#include <iostream>\n\nlong long tribonacci(int n) {\n    if (n == 0) return 0;\n    if (n == 1) return -1;\n    if (n == 2) return -1;\n\n    long long t0 = 0;   // t0\n    long long t1 = -1;  // t1\n    long long t2 = -1;  // t2\n\n    for (int i = 3; i <= n; ++i) {\n        long long t3 = t0 + t1 + t2; // t_i = t_{i-1} + t_{i-2} + t_{i-3}\n        t0 = t1;\n        t1 = t2;\n        t2 = t3;\n    }\n    return t2;\n}\n\nint main() {\n    int n;\n    std::cout << \"Enter n (0-based index, n >= 0): \";\n    if (!(std::cin >> n) || n < 0) {\n        std::cerr << \"Invalid input. Please enter a non-negative integer.\\n\";\n        return 1;\n    }\n\n    std::cout << \"a[\" << n << \"] = \" << tribonacci(n) << std::endl;\n    return 0;\n}\n```\n\nNote:\n- This uses 0-based indexing: a[0] = 0, a[1] = -1, a[2] = -1.\n- If you prefer 1-based indexing, you can adjust accordingly (e.g., define a[1]=0, a[2]=-1, a[3]=-1 and compute from there)."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "22": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Write a simple website in HTML. When a user clicks the button, it shows a random joke from a list of 4 jokes.",
+                "assistant": "```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>Random Joke Generator</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      background: #f5f5f5;\n      display: flex;\n      min-height: 100vh;\n      align-items: center;\n      justify-content: center;\n      margin: 0;\n    }\n    .card {\n      background: #fff;\n      padding: 2rem;\n      border-radius: 12px;\n      box-shadow: 0 4px 14px rgba(0,0,0,.1);\n      text-align: center;\n      width: 90%;\n      max-width: 600px;\n    }\n    #joke {\n      min-height: 3em;\n      margin: 1rem 0;\n      font-size: 1.25rem;\n      color: #333;\n    }\n    button {\n      padding: 0.75rem 1.5rem;\n      font-size: 1rem;\n      border: none;\n      border-radius: 6px;\n      background: #007bff;\n      color: #fff;\n      cursor: pointer;\n    }\n    button:hover {\n      background: #0056b3;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Random Joke Generator</h1>\n    <div id=\"joke\" aria-live=\"polite\">Click the button to get a joke</div>\n    <button id=\"newJoke\" type=\"button\" aria-label=\"Show a random joke\">Tell me a joke</button>\n  </div>\n\n  <script>\n    (function() {\n      const jokes = [\n        \"Why don't scientists trust atoms? Because they make up everything.\",\n        \"I told my computer I needed a break, and it asked 'Are you sure you want to quit?'\",\n        \"Why did the scarecrow win an award? Because he was outstanding in his field.\",\n        \"I would tell you a UDP joke, but you might not get it.\"\n      ];\n\n      const jokeDiv = document.getElementById('joke');\n      const btn = document.getElementById('newJoke');\n      let lastIndex = -1;\n\n      function showRandomJoke() {\n        let index;\n        // Ensure we don't show the same joke twice in a row (optional)\n        do {\n          index = Math.floor(Math.random() * jokes.length);\n        } while (jokes.length > 1 && index === lastIndex);\n\n        lastIndex = index;\n        jokeDiv.textContent = jokes[index];\n      }\n\n      btn.addEventListener('click', showRandomJoke);\n    })();\n  </script>\n</body>\n</html>\n```"
+            },
+            {
+                "round": 2,
+                "user": "How to use CSS to change the color of jokes to red?",
+                "assistant": "You can just set the text color of the joke element to red using CSS.\n\nTwo simple options:\n\n- Target the existing element by its id:\n  #joke { color: red; }\n\n- Or give the joke a class and target that:\n  <div id=\"joke\" class=\"joke\">...</div>\n\n  .joke { color: red; }\n\nNotes:\n- You can use other color formats too, e.g., color: #ff0000; or color: rgb(255, 0, 0); or color: hsl(0, 100%, 50%); \n- The color property affects the text inside the element. If you have nested elements with their own color, they may override it unless you set the color on the correct selector."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "23": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Here is a Python function to find the length of the longest common subsequence of two input strings. Can you identify any bug in this function?\n\n```\ndef longest_common_subsequence_length(str1, str2):\n    m = len(str1)\n    n = len(str2)\n\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if str1[i - 1] == str2[j - 1]:\n                dp[i][j] = dp[i - 1][j - 1] + 1\n            else:\n                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])\n\n    return dp[m][n]\n```",
+                "assistant": "There isn’t a bug in this function. It’s a correct dynamic programming solution for the length of the longest common subsequence (LCS).\n\nWhy it’s correct:\n- dp is (m+1) x (n+1) initialized to 0, which covers the base cases (empty substrings).\n- If chars match (str1[i-1] == str2[j-1]), it uses dp[i-1][j-1] + 1.\n- Otherwise, it uses max(dp[i-1][j], dp[i][j-1]).\n- Returns dp[m][n], which is the LCS length.\n\nQuick tests you can run:\n- longest_common_subsequence_length(\"ABCBDAB\", \"BDCABC\") -> 4\n- longest_common_subsequence_length(\"abc\", \"abc\") -> 3\n- longest_common_subsequence_length(\"abc\", \"\") -> 0\n\nIf you want to optimize memory, you could reduce it to two rows, since each dp[i][j] depends only on the previous row. But as written, it’s correct."
+            },
+            {
+                "round": 2,
+                "user": "what about this one?\n\n```\ndef longest_common_subsequence(X , Y): \n    # Find lengths of two strings \n    m = len(X) \n    n = len(Y) \n  \n    # Create a table to store results of sub-problems \n    dp = [[None]*(n+1) for i in range(m+1)] \n  \n    # Fill dp[][] in bottom up manner \n    for i in range(1, m+1): \n        for j in range(1, n+1): \n            if X[i-1] == Y[j-1]: \n                dp[i][j] = dp[i-1][j-1]+1\n            else: \n                dp[i][j] = max(dp[i-1][j], dp[i][j-1]) \n  \n    return dp[m][n]\n```",
+                "assistant": "Bug: The DP table is initialized with None values. Since the DP recurrence uses dp[i-1][j-1] + 1 and max(dp[i-1][j], dp[i][j-1]), having None in the base cells (row 0 and column 0) will cause errors (TypeError) or incorrect results.\n\nFix: initialize the table with zeros (base cases for empty substrings).\n\nCorrected code:\n\ndef longest_common_subsequence(X, Y):\n    m = len(X)\n    n = len(Y)\n\n    # Initialize with 0s for base cases\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if X[i - 1] == Y[j - 1]:\n                dp[i][j] = dp[i - 1][j - 1] + 1\n            else:\n                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])\n\n    return dp[m][n]"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "24": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Write a function to find the highest common ancestor (not LCA) of two nodes in a binary tree.",
+                "assistant": "Clarification: usually “LCA” means lowest common ancestor. If you truly want the “highest” common ancestor (closest to the root), that would be the root of the tree (provided both nodes exist). Below are two options:\n\n1) If you want the lowest common ancestor (LCA)\n- This is the standard solution.\n\nPython example:\n- Node class for context\nclass Node:\n    def __init__(self, val, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\ndef lowest_common_ancestor(root, p, q):\n    if root is None or root is p or root is q:\n        return root\n    left = lowest_common_ancestor(root.left, p, q)\n    right = lowest_common_ancestor(root.right, p, q)\n    if left is not None and right is not None:\n        return root\n    return left if left is not None else right\n\nNotes:\n- Assumes both p and q are nodes in the tree (or you can add extra checks if needed).\n- Time complexity: O(n); Space complexity: O(h) due to recursion stack (h = height of tree).\n\n2) If you truly want the highest common ancestor (closest to the root)\n- In a connected binary tree, the highest common ancestor of any two nodes is the root (assuming both nodes exist). Here’s a version that checks existence and returns the root if both nodes exist; otherwise None.\n\nPython example:\ndef exists(root, target):\n    if root is None:\n        return False\n    if root is target:\n        return True\n    return exists(root.left, target) or exists(root.right, target)\n\ndef highest_common_ancestor_root(root, p, q):\n    if root is None:\n        return None\n    if exists(root, p) and exists(root, q):\n        return root\n    return None\n\nIf you tell me your preferred language (Python, Java, C++, JavaScript, etc.) and whether you want LCA or the true root-based highest ancestor, I can tailor the code accordingly."
+            },
+            {
+                "round": 2,
+                "user": "What if it is not a binary tree?",
+                "assistant": "If the structure is not binary but a rooted N-ary tree (each node can have any number of children), you can generalize the LCA approach.\n\nKey points:\n- The highest common ancestor (closest to the root) in a rooted tree is still the root, assuming both nodes exist.\n- The lowest common ancestor (LCA) generalizes naturally to N-ary trees by checking all children.\n\nOption 1: LCA for an N-ary tree (generalized from binary)\n\nPython example:\n- Node class with a list of children\nclass Node:\n    def __init__(self, val, children=None):\n        self.val = val\n        self.children = children if children is not None else []\n\ndef lowest_common_ancestor_nary(root, p, q):\n    if root is None or root is p or root is q:\n        return root\n\n    found = []\n    for child in root.children:\n        res = lowest_common_ancestor_nary(child, p, q)\n        if res is not None:\n            found.append(res)\n\n    if len(found) >= 2:\n        # p and q are found in two different subtrees of root\n        return root\n    if len(found) == 1:\n        # Both nodes are in the same subtree\n        return found[0]\n    return None\n\nNotes:\n- Assumes both p and q are nodes in the tree (or you can add checks).\n- Time complexity: O(n); Space complexity: O(h) due to recursion stack (h = height of the tree).\n\nOption 1a: LCA for N-ary tree using parent pointers (iterative)\n\ndef lca_nary_with_parents(root, p, q):\n    # Build parent map\n    parent = {root: None}\n    stack = [root]\n    while stack:\n        node = stack.pop()\n        for child in node.children:\n            parent[child] = node\n            stack.append(child)\n\n    # Collect ancestors of p\n    ancestors_p = set()\n    cur = p\n    while cur is not None:\n        ancestors_p.add(cur)\n        cur = parent.get(cur)\n\n    # Walk from q up until we find a common ancestor\n    cur = q\n    while cur is not None:\n        if cur in ancestors_p:\n            return cur\n        cur = parent.get(cur)\n\n    return None\n\nOption 2: Highest common ancestor (closest to root) in an N-ary tree\n\nIf you truly want the highest common ancestor (closest to the root), in a connected rooted tree it is the root, provided both nodes exist. You can implement a simple existence check:\n\ndef exists(root, target):\n    if root is None:\n        return False\n    if root is target:\n        return True\n    for child in root.children:\n        if exists(child, target):\n            return True\n    return False\n\ndef highest_common_ancestor_root_nary(root, p, q):\n    if root is None:\n        return None\n    if exists(root, p) and exists(root, q):\n        return root\n    return None\n\nAdditional notes:\n- If your structure is a DAG or general graph (not a tree), the concept of LCA becomes more nuanced and requires a different approach. In DAGs, there are multiple possible LCAs; you may need to define a specific criterion (e.g., lowest among common ancestors with respect to a topological order) and use graph traversal with ancestor sets.\n- If you want, tell me your language of choice (Python, Java, C++, JavaScript, etc.) and whether you want LCA or the true root-based highest ancestor, and I’ll tailor the code."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "25": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Implement a function to find the median of two sorted arrays of different sizes with O(1) space complexity and O(n) time complexity.",
+                "assistant": "Here's a straightforward O(n) time, O(1) space solution that finds the median by simulating the merge process with two pointers (without creating a merged array).\n\nPython implementation:\n\n```python\ndef find_median_sorted_arrays(nums1, nums2):\n    m, n = len(nums1), len(nums2)\n    total = m + n\n    if total == 0:\n        return None  # or raise an exception if both arrays are empty\n\n    i = j = 0\n    mid1 = mid2 = None\n\n    # Indices of the median positions in the merged array\n    target1 = (total - 1) // 2\n    target2 = total // 2\n\n    count = 0\n    while i < m or j < n:\n        if i < m and (j >= n or nums1[i] <= nums2[j]):\n            val = nums1[i]\n            i += 1\n        else:\n            val = nums2[j]\n            j += 1\n\n        if count == target1:\n            mid1 = val\n        if count == target2:\n            mid2 = val\n            break  # we found the median positions\n        count += 1\n\n    if total % 2 == 1:\n        return mid2  # middle element\n    else:\n        return (mid1 + mid2) / 2.0  # average of the two middle elements\n```\n\nNotes:\n- Time complexity: O(m + n) in the worst case (we may traverse both arrays fully).\n- Space complexity: O(1) extra space (only a few variables).\n- If both arrays are empty, the function returns None (you can raise an exception if you prefer)."
+            },
+            {
+                "round": 2,
+                "user": "Does there exist an implementation with better time complexity?",
+                "assistant": "Yes. There is an algorithm with O(log(min(m, n))) time and O(1) space that finds the median of two sorted arrays. It binary-searches the partition of the smaller array to ensure the combined left and right halves are balanced.\n\nIdea (binary partition):\n- Let m = len(nums1), n = len(nums2) with m <= n.\n- We choose i elements from nums1 and j = (m + n + 1) // 2 - i elements from nums2 to form the left half.\n- We require:\n  - A_left = nums1[i-1] (or -inf if i == 0)\n  - A_right = nums1[i] (or +inf if i == m)\n  - B_left = nums2[j-1] (or -inf if j == 0)\n  - B_right = nums2[j] (or +inf if j == n)\n  - Condition: A_left <= B_right and B_left <= A_right\n- If total length is odd, median is max(A_left, B_left). If even, median is (max(A_left, B_left) + min(A_right, B_right)) / 2.\n\nPython implementation:\n\n```python\ndef find_median_sorted_arrays(nums1, nums2):\n    m, n = len(nums1), len(nums2)\n    # Ensure nums1 is the smaller array\n    if m > n:\n        nums1, nums2, m, n = nums2, nums1, n, m\n\n    if n == 0:\n        raise ValueError(\"Both input arrays are empty\")\n\n    imin, imax, half = 0, m, (m + n + 1) // 2\n\n    while imin <= imax:\n        i = (imin + imax) // 2\n        j = half - i\n\n        A_left  = nums1[i - 1] if i > 0 else float('-inf')\n        A_right = nums1[i]     if i < m else float('inf')\n        B_left  = nums2[j - 1] if j > 0 else float('-inf')\n        B_right = nums2[j]     if j < n else float('inf')\n\n        if A_left <= B_right and B_left <= A_right:\n            if (m + n) % 2 == 1:\n                return max(A_left, B_left)\n            else:\n                return (max(A_left, B_left) + min(A_right, B_right)) / 2.0\n        elif A_left > B_right:\n            imax = i - 1\n        else:\n            imin = i + 1\n```\n\nNotes:\n- Time complexity: O(log(min(m, n))) because we binary-search the smaller array.\n- Space complexity: O(1).\n- If one array is empty, this reduces to the median of the non-empty array.\n- If both arrays are empty, raise an exception or define behavior as needed."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "26": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Write a function to find the majority element in a given integer array using the Boyer-Moore Voting Algorithm.",
+                "assistant": "Here is a Python implementation of the Boyer-Moore Voting Algorithm to find the majority element (the element that appears more than n/2 times). It assumes such an element exists. A verification variant is included.\n\n```python\ndef majority_element(nums):\n    \"\"\"\n    Returns the element that appears more than n/2 times in nums using\n    the Boyer-Moore Voting Algorithm.\n    Assumes a majority element exists.\n    \"\"\"\n    count = 0\n    candidate = None\n\n    for num in nums:\n        if count == 0:\n            candidate = num\n        if num == candidate:\n            count += 1\n        else:\n            count -= 1\n\n    return candidate\n\ndef majority_element_with_verification(nums):\n    \"\"\"\n    Like majority_element, but verifies that the candidate is indeed a majority.\n    Raises ValueError if no majority element exists.\n    \"\"\"\n    candidate = majority_element(nums)\n    if nums.count(candidate) > len(nums) // 2:\n        return candidate\n    raise ValueError(\"No majority element exists\")\n```\n\nUsage example:\n- majority_element([2, 2, 1, 1, 1, 2, 2]) -> 2\n- majority_element_with_verification([2, 2, 1, 1, 1, 2, 2]) -> 2"
+            },
+            {
+                "round": 2,
+                "user": "How about finding the top-2 most occurring elements?",
+                "assistant": "You can find the top-2 most frequent elements by counting frequencies and then selecting the two highest counts.\n\nPython implementation (no external libs):\n\n```python\ndef top_two_most_occurring(nums):\n    \"\"\"\n    Return the top two most frequent elements with their counts.\n    Returns a list of tuples [(elem1, count1), (elem2, count2)]\n    in descending order of frequency. If fewer than two distinct\n    elements exist, returns as many as available.\n    \"\"\"\n    # Count frequencies\n    counts = {}\n    for x in nums:\n        counts[x] = counts.get(x, 0) + 1\n\n    # Find top two by counting\n    top1, top2 = None, None\n    c1, c2 = 0, 0\n\n    for val, cnt in counts.items():\n        if cnt > c1:\n            top2, c2 = top1, c1\n            top1, c1 = val, cnt\n        elif cnt > c2:\n            top2, c2 = val, cnt\n\n    result = []\n    if top1 is not None:\n        result.append((top1, c1))\n    if top2 is not None:\n        result.append((top2, c2))\n    return result\n```\n\nUsage examples:\n- top_two_most_occurring([2, 2, 1, 1, 1, 2, 2]) -> [(2, 4), (1, 3)]\n- top_two_most_occurring([1, 2, 2, 3, 3, 3, 4, 4]) -> [(3, 3), (2, 2)]\n\nNotes:\n- Time complexity: O(n) to count plus O(d) to scan distinct elements (d is the number of distinct elements).\n- Space complexity: O(d) for the frequency map.\n- If you’re allowed to use Python’s Counter, you can shorten this to:\n  from collections import Counter\n  Counter(nums).most_common(2)"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "27": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "A binary tree is full if all of its vertices have either zero or two children. Let B_n denote the number of full binary trees with n vertices. Implement a function to find B_n.",
+                "assistant": "Key fact:\n- A full binary tree with n vertices can only exist when n is odd.\n- If n = 2m + 1, then B_n equals the m-th Catalan number: B_{2m+1} = C_m = (1/(m+1)) * binomial(2m, m).\n\nPython implementations:\n\n1) Closed-form (fast, O(m) time for binomial via Python big integers)\n```python\nfrom math import comb\n\ndef B(n: int) -> int:\n    if n % 2 == 0 or n < 1:\n        return 0\n    m = (n - 1) // 2\n    return comb(2 * m, m) // (m + 1)\n\n# Examples\nprint(B(1))  # 1\nprint(B(3))  # 1\nprint(B(5))  # 2\nprint(B(7))  # 5\n```\n\n2) Dynamic-programming recurrence (useful if you want to see the structure)\n```python\ndef B_dp(n: int, memo=None) -> int:\n    if memo is None:\n        memo = {}\n    if n in memo:\n        return memo[n]\n    if n % 2 == 0:\n        memo[n] = 0\n        return 0\n    if n == 1:\n        memo[n] = 1\n        return 1\n\n    m = (n - 1) // 2\n    total = 0\n    for i in range(m):\n        left = B_dp(2 * i + 1, memo)\n        right = B_dp(2 * (m - 1 - i) + 1, memo)\n        total += left * right\n\n    memo[n] = total\n    return total\n\n# Examples\nprint(B_dp(1))  # 1\nprint(B_dp(3))  # 1\nprint(B_dp(5))  # 2\nprint(B_dp(7))  # 5\n```\n\nNotes:\n- B_n = 0 if n is even.\n- For odd n = 2m+1, B_n equals the m-th Catalan number: C_m = binomial(2m, m) / (m+1).\n- The closed-form version is typically fastest and precise for large n."
+            },
+            {
+                "round": 2,
+                "user": "What if the problem changed from a binary tree to a ternary tree?",
+                "assistant": "For a full ternary tree (every internal node has exactly 3 children), let T_n be the number of such trees with n vertices.\n\nKey facts:\n- If n is not of the form 3I + 1, then T_n = 0.\n- If n = 3I + 1 (i.e., n ≡ 1 mod 3), the number is the Fuss–Catalan number:\n  T_{3I+1} = (1 / (2I + 1)) * binomial(3I, I)\n\nEquivalently, with m = I:\n- T_{3m+1} = binomial(3m, m) / (2m + 1)\n\nExamples:\n- T_1 = 1\n- T_4 = 1\n- T_7 = 3\n- T_10 = 12\n- T_13 = 55\n\nPython implementation (closed form):\nfrom math import comb\n\ndef T(n: int) -> int:\n    if n % 3 != 1 or n < 1:\n        return 0\n    I = (n - 1) // 3\n    return comb(3 * I, I) // (2 * I + 1)\n\nNotes:\n- This is the k-ary generalization of Catalan numbers known as Fuss–Catalan numbers.\n- In general, for full k-ary trees, the number with I internal nodes is C_I^(k) = (1 / ((k-1)I + 1)) * binomial(kI, I), and the total number of vertices is N = kI + 1. For k = 2 this reduces to the ordinary Catalan numbers."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "28": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "You are given two sorted lists of size m and n. Implement a function to find the kth smallest element in the union of the two lists with linear complexity.",
+                "assistant": "Idea:\n- Do a merge-like scan of the two sorted arrays and stop as soon as we reach the k-th element. This uses only O(1) extra space and O(m + n) time in the worst case (linear in the total input size).\n\nPython implementation (1-based k):\n```\ndef kth_smallest(a, b, k):\n    \"\"\"\n    Return the k-th smallest element in the union of sorted lists a and b.\n    k is 1-based (k = 1 returns the smallest element).\n    Assumes 1 <= k <= len(a) + len(b).\n    \"\"\"\n    i = 0  # index into a\n    j = 0  # index into b\n    m, n = len(a), len(b)\n\n    while True:\n        # If we've exhausted a, the k-th element is in b\n        if i == m:\n            return b[j + k - 1]\n        # If we've exhausted b, the k-th element is in a\n        if j == n:\n            return a[i + k - 1]\n        # If k == 1, return the smaller of the current elements\n        if k == 1:\n            return a[i] if a[i] <= b[j] else b[j]\n\n        # Move one step from the array with the smaller current element\n        if a[i] <= b[j]:\n            i += 1\n        else:\n            j += 1\n\n        k -= 1\n```\n\nUsage example:\n```\nA = [1, 3, 5, 7]\nB = [2, 4, 6, 8, 9]\nprint(kth_smallest(A, B, 5))  # should print 5\n```\n\nNotes:\n- k is 1-based (k = 1 returns the smallest element).\n- Time complexity: O(m + n) in the worst case (linear in the total input size).\n- Space complexity: O(1) extra space."
+            },
+            {
+                "round": 2,
+                "user": "Does there exist an algorithm with better time complexity? If so, implement it.",
+                "assistant": "Yes. You can do this in O(log(min(m, n))) time with a divide-and-conquer approach (binary-search style). The idea is to discard about k/2 elements from one of the arrays in each step, keeping the k-th element within the remaining portions.\n\nHere is an iterative Python implementation that runs in O(log(min(m, n))) time and O(1) extra space (besides the input):\n\n```\ndef kth_smallest_two_sorted(a, b, k):\n    \"\"\"\n    Return the k-th smallest element in the union of sorted lists a and b.\n    k is 1-based (k = 1 returns the smallest element).\n    Assumes 1 <= k <= len(a) + len(b).\n    Time: O(log(min(len(a), len(b))))\n    Space: O(1)\n    \"\"\"\n    if k < 1 or k > len(a) + len(b):\n        raise ValueError(\"k is out of bounds\")\n\n    # Make sure a is the shorter array to guarantee O(log min(m,n))\n    if len(a) > len(b):\n        a, b = b, a\n\n    i = 0  # offset into a\n    j = 0  # offset into b\n\n    while True:\n        m = len(a) - i\n        n = len(b) - j\n\n        # If a is exhausted, answer is in b\n        if m == 0:\n            return b[j + k - 1]\n        # If b is exhausted, answer is in a\n        if n == 0:\n            return a[i + k - 1]\n        # If k == 1, return the smaller of the current elements\n        if k == 1:\n            return a[i] if a[i] <= b[j] else b[j]\n\n        # Compare A[i + min(m, k//2) - 1] with B[j + (k - min(m, k//2)) - 1]\n        take_from_a = min(m, k // 2)\n        take_from_b = k - take_from_a\n\n        # Ensure indices are valid (take_from_b <= n holds because a is the shorter array)\n        if a[i + take_from_a - 1] <= b[j + take_from_b - 1]:\n            # Discard the first take_from_a elements from a\n            i += take_from_a\n            k -= take_from_a\n        else:\n            # Discard the first take_from_b elements from b\n            j += take_from_b\n            k -= take_from_b\n```\n\nUsage example:\n```\nA = [1, 3, 5, 7]\nB = [2, 4, 6, 8, 9]\nprint(kth_smallest_two_sorted(A, B, 5))  # prints 5\n```\n\nNotes:\n- k is 1-based (k = 1 returns the smallest element).\n- Time complexity: O(log(min(m, n))) where m = len(A), n = len(B).\n- Space complexity: O(1) extra space (iterative version)."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "29": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Implement a program to find the common elements in two arrays without using any extra data structures.",
+                "assistant": "Here's a solution that finds the common elements in two arrays without using any extra data structures. The idea is:\n\n- Sort both arrays in place.\n- Use two pointers to walk the sorted arrays and emit elements that appear in both.\n\nThis uses no extra data structures beyond the input arrays themselves and runs in O(n log n + m log m) time (due to sorting) plus O(n + m) for the merge pass.\n\nC++ (prints all common elements including duplicates)\n- Reads n, m and the two arrays from stdin.\n- Sorts both arrays in place.\n- Prints common elements (including duplicates).\n\nCode:\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n)) return 0;\n    if (!(cin >> m)) return 0;\n\n    vector<long long> a(n), b(m);\n    for (int i = 0; i < n; ++i) cin >> a[i];\n    for (int j = 0; j < m; ++j) cin >> b[j];\n\n    sort(a.begin(), a.end()); // in-place\n    sort(b.begin(), b.end()); // in-place\n\n    int i = 0, j = 0;\n    bool first = true;\n    while (i < n && j < m) {\n        if (a[i] == b[j]) {\n            if (!first) cout << ' ';\n            cout << a[i];\n            first = false;\n            ++i;\n            ++j;\n        } else if (a[i] < b[j]) {\n            ++i;\n        } else {\n            ++j;\n        }\n    }\n    cout << '\\n';\n    return 0;\n}\n```\n\nIf you want to output only unique common elements (i.e., remove duplicates in the output even if they appear many times in both arrays), you can skip duplicates when advancing pointers:\n\nCode (unique common elements):\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n)) return 0;\n    if (!(cin >> m)) return 0;\n\n    vector<long long> a(n), b(m);\n    for (int i = 0; i < n; ++i) cin >> a[i];\n    for (int j = 0; j < m; ++j) cin >> b[j];\n\n    sort(a.begin(), a.end()); // in-place\n    sort(b.begin(), b.end()); // in-place\n\n    int i = 0, j = 0;\n    bool first = true;\n    while (i < n && j < m) {\n        if (a[i] == b[j]) {\n            long long val = a[i];\n            if (!first) cout << ' ';\n            cout << val;\n            first = false;\n            // skip duplicates in both arrays\n            while (i < n && a[i] == val) ++i;\n            while (j < m && b[j] == val) ++j;\n        } else if (a[i] < b[j]) {\n            long long cur = a[i];\n            while (i < n && a[i] == cur) ++i;\n        } else {\n            long long cur = b[j];\n            while (j < m && b[j] == cur) ++j;\n        }\n    }\n    cout << '\\n';\n    return 0;\n}\n```\n\nNotes:\n- Sorting in place satisfies the “no extra data structures” constraint.\n- Time complexity: O(n log n + m log m) for sorting, plus O(n + m) for the merge.\n- If you need a different language (Java, Python, etc.), I can provide equivalent in-place solutions there as well."
+            },
+            {
+                "round": 2,
+                "user": "Now the constraint of not using extra data structure is removed, implement one with the best time complexity.",
+                "assistant": "Good. Since extra data structures are allowed, you can achieve O(n + m) average time using a hash map to count frequencies from one array and then emit matches from the other array.\n\nHere's a C++17 implementation that prints all common elements including duplicates (multiplicity is min(count in A, count in B)):\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n)) return 0;\n    if (!(cin >> m)) return 0;\n\n    vector<long long> a(n), b(m);\n    for (int i = 0; i < n; ++i) cin >> a[i];\n    for (int j = 0; j < m; ++j) cin >> b[j];\n\n    // Count frequencies in the first array\n    unordered_map<long long, int> freq;\n    freq.reserve(n * 2); // avoid rehashing\n    for (const auto& x : a) ++freq[x];\n\n    // Emit common elements with multiplicity min(freq in A, occurrences in B)\n    bool first = true;\n    for (const auto& x : b) {\n        auto it = freq.find(x);\n        if (it != freq.end() && it->second > 0) {\n            if (!first) cout << ' ';\n            cout << x;\n            first = false;\n            --(it->second);\n        }\n    }\n    cout << '\\n';\n    return 0;\n}\n```\n\nNotes:\n- Time complexity: average O(n + m) due to hashing (insertion + lookup).\n- Space complexity: O(n) for the frequency map (worst-case, equals number of distinct elements in the first array).\n- If you want only unique common elements, you can insert elements of the first array into an unordered_set and then build another set for the result, printing the result set at the end (still O(n + m) time, with additional O(k) space for k unique common elements). If you’d like, I can provide that variant too."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "30": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Evaluate the following movie reviews on a scale of 1 to 5, with 1 being very negative, 3 being neutral, and 5 being very positive:\n1. This movie released on Nov. 18, 2019, was phenomenal. The cinematography, the acting, the plot - everything was top-notch.\n2. Never before have I been so disappointed with a movie. The plot was predictable and the characters were one-dimensional. In my opinion, this movie is the worst one to have been released in 2022.\n3. The movie was okay. There were some parts I  enjoyed, but there were also parts that felt lackluster. This is a movie that was released in Feb 2018 and seems to be quite ordinary.\nReturn the answer as a JSON array of integers.",
+                "assistant": "[5, 1, 3]"
+            },
+            {
+                "round": 2,
+                "user": "Update your previous reply by including the release date as part of the JSON content.",
+                "assistant": "[\n  {\"rating\": 5, \"release_date\": \"2019-11-18\"},\n  {\"rating\": 1, \"release_date\": \"2022\"},\n  {\"rating\": 3, \"release_date\": \"2018-02\"}\n]"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "31": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Given these categories - Literature, History, Science, and Art. Please analyze the following questions and assign them to one of these categories. In your response, refrain from uttering any extraneous words. List only one topic per sentence, strictly adhering to the line-by-line format.\n1. Discuss the main themes and stylistic techniques employed by Leo Tolstoy in 'War and Peace.' How do they align with the wider social context of 19th-century Russia?\n2. Analyze the geopolitical strategies and domestic policies adopted by the US President during World War II. How did these actions shape the post-war international order?\n3. Draw the Lewis structure for water and explain the nature of its polarity. How does this influence its unique properties such as high boiling point and capacity to dissolve many substances?\n4. Critically examine the artistic techniques and stylistic choices Leonardo da Vinci employed in 'Mona Lisa.' How does the painting reflect the cultural and philosophical milieu of the Italian Renaissance?",
+                "assistant": "Literature\nHistory\nScience\nArt"
+            },
+            {
+                "round": 2,
+                "user": "Amend your earlier answer by mentioning a person who is most relevant to each point.",
+                "assistant": "Literature: Leo Tolstoy\nHistory: Franklin D. Roosevelt\nScience: Linus Pauling\nArt: Leonardo da Vinci"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "32": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Extract the following information from the presented texts: The name of the book, the author, the main character, the year of publication. Output in the format of \"main character, book, author, year of publication\", one book per line.\na) In the realm of wizarding literature, a true standout is the work of J.K. Rowling. One of her books that left an indelible mark is 'Harry Potter and the Philosopher's Stone'. This iconic tale, published in 1997, tells the story of Harry, a young orphan who discovers his magical abilities on his 11th birthday. Soon, he finds himself at the Hogwarts School of Witchcraft and Wizardry, a place teeming with magic and adventure, located somewhere in Scotland.\nb) The magic of Middle-earth has entranced readers worldwide, thanks to the brilliance of J.R.R. Tolkien. In one of his seminal works, 'The Lord of the Rings: The Fellowship of the Ring', published in 1954, we meet Frodo Baggins, a brave hobbit tasked with the perilous quest of destroying the One Ring. The epic journey takes him from the peaceful Shire to the tumultuous regions of Middle-earth.\nc) In a galaxy far, far away, the imagination of L.E. Starlighter gives us 'The Prism Galaxy Chronicles: The Awakening of the Starcaster'. Published in 2028, the story is about Zylo, a humble spaceship mechanic, who unexpectedly discovers he's a Starcaster - a rare individual with the power to manipulate stardust. Set against the backdrop of an interstellar empire in turmoil, Zylo's destiny unfolds on numerous alien worlds, each with its unique cosmic charm.",
+                "assistant": "Harry, Harry Potter and the Philosopher's Stone, J.K. Rowling, 1997\nFrodo Baggins, The Lord of the Rings: The Fellowship of the Ring, J.R.R. Tolkien, 1954\nZylo, The Prism Galaxy Chronicles: The Awakening of the Starcaster, L.E. Starlighter, 2028"
+            },
+            {
+                "round": 2,
+                "user": "Reformulate your earlier reply, output it in JSON format and only include books published after 1980.",
+                "assistant": "[\n  {\"main_character\":\"Harry\",\"book\":\"Harry Potter and the Philosopher's Stone\",\"author\":\"J.K. Rowling\",\"year_of_publication\":1997},\n  {\"main_character\":\"Zylo\",\"book\":\"The Prism Galaxy Chronicles: The Awakening of the Starcaster\",\"author\":\"L.E. Starlighter\",\"year_of_publication\":2028}\n]"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "33": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Given the following data, identify the company with the highest profit in 2021 and provide its CEO's name:\na) Company X, with CEO Amy Williams, reported $30 billion in revenue and a $3 billion profit in 2021.\nb) Company Y, led by CEO Mark Thompson, posted a $60 billion revenue and a $6 billion profit in the same year.\nc) Company Z, under CEO Sarah Johnson, announced a $20 billion revenue and a $7 billion profit in 2021.\nd) Company W, managed by CEO James Smith, revealed a $300 billion revenue with a $21 billion profit in 2021.\ne) Company V, with CEO Lisa Brown, reported a $200 billion revenue and a $25 billion profit in 2021.\nf) Company U, under CEO John White, posted a $180 billion revenue and a $20 billion profit in the same year.",
+                "assistant": "Company V had the highest profit in 2021, with $25 billion, and its CEO is Lisa Brown."
+            },
+            {
+                "round": 2,
+                "user": "Which company had the highest profit margin (profit/revenue ratio))?",
+                "assistant": "Company Z — profit margin of 35% (7B profit on 20B revenue)."
+            }
+        ],
+        "origin_prompt": null
+    },
+    "34": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Identify the countries, their capitals, and the languages spoken in the following sentences. Output in JSON format.\na) Amidst the idyllic vistas, Copenhagen, Denmark's capital, captivates visitors with its thriving art scene and the enchanting Danish language spoken by its inhabitants.\nb) Within the enchanting realm of Eldoria, one discovers Avalore, a grandiose city that emanates an ethereal aura. Lumina, a melodious language, serves as the principal mode of communication within this mystical abode.\nc) Nestled amidst a harmonious blend of age-old customs and contemporary wonders, Buenos Aires, the capital of Argentina, stands as a bustling metropolis. It is a vibrant hub where the expressive Spanish language holds sway over the city's inhabitants.",
+                "assistant": "[\n  {\n    \"country\": \"Denmark\",\n    \"capital\": \"Copenhagen\",\n    \"language\": \"Danish\"\n  },\n  {\n    \"country\": \"Eldoria\",\n    \"capital\": \"Avalore\",\n    \"language\": \"Lumina\"\n  },\n  {\n    \"country\": \"Argentina\",\n    \"capital\": \"Buenos Aires\",\n    \"language\": \"Spanish\"\n  }\n]"
+            },
+            {
+                "round": 2,
+                "user": "Come up with 3 similar examples in the YAML format.",
+                "assistant": "- country: Canada\n  capital: Ottawa\n  language: \"English and French\"\n- country: India\n  capital: New Delhi\n  language: \"Hindi and English\"\n- country: Brazil\n  capital: Brasília\n  language: \"Portuguese\""
+            }
+        ],
+        "origin_prompt": null
+    },
+    "35": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Please read the paragraph below and count how many times the words \"Amazon\", \"river\", and \"you\" appear. Please present the results in the format of \"word, number of appearances\" with each word on a separate line. Sort the lines in order of the number of appearances.\nThe Amazon, a mesmerizing expanse of nature's wonders, is home to the legendary Amazon River. Flowing through awe-inspiring landscapes like the Amazon rainforest, the river weaves its way through Brazil, Colombia, and Peru, giving life to countless creatures. From the mighty jaguars prowling the Amazon jungle to the vibrant macaws soaring above the canopy, this remarkable region teems with biodiversity. Deep within the river's currents, magnificent pink river dolphins gracefully glide alongside piranhas and electric eels. Along the riverbanks, you'll find bustling cities like Manaus, where the urban meets the wild, and Iquitos, a gateway to the heart of the Amazon rainforest. As you venture further, the Amazon River reveals hidden gems like the captivating Anavilhanas Archipelago, a mosaic of islands brimming with rare species. Embark on an adventure, explore the enchanting Amazon River, and immerse yourself in a world teeming with life and untamed beauty.",
+                "assistant": "you, 1\nriver, 5\nAmazon, 7"
+            },
+            {
+                "round": 2,
+                "user": "Please repeat the same task using the words 'the', 'and', and 'to'",
+                "assistant": "to, 4\nand, 5\nthe, 17"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "36": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Identify the named entities (people, organizations, locations) mentioned in the given news article. Please generate a JSON dictionary that lists the named entities in three separate groups based on their entity types. The key is the type of entity and the value is a list of strings.\n\nYesterday, Adamson Emerson, the CEO of Faraday, and Dieter Zetsche, the CEO of Daimler AG, announced plans to build a new Gigafactory in Berlin. The facility will be a joint venture between Faraday and Daimler, producing electric vehicles and battery packs for both companies, creating thousands of job opportunities in the region. Emerson and Zetsche stated that the strategic location of Berlin, coupled with its skilled workforce and strong infrastructure, makes it an ideal choice for expansion. The new Gigafactory aims to meet the growing demand for electric vehicles in Europe and contribute to a sustainable future. Volkswagen CEO Herbert Diess welcomed the news, saying greater collaboration will benefit the auto industry's transition to e-mobility.",
+                "assistant": "{\n  \"People\": [\"Adamson Emerson\", \"Dieter Zetsche\", \"Herbert Diess\"],\n  \"Organizations\": [\"Faraday\", \"Daimler AG\", \"Volkswagen\"],\n  \"Locations\": [\"Berlin\", \"Europe\"]\n}"
+            },
+            {
+                "round": 2,
+                "user": "Now make the JSON object shorter by replacing each value with its first letter. Please output everything in a single line without using indentation or creating new lines.",
+                "assistant": "{\"People\":[\"A\",\"D\",\"H\"],\"Organizations\":[\"F\",\"D\",\"V\"],\"Locations\":[\"B\",\"E\"]}"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "37": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Analyze the following customer reviews from different sources for three different smartphones - the latest iPhone, Samsung Galaxy, and Google Pixel - and provide an overall rating for each phone on a scale of 1 to 10. Consider the following complex and contradictory reviews:\n- TechRadar's review of the latest iPhone: The new iPhone is a stunning triumph of engineering that sets a new bar for smartphone performance and camera quality. However, the incremental design and high price mean it lacks the 'wow' factor of previous iPhones. Still, its power and intelligence are unrivaled.\n- CNET's review of the latest Samsung Galaxy: The Samsung Galaxy phone has plenty of high points, including an amazing screen, fast performance, solid battery life and an impressive array of camera options. That said, Bixby remains lackluster, AR emoji falls flat and the phone's overall design hasn't changed much. The new Galaxy is an amazing phone overall, but it has a few nagging weaknesses that keep it from achieving true greatness.\n- The Verge's review of the latest Google Pixel: Google's Pixel packs cutting-edge specs, innovative AI-powered software, and a killer camera into a sleek design. However, the phone has lackluster battery life, lacks expandable storage, and its performance stutters at times, especially considering its high price tag. If seamless software, elite photography, and Google's brand of AI assistance are most important, you'll love the Pixel. But the overall experience isn't as well-rounded as some competitors. Return the answer as a JSON object with the overall ratings for each phone out of 10, to one decimal place.",
+                "assistant": "{\n  \"iPhone\": 8.8,\n  \"Samsung_Galaxy\": 8.9,\n  \"Google_Pixel\": 7.9\n}"
+            },
+            {
+                "round": 2,
+                "user": "Can you change the ratings from numbers to letters? Capital letters MUST be used when writing the names of phones.",
+                "assistant": "{\n  \"IPHONE\": \"A\",\n  \"SAMSUNG GALAXY\": \"A\",\n  \"GOOGLE PIXEL\": \"B\"\n}"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "38": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Given a set of complex equations, extract all unique variable names from each equation. Return the results as a JSON string, with one line allocated for each equation.\n```\n1) y = (3/4)x^3 - e^(2x) + sin(pi*x) - sqrt(7)\n2) 2A - B/(3+C) * sum(N=1 to 5; ln(N)^2) = 5D*integral(a=0 to pi; cos(comb(N=1 to 10; N*a)))\n3) E = m(c^2) + gamma*(v/d)/(-(alpha/2) + sqrt(beta^2 + (alpha/2)^2))\n```",
+                "assistant": "{\"equation\":1,\"variables\":[\"y\",\"x\"]}\n{\"equation\":2,\"variables\":[\"A\",\"B\",\"C\",\"N\",\"D\",\"a\"]}\n{\"equation\":3,\"variables\":[\"E\",\"m\",\"c\",\"gamma\",\"v\",\"d\",\"alpha\",\"beta\"]}"
+            },
+            {
+                "round": 2,
+                "user": "Please rearrange the equations and use 'a', 'b', 'c', 'd', etc. as variables.",
+                "assistant": "{\"equation\":1,\"variables\":[\"a\",\"b\"],\"rearranged\":\"a = (3/4) b^3 - e^(2 b) + sin(pi*b) - sqrt(7)\"}\n{\"equation\":2,\"variables\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"],\"rearranged\":\"a = (5*e*I + b/(3+c)*S)/2\",\"notes\":\"I = integral_{f=0}^{pi} cos(comb(d=1 to 10; d*f)); S = sum_{d=1}^{5} ln(d)^2\"}\n{\"equation\":3,\"variables\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\"],\"rearranged\":\"a = b*c^2 + (d*(e/f)) / ( - (g/2) + sqrt(h^2 + (g/2)^2) )\"}"
+            }
+        ],
+        "origin_prompt": null
+    },
+    "39": {
+        "prediction": [
+            {
+                "round": 1,
+                "user": "Given the following records of stock prices, extract the highest and lowest closing prices for each month in the year 2022. Return the results as a CSV string, with one line allocated for each month.\nDate,Open,High,Low,Close,Volume\n2022-01-01,150.02,155.28,148.50,153.80,15678900\n2022-01-02,154.32,157.25,153.48,156.25,19874500\n2022-02-01,160.50,163.28,159.50,161.80,14326700\n2022-02-02,161.80,164.25,161.30,163.90,17689200\n2022-03-01,165.40,168.35,163.10,166.80,16253400\n2022-03-02,167.00,169.85,165.50,168.20,19568100",
+                "assistant": "Month,HighestClose,LowestClose\n2022-01,156.25,153.80\n2022-02,163.90,161.80\n2022-03,168.20,166.80"
+            },
+            {
+                "round": 2,
+                "user": "Do the same task again with the JSON format and round all numbers in your response to the nearest integers.",
+                "assistant": "[\n  {\"Month\": \"2022-01\", \"HighestClose\": 156, \"LowestClose\": 154},\n  {\"Month\": \"2022-02\", \"HighestClose\": 164, \"LowestClose\": 162},\n  {\"Month\": \"2022-03\", \"HighestClose\": 168, \"LowestClose\": 167}\n]"
+            }
+        ],
+        "origin_prompt": null
+    }
+}

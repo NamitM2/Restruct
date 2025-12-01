@@ -1,0 +1,65 @@
+datasets = [
+    [
+        dict(
+            abbr='mtbench_0.0',
+            eval_cfg=dict(
+                evaluator=dict(
+                    prompt_template=dict(
+                        template=dict(
+                            begin=[
+                                dict(
+                                    fallback_role='HUMAN',
+                                    prompt='{system_prompt}',
+                                    role='SYSTEM'),
+                            ],
+                            round=[
+                                dict(prompt='{prompt_template}', role='HUMAN'),
+                            ]),
+                        type=
+                        'opencompass.openicl.icl_prompt_template.PromptTemplate'
+                    ),
+                    type='opencompass.openicl.icl_evaluator.LMEvaluator'),
+                pred_role='BOT'),
+            infer_cfg=dict(
+                inferencer=dict(
+                    do_sample=False,
+                    infer_mode='every',
+                    max_out_len=1024,
+                    max_seq_len=4096,
+                    temperature=0.0,
+                    type='opencompass.openicl.icl_inferencer.ChatInferencer'),
+                prompt_template=dict(
+                    template='{dialogue}',
+                    type=
+                    'opencompass.openicl.icl_prompt_template.PromptTemplate'),
+                retriever=dict(
+                    type='opencompass.openicl.icl_retriever.ZeroRetriever')),
+            mode='singlescore',
+            name='mtbench_0.0',
+            path='data/subjective/mtbench',
+            reader_cfg=dict(
+                input_columns=[
+                    'dialogue',
+                    'capability',
+                    'system_prompt',
+                    'prompt_template',
+                ],
+                output_column='judge'),
+            summarizer=dict(
+                judge_type='single',
+                type='opencompass.summarizers.MTBenchSummarizer'),
+            type='opencompass.datasets.MTBenchDataset'),
+    ],
+]
+models = [
+    dict(
+        abbr='gemini-2.0-flash',
+        batch_size=1,
+        max_out_len=512,
+        max_seq_len=512000,
+        query_per_second=32,
+        route_name='gemini-2.0-flash',
+        run_cfg=dict(num_gpus=0, num_procs=32),
+        type='restruct_oc_model.RestructAPIModel'),
+]
+work_dir = 'outputs/20251031_040601'
