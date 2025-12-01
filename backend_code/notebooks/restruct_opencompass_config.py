@@ -38,8 +38,7 @@ custom_imports = dict(
 )
 
 with read_base():
-    from opencompass.configs.datasets.subjective.multiround.mtbench_single_judge_diff_temp import \
-        mtbench_datasets
+    from opencompass.configs.datasets.subjective.multiround.mtbench_single_judge_diff_temp import mtbench_datasets
 
 datasets = [*mtbench_datasets]
 
