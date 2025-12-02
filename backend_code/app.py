@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Optional, List
 from contextlib import asynccontextmanager
+import asyncio
 import os
 import re
 from uuid import uuid4
@@ -48,14 +49,17 @@ def get_user_conversations(user_id: str) -> list:
     return result.data
 
 
-def get_conversation_messages(conversation_id: str) -> list:
-    result = (
-        supabase.table("messages")
-        .select("*")
-        .eq("conversation_id", conversation_id)
-        .order("created_at", desc=False)
-        .execute()
-    )
+async def get_conversation_messages(conversation_id: str) -> list:
+    def _query():
+        return (
+            supabase.table("messages")
+            .select("*")
+            .eq("conversation_id", conversation_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+
+    result = await asyncio.to_thread(_query)
     messages = []
     for message in result.data:
         msg = {
@@ -74,7 +78,7 @@ def get_conversation_messages(conversation_id: str) -> list:
     return messages
 
 
-def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None, message_group_id: str = None) -> dict:
+async def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None, message_group_id: str = None) -> dict:
     message_data = {
         "conversation_id": conversation_id,
         "role": role,
@@ -92,18 +96,24 @@ def add_message(conversation_id: str, role: str, content: str, model: str = None
     if message_group_id:
         message_data["message_group_id"] = message_group_id
 
-    result = supabase.table("messages").insert(message_data).execute()
+    def _insert():
+        return supabase.table("messages").insert(message_data).execute()
+
+    result = await asyncio.to_thread(_insert)
 
     # Update conversation stats for assistant messages
     if role == "assistant" and metadata:
-        update_conversation_stats(conversation_id, model, metadata)
+        await update_conversation_stats(conversation_id, model, metadata)
 
     return result.data[0]
 
 
-def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
+async def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
     """Update aggregated stats on the conversation."""
-    conv = supabase.table("conversations").select("stats").eq("id", conversation_id).execute()
+    def _select():
+        return supabase.table("conversations").select("stats").eq("id", conversation_id).execute()
+
+    conv = await asyncio.to_thread(_select)
     current_stats = (conv.data[0].get("stats") if conv.data else None) or {
         "input_tokens": 0,
         "output_tokens": 0,
@@ -132,7 +142,10 @@ def update_conversation_stats(conversation_id: str, model: str, metadata: dict):
     if metadata.get("inference_time_ms"):
         current_stats["response_times"].append(metadata["inference_time_ms"])
 
-    supabase.table("conversations").update({"stats": current_stats}).eq("id", conversation_id).execute()
+    def _update():
+        return supabase.table("conversations").update({"stats": current_stats}).eq("id", conversation_id).execute()
+
+    await asyncio.to_thread(_update)
 
 
 def update_conversation_title(conversation_id: str, title: str) -> dict:
@@ -196,7 +209,7 @@ async def lifespan(_app: FastAPI):
     # else:
     #     print(f"✓ Using Gemini API routing (Local model not loaded)")
     
-    print("✓ Using Gemini API routing")
+    print("[OK] Using Gemini API routing")
     yield
 
 
@@ -220,12 +233,16 @@ async def auth_error_handler(request, exc: AuthApiError):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-def get_user_from_token(authorization: str) -> dict:
+async def get_user_from_token(authorization: str) -> dict:
     """Extract user from JWT token in Authorization header."""
     if not authorization or not authorization.startswith("Bearer "):
         return None
     token = authorization.split(" ", 1)[1]
-    response = supabase.auth.get_user(token)
+
+    def _get_user():
+        return supabase.auth.get_user(token)
+
+    response = await asyncio.to_thread(_get_user)
     if response and response.user:
         return response.user
     return None
@@ -243,16 +260,14 @@ def root():
 
 @app.post("/chat")
 async def chat(body: dict, authorization: str = Header(None)):
-    """Main chat endpoint."""
+    """Single model chat endpoint."""
     import time
 
     prompt = body.get("prompt")
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
     conversation_id = body.get("conversation_id")
-    save_user_message = body.get("save_user_message", True)
-    message_group_id = body.get("message_group_id")
-    user = get_user_from_token(authorization)
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     user_id = user.id
@@ -261,14 +276,13 @@ async def chat(body: dict, authorization: str = Header(None)):
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
 
-    # Add user message to conversation (skip for parallel multi-model requests after the first)
-    if save_user_message:
-        add_message(
-            conversation_id=conversation_id,
-            role="user",
-            content=prompt
-        )
-    conversation = get_conversation_messages(conversation_id)
+    # Add user message to conversation
+    await add_message(
+        conversation_id=conversation_id,
+        role="user",
+        content=prompt
+    )
+    conversation = await get_conversation_messages(conversation_id)
 
     # PHASE 1: ROUTING
     routing_start = time.time()
@@ -277,7 +291,7 @@ async def chat(body: dict, authorization: str = Header(None)):
 
     # PHASE 2: INFERENCE
     inference_start = time.time()
-    response_data = inference.inference(model_choice, conversation)
+    response_data = await inference.inference(model_choice, conversation)
     inference_time = time.time() - inference_start
 
     response_text = response_data.get("text") or ""
@@ -293,7 +307,7 @@ async def chat(body: dict, authorization: str = Header(None)):
     total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
 
     # Save assistant message to database with full stats
-    add_message(
+    await add_message(
         conversation_id=conversation_id,
         role="assistant",
         content=response_text,
@@ -308,8 +322,7 @@ async def chat(body: dict, authorization: str = Header(None)):
             "cost": total_cost,
             "routing_time_ms": round(routing_time * 1000, 2),
             "inference_time_ms": round(inference_time * 1000, 2)
-        },
-        message_group_id=message_group_id
+        }
     )
 
     # Build response
@@ -338,9 +351,124 @@ async def chat(body: dict, authorization: str = Header(None)):
     }
 
 
+@app.post("/chat/batch")
+async def chat_batch(body: dict, authorization: str = Header(None)):
+    """Batch endpoint for parallel multi-model responses."""
+    import time
+
+    prompt = body.get("prompt")
+    model_overrides = body.get("model_overrides")  # List of model override strings
+    conversation_id = body.get("conversation_id")
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = user.id
+    profile = body.get("profile", "default")
+
+    if not conversation_id:
+        raise HTTPException(status_code=400, detail="conversation_id is required")
+    if not model_overrides or not isinstance(model_overrides, list):
+        raise HTTPException(status_code=400, detail="model_overrides must be a non-empty list")
+
+    # Save user message once
+    await add_message(
+        conversation_id=conversation_id,
+        role="user",
+        content=prompt
+    )
+    conversation = await get_conversation_messages(conversation_id)
+
+    # Generate a unique message group ID for this batch
+    message_group_id = str(uuid4())
+
+    # Process all models in parallel
+    async def process_model(model_override: str):
+        try:
+            # PHASE 1: ROUTING
+            routing_start = time.time()
+            model_choice = resolve_model_choice("manual", model_override, conversation)
+            routing_time = time.time() - routing_start
+
+            # PHASE 2: INFERENCE
+            inference_start = time.time()
+            response_data = await inference.inference(model_choice, conversation)
+            inference_time = time.time() - inference_start
+
+            response_text = response_data.get("text") or ""
+            if not response_text:
+                return {
+                    "model_override": model_override,
+                    "error": "Model returned empty response"
+                }
+
+            input_tokens = response_data.get("input_tokens") or 0
+            output_tokens = response_data.get("output_tokens") or 0
+
+            # Calculate cost
+            input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
+            output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
+            total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+            # Save assistant message to database with full stats
+            await add_message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=response_text,
+                model=model_choice["model_name"],
+                provider=model_choice["vendor"],
+                profile_name=profile,
+                metadata={
+                    "score": model_choice.get("score", 0),
+                    "router_mode": "manual",
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost": total_cost,
+                    "routing_time_ms": round(routing_time * 1000, 2),
+                    "inference_time_ms": round(inference_time * 1000, 2)
+                },
+                message_group_id=message_group_id
+            )
+
+            return {
+                "status": "complete",
+                "model_override": model_override,
+                "output": response_text,
+                "model": model_choice["model_name"],
+                "provider": model_choice["vendor"],
+                "routing_metadata": {
+                    "score": model_choice.get("score", 0)
+                },
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost": total_cost
+                },
+                "timing": {
+                    "routing_time": round(routing_time * 1000, 2),
+                    "inference_time": round(inference_time * 1000, 2),
+                    "total_time_ms": round((routing_time + inference_time) * 1000, 2)
+                }
+            }
+        except Exception as e:
+            return {
+                "model_override": model_override,
+                "error": str(e)
+            }
+
+    # Execute all model requests in parallel
+    results = await asyncio.gather(*[process_model(model_override) for model_override in model_overrides])
+
+    return {
+        "status": "complete",
+        "conversation_id": conversation_id,
+        "message_group_id": message_group_id,
+        "results": results
+    }
+
+
 @app.get("/conversations")
-def list_conversations(authorization: str = Header(None)):
-    user = get_user_from_token(authorization)
+async def list_conversations(authorization: str = Header(None)):
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     conversations = get_user_conversations(user.id)
@@ -348,8 +476,8 @@ def list_conversations(authorization: str = Header(None)):
 
 
 @app.get("/conversations/{conversation_id}/messages")
-def get_messages(conversation_id: str, authorization: str = Header(None)):
-    user = get_user_from_token(authorization)
+async def get_messages(conversation_id: str, authorization: str = Header(None)):
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -363,8 +491,8 @@ def get_messages(conversation_id: str, authorization: str = Header(None)):
 
 
 @app.post("/conversations")
-def new_conversation(body: dict, authorization: str = Header(None)):
-    user = get_user_from_token(authorization)
+async def new_conversation(body: dict, authorization: str = Header(None)):
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     title = body.get("title") or "New Chat"
@@ -373,8 +501,8 @@ def new_conversation(body: dict, authorization: str = Header(None)):
 
 
 @app.patch("/conversations/{conversation_id}")
-def update_conversation(conversation_id: str, body: dict, authorization: str = Header(None)):
-    user = get_user_from_token(authorization)
+async def update_conversation(conversation_id: str, body: dict, authorization: str = Header(None)):
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     conv = supabase.table("conversations").select("user_id").eq("id", conversation_id).execute()
@@ -388,8 +516,8 @@ def update_conversation(conversation_id: str, body: dict, authorization: str = H
 
 
 @app.get("/profiles")
-def list_profiles(authorization: str = Header(None)):
-    user = get_user_from_token(authorization)
+async def list_profiles(authorization: str = Header(None)):
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     profiles = get_routing_profiles(user.id)
@@ -397,7 +525,7 @@ def list_profiles(authorization: str = Header(None)):
 
 
 @app.post("/profiles")
-def create_profile(body: dict, authorization: str = Header(None)):
+async def create_profile(body: dict, authorization: str = Header(None)):
     name = body.get("name")
     graph_state = body.get("graph_state")
     if not name:
@@ -406,7 +534,7 @@ def create_profile(body: dict, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail="Graph state is required for routing profiles")
 
     description = body.get("description")
-    user = get_user_from_token(authorization)
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -557,9 +685,9 @@ def auth_signout(authorization: str = Header(None)):
 
 
 @app.get("/auth/me")
-def auth_me(authorization: str = Header(None)):
+async def auth_me(authorization: str = Header(None)):
     """Get the currently authenticated user."""
-    user = get_user_from_token(authorization)
+    user = await get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 

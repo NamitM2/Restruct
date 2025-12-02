@@ -3,6 +3,7 @@ Inference: calls the appropriate provider API.
 No classes, just functions.
 """
 
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
@@ -53,7 +54,7 @@ def _conversation_to_anthropic(conversation: Union[str, List[Dict[str, Any]]]) -
     return formatted
 
 
-def call_openai(model: Dict[str, Any], conversation) -> Dict[str, Any]:
+async def call_openai(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Call OpenAI API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
@@ -68,11 +69,14 @@ def call_openai(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     }
     log_path.write_text(json.dumps(log_payload, ensure_ascii=True, indent=2))
 
-    client = OpenAI(api_key=api_key)
-    response = client.responses.create(
-        model=model_name,
-        input=normalized_conv
-    )
+    def _call():
+        client = OpenAI(api_key=api_key)
+        return client.responses.create(
+            model=model_name,
+            input=normalized_conv
+        )
+
+    response = await asyncio.to_thread(_call)
 
     return {
         "text": response.output_text,
@@ -82,16 +86,19 @@ def call_openai(model: Dict[str, Any], conversation) -> Dict[str, Any]:
  
 
 
-def call_google(model: Dict[str, Any], conversation) -> Dict[str, Any]:
+async def call_google(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Call Google Gemini API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
 
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=model_name,
-        contents=_conversation_to_google_history(conversation)
-    )
+    def _call():
+        client = genai.Client(api_key=api_key)
+        return client.models.generate_content(
+            model=model_name,
+            contents=_conversation_to_google_history(conversation)
+        )
+
+    response = await asyncio.to_thread(_call)
 
     return {
         "text": response.text,
@@ -100,18 +107,20 @@ def call_google(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     }
 
 
-def call_anthropic(model: Dict[str, Any], conversation) -> Dict[str, Any]:
+async def call_anthropic(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Call Anthropic Claude API."""
     api_key = model["api_key"]
     model_name = model["model_name"]
 
-    client = Anthropic(api_key=api_key)
+    def _call():
+        client = Anthropic(api_key=api_key)
+        return client.messages.create(
+            model=model_name,
+            max_tokens=1000,
+            messages=_conversation_to_anthropic(conversation)
+        )
 
-    response = client.messages.create(
-        model=model_name,
-        max_tokens=1000,
-        messages=_conversation_to_anthropic(conversation)
-    )
+    response = await asyncio.to_thread(_call)
 
     return {
         "text": response.content[0].text,
@@ -120,7 +129,7 @@ def call_anthropic(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     }
 
 
-def infer(model: Dict[str, Any], conversation) -> Dict[str, Any]:
+async def infer(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """
     Run inference on selected model.
 
@@ -134,15 +143,15 @@ def infer(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     vendor = model["vendor"]
 
     if vendor == "openai":
-        return call_openai(model, conversation)
+        return await call_openai(model, conversation)
     elif vendor == "google":
-        return call_google(model, conversation)
+        return await call_google(model, conversation)
     elif vendor == "anthropic":
-        return call_anthropic(model, conversation)
+        return await call_anthropic(model, conversation)
 
     return {"text": f"Unsupported vendor: {vendor}", "input_tokens": 0, "output_tokens": 0}
 
 
-def inference(model: Dict[str, Any], conversation) -> Dict[str, Any]:
+async def inference(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Main inference function."""
-    return infer(model, conversation)
+    return await infer(model, conversation)

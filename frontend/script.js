@@ -1047,7 +1047,7 @@ if (chatForm) {
 
         // Handle multiple model overrides
         if (selectedOverrideModels.length > 1) {
-            await handleMultiModelSubmission(prompt, attachmentMetadata, currentProfile);
+            await handleMultiModelSubmission(prompt, attachmentMetadata);
             return;
         }
 
@@ -1285,7 +1285,7 @@ function renderMarkdownAndLatex(text) {
 }
 
 // Handle multi-model submission with split-screen display
-async function handleMultiModelSubmission(prompt, attachmentMetadata, currentProfile) {
+async function handleMultiModelSubmission(prompt, attachmentMetadata) {
     if (promptInput) {
         promptInput.value = '';
         promptInput.style.height = 'auto';
@@ -1334,7 +1334,7 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
     // Generate a unique group ID for this multi-model request
     const messageGroupId = crypto.randomUUID();
 
-    // Send requests to all selected models in true parallel
+    // Send requests to all selected models in parallel - each completes independently
     const modelPromises = selectedOverrideModels.map(async (modelName, index) => {
         const loadingId = showLoadingInMultiModelPane(multiModelGroupContainer, modelName);
         console.log(`[${new Date().toISOString()}] Starting request for ${modelName}`);
@@ -1346,13 +1346,6 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
                 conversation_id: currentConversation.conversationId,
                 save_user_message: index === 0,
                 message_group_id: messageGroupId,
-                priorities: {
-                    latency: currentProfile.latency,
-                    cost: currentProfile.cost,
-                    quality: currentProfile.quality
-                },
-                max_tokens: 1000,
-                temperature: 0.7,
                 router_mode: 'manual',
                 model_override: modelOverrideMap[modelName],
                 user_id: getUserId()
@@ -1377,7 +1370,7 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
             const data = await response.json();
             console.log(`[${new Date().toISOString()}] Received response for ${modelName}`);
 
-            // Remove loading and display response immediately
+            // Remove loading and display response immediately as it arrives
             removeLoadingFromMultiModelPane(loadingId);
 
             const routingTime = data.timing?.routing_time || 0;
