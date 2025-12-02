@@ -1729,93 +1729,100 @@ textarea {
     transition: all 0.3s ease;
 }
 
-/* Split-screen mode for multiple model overrides */
-.chat-container.split-mode {
+/* Multi-model response groups - independent containers for side-by-side model comparisons */
+.multi-model-group {
     display: flex;
+    align-items: flex-start;
     gap: 16px;
-    padding: 20px 16px 28px;
-    overflow: hidden;
+    margin-bottom: 24px;
+    width: 100%;
+    animation: multiModelGroupIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.split-pane {
+@keyframes multiModelGroupIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Individual model response pane - each can have different height */
+.model-response-pane {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: white;
     border-radius: 12px;
-    padding: 16px;
     box-shadow: 0 2px 8px rgba(92, 49, 30, 0.08);
-    min-height: 0;
+    overflow: visible;
     min-width: 0;
-    overflow: hidden;
-    animation: splitPaneIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    align-self: flex-start;
 }
 
-@keyframes splitPaneIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.split-pane-header {
+/* Model pane header with logo and name */
+.model-pane-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding-bottom: 12px;
+    justify-content: space-between;
+    padding: 12px 16px;
     border-bottom: 2px solid rgba(92, 49, 30, 0.1);
-    margin-bottom: 16px;
+    background: rgba(255, 250, 245, 0.5);
+    border-radius: 12px 12px 0 0;
     flex-shrink: 0;
 }
 
-.split-pane-header img {
+.model-pane-header img {
     width: 60px;
     height: 30px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
-.split-pane-header h4 {
+.model-pane-header h4 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #2b1d14;
+    text-align: right;
+    flex-shrink: 0;
 }
 
-.split-pane-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
-}
-
-/* Message group for split responses */
-.message-group {
-    margin-bottom: 32px;
-}
-
-.message-group.user-group .message {
-    margin-bottom: 16px;
-}
-
-.message-group.assistant-group {
-    display: flex;
-    gap: 16px;
-}
-
-.message-group.assistant-group .message {
-    flex: 1;
-    background: white;
-    border-radius: 12px;
+/* Model pane content - expands to fit content, no scrollbars */
+.model-pane-content {
     padding: 16px;
-    box-shadow: 0 2px 8px rgba(92, 49, 30, 0.08);
+    overflow: visible;
+    flex-shrink: 0;
 }
 
-.message-group.assistant-group .message .message-model-logo {
-    margin-bottom: 12px;
+/* Text content in multi-model panes - no speech bubble */
+.multi-model-text {
+    color: rgba(43, 29, 20, 0.9);
+    line-height: 1.7;
+    font-size: 14px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.multi-model-text p {
+    margin: 0 0 12px 0;
+}
+
+.multi-model-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* Footer for multi-model responses */
+.multi-model-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(92, 49, 30, 0.08);
 }
 
 .chat-toolbar {
@@ -1837,12 +1844,10 @@ textarea {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
 }
 
 .chat-toolbar-group.start {
     justify-self: start;
-    max-width: 600px;
 }
 
 .chat-toolbar-group.center {
@@ -1853,16 +1858,22 @@ textarea {
     justify-self: end;
 }
 
-#selectedModelName {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    max-width: 400px;
+#overrideCountBadge {
+    animation: badgePulse 0.3s ease-out;
 }
 
-.model-override-badge {
-    white-space: nowrap;
+@keyframes badgePulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 #enterFocusBtn:hover,

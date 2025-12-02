@@ -1051,6 +1051,11 @@ if (chatForm) {
             return;
         }
 
+        // Disable split-screen if it was active (switching back to single model)
+        if (chatContainer && chatContainer.classList.contains('split-mode')) {
+            chatContainer.classList.remove('split-mode');
+        }
+
         const payload = {
             prompt,
             profile: currentProfileName,
@@ -1297,11 +1302,13 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
         }
     }
 
-    // Enable split-screen mode
-    enableSplitScreen();
-
+    // Add user message normally
     addMessage('user', prompt, null, attachmentMetadata);
     resetAttachments();
+
+    // Create a multi-model response group container
+    const multiModelGroupContainer = createMultiModelResponseGroup(selectedOverrideModels);
+    chatContainer.appendChild(multiModelGroupContainer);
 
     // Create conversation if needed
     if (!currentConversation.conversationId) {
@@ -1324,19 +1331,21 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
         currentConversation.title = title;
     }
 
-    // Start loading indicators for each model
-    const loadingIds = {};
-    selectedOverrideModels.forEach(modelName => {
-        loadingIds[modelName] = showLoadingInPane(modelName);
-    });
+    // Generate a unique group ID for this multi-model request
+    const messageGroupId = crypto.randomUUID();
 
-    // Send requests to all selected models simultaneously
-    const responses = await Promise.allSettled(
-        selectedOverrideModels.map(async (modelName) => {
+    // Send requests to all selected models in true parallel
+    const modelPromises = selectedOverrideModels.map(async (modelName, index) => {
+        const loadingId = showLoadingInMultiModelPane(multiModelGroupContainer, modelName);
+        console.log(`[${new Date().toISOString()}] Starting request for ${modelName}`);
+
+        try {
             const payload = {
                 prompt,
                 profile: currentProfileName,
                 conversation_id: currentConversation.conversationId,
+                save_user_message: index === 0,
+                message_group_id: messageGroupId,
                 priorities: {
                     latency: currentProfile.latency,
                     cost: currentProfile.cost,
@@ -1360,23 +1369,17 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
             });
 
             if (!response.ok) {
-                throw new Error('API request failed');
+                const errorData = await response.json().catch(() => ({}));
+                const errorMsg = errorData.detail || `API request failed (${response.status})`;
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
-            return { modelName, data };
-        })
-    );
+            console.log(`[${new Date().toISOString()}] Received response for ${modelName}`);
 
-    // Process responses and add to split panes
-    const messageGroup = createMessageGroup();
+            // Remove loading and display response immediately
+            removeLoadingFromMultiModelPane(loadingId);
 
-    responses.forEach((result, index) => {
-        const modelName = selectedOverrideModels[index];
-        removeLoadingFromPane(loadingIds[modelName]);
-
-        if (result.status === 'fulfilled') {
-            const { data } = result.value;
             const routingTime = data.timing?.routing_time || 0;
             const responseTime = data.timing?.inference_time || 0;
 
@@ -1390,7 +1393,7 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
             const costIncrement = Number(data.usage?.cost);
             sessionStats.totalCost += Number.isFinite(costIncrement) ? costIncrement : 0;
 
-            addMessageToPane(modelName, messageGroup, data.output, {
+            addResponseToMultiModelPane(multiModelGroupContainer, modelName, data.output, {
                 model: data.model,
                 provider: data.provider,
                 score: data.routing_metadata?.score,
@@ -1399,32 +1402,40 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata, currentPro
                 inputTokens: data.usage?.input_tokens,
                 outputTokens: data.usage?.output_tokens
             });
-        } else {
-            addMessageToPane(modelName, messageGroup, `Error: ${result.reason.message}`, {
+
+            updateSessionStats();
+
+        } catch (error) {
+            console.error(`Error with model ${modelName}:`, error);
+            removeLoadingFromMultiModelPane(loadingId);
+
+            addResponseToMultiModelPane(multiModelGroupContainer, modelName, `Error: ${error.message}`, {
                 model: 'error',
                 provider: 'system'
             });
         }
     });
 
-    updateSessionStats();
-    setLoading(false);
-    promptInput?.focus();
+    // Wait for all models to complete before cleaning up
+    Promise.allSettled(modelPromises).then(() => {
+        setLoading(false);
+        promptInput?.focus();
+    });
 }
 
-function enableSplitScreen() {
-    if (!chatContainer) return;
+// Create a multi-model response group container
+function createMultiModelResponseGroup(modelNames) {
+    const groupContainer = document.createElement('div');
+    groupContainer.className = 'multi-model-group';
+    groupContainer.dataset.modelCount = modelNames.length;
 
-    chatContainer.classList.add('split-mode');
-    chatContainer.innerHTML = '';
-
-    selectedOverrideModels.forEach(modelName => {
+    modelNames.forEach(modelName => {
         const pane = document.createElement('div');
-        pane.className = 'split-pane';
+        pane.className = 'model-response-pane';
         pane.dataset.modelName = modelName;
 
         const header = document.createElement('div');
-        header.className = 'split-pane-header';
+        header.className = 'model-pane-header';
 
         const model = allModels.find(m => m.name === modelName);
         if (model) {
@@ -1441,25 +1452,22 @@ function enableSplitScreen() {
         header.appendChild(title);
 
         const content = document.createElement('div');
-        content.className = 'split-pane-content';
+        content.className = 'model-pane-content';
 
         pane.appendChild(header);
         pane.appendChild(content);
-        chatContainer.appendChild(pane);
+        groupContainer.appendChild(pane);
     });
+
+    return groupContainer;
 }
 
-function disableSplitScreen() {
-    if (!chatContainer) return;
-    chatContainer.classList.remove('split-mode');
-}
-
-function showLoadingInPane(modelName) {
+function showLoadingInMultiModelPane(groupContainer, modelName) {
     const loadingId = `loading-${modelName}-${Date.now()}`;
-    const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
+    const pane = groupContainer.querySelector(`.model-response-pane[data-model-name="${modelName}"]`);
     if (!pane) return loadingId;
 
-    const content = pane.querySelector('.split-pane-content');
+    const content = pane.querySelector('.model-pane-content');
     if (!content) return loadingId;
 
     const loadingDiv = document.createElement('div');
@@ -1478,36 +1486,22 @@ function showLoadingInPane(modelName) {
     return loadingId;
 }
 
-function removeLoadingFromPane(loadingId) {
+function removeLoadingFromMultiModelPane(loadingId) {
     const loadingElement = document.getElementById(loadingId);
     if (loadingElement) {
         loadingElement.remove();
     }
 }
 
-function createMessageGroup() {
-    return {
-        id: `group-${Date.now()}`,
-        models: selectedOverrideModels.slice(),
-        messages: {}
-    };
-}
-
-function addMessageToPane(modelName, messageGroup, content, metadata) {
-    const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
+function addResponseToMultiModelPane(groupContainer, modelName, content, metadata) {
+    const pane = groupContainer.querySelector(`.model-response-pane[data-model-name="${modelName}"]`);
     if (!pane) return;
 
-    const paneContent = pane.querySelector('.split-pane-content');
+    const paneContent = pane.querySelector('.model-pane-content');
     if (!paneContent) return;
 
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message message-assistant';
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-
     const textDiv = document.createElement('div');
-    textDiv.className = 'message-text';
+    textDiv.className = 'multi-model-text';
 
     const htmlContent = renderMarkdownAndLatex(content);
     textDiv.innerHTML = htmlContent;
@@ -1522,11 +1516,11 @@ function addMessageToPane(modelName, messageGroup, content, metadata) {
         });
     }
 
-    contentDiv.appendChild(textDiv);
+    paneContent.appendChild(textDiv);
 
     if (metadata) {
         const footerDiv = document.createElement('div');
-        footerDiv.className = 'message-footer';
+        footerDiv.className = 'multi-model-footer';
 
         const copyButton = document.createElement('button');
         copyButton.className = 'copy-button';
@@ -1577,102 +1571,39 @@ function addMessageToPane(modelName, messageGroup, content, metadata) {
         }
 
         footerDiv.appendChild(infoDiv);
-        contentDiv.appendChild(footerDiv);
+        paneContent.appendChild(footerDiv);
     }
-
-    messageDiv.appendChild(contentDiv);
-    paneContent.appendChild(messageDiv);
-
-    messageGroup.messages[modelName] = {
-        content,
-        metadata
-    };
 
     currentConversation.messages.push({
         role: 'assistant',
         text: content,
         metadata,
-        modelName,
-        groupId: messageGroup.id
+        modelName
     });
+}
+
+function renderMultiModelGroup(groupedMessages) {
+    if (!chatContainer) return;
+
+    const modelNames = groupedMessages.map(msg => msg.model);
+    const groupContainer = createMultiModelResponseGroup(modelNames);
+
+    groupedMessages.forEach(msg => {
+        addResponseToMultiModelPane(groupContainer, msg.model, msg.text, {
+            model: msg.model,
+            provider: msg.metadata?.provider,
+            routingTime: msg.metadata?.routing_time_ms,
+            responseTime: msg.metadata?.inference_time_ms,
+            inputTokens: msg.metadata?.input_tokens,
+            outputTokens: msg.metadata?.output_tokens
+        });
+    });
+
+    chatContainer.appendChild(groupContainer);
 }
 
 function addMessage(role, content, metadata = null, attachments = []) {
     if (!chatContainer) return;
-
-    // If in split mode and it's a user message, add to all panes
-    if (chatContainer.classList.contains('split-mode') && role === 'user') {
-        selectedOverrideModels.forEach(modelName => {
-            const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
-            if (!pane) return;
-
-            const paneContent = pane.querySelector('.split-pane-content');
-            if (!paneContent) return;
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message message-user';
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-
-            const textDiv = document.createElement('div');
-            textDiv.className = 'message-text';
-
-            const htmlContent = renderMarkdownAndLatex(content);
-            textDiv.innerHTML = htmlContent;
-
-            if (typeof renderMathInElement !== 'undefined') {
-                renderMathInElement(textDiv, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false }
-                    ],
-                    throwOnError: false
-                });
-            }
-
-            contentDiv.appendChild(textDiv);
-
-            if (attachments && attachments.length) {
-                const attachmentsDiv = document.createElement('div');
-                attachmentsDiv.className = 'message-attachments';
-
-                attachments.forEach(file => {
-                    const pill = document.createElement('div');
-                    pill.className = 'message-attachment';
-
-                    const clip = document.createElement('svg');
-                    clip.setAttribute('viewBox', '0 0 24 24');
-                    clip.setAttribute('fill', 'none');
-                    clip.setAttribute('stroke', '#8e3c2c');
-                    clip.setAttribute('stroke-width', '2');
-                    clip.setAttribute('stroke-linecap', 'round');
-                    clip.setAttribute('stroke-linejoin', 'round');
-                    clip.innerHTML = '<path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07L14.36 4.5a3.5 3.5 0 0 1 4.95 4.95L10 18.76a2 2 0 1 1-2.83-2.83L16.17 6.93"></path>';
-                    pill.appendChild(clip);
-
-                    const label = document.createElement('span');
-                    label.textContent = file.name || 'attachment';
-                    pill.appendChild(label);
-
-                    attachmentsDiv.appendChild(pill);
-                });
-
-                contentDiv.appendChild(attachmentsDiv);
-            }
-
-            messageDiv.appendChild(contentDiv);
-            paneContent.appendChild(messageDiv);
-        });
-
-        currentConversation.messages.push({
-            role,
-            text: content,
-            metadata,
-            attachments
-        });
-        return;
-    }
 
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${role}`;
@@ -1722,7 +1653,6 @@ function addMessage(role, content, metadata = null, attachments = []) {
     const htmlContent = renderMarkdownAndLatex(content);
     textDiv.innerHTML = htmlContent;
 
-    // Render LaTeX expressions with KaTeX
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(textDiv, {
             delimiters: [
@@ -2197,9 +2127,32 @@ async function loadConversation(conversationId) {
         sessionStats.responseTimes = conversation.stats.response_times || [];
     }
 
-    messagesToLoad.forEach(msg => {
-        addMessage(msg.role, msg.text, msg.metadata, msg.attachments || []);
-    });
+    let i = 0;
+    while (i < messagesToLoad.length) {
+        const msg = messagesToLoad[i];
+
+        if (msg.role === 'user') {
+            addMessage('user', msg.text, msg.metadata, msg.attachments || []);
+            i++;
+            continue;
+        }
+
+        if (msg.message_group_id) {
+            const groupId = msg.message_group_id;
+            const groupedMessages = [];
+
+            while (i < messagesToLoad.length &&
+                   messagesToLoad[i].message_group_id === groupId) {
+                groupedMessages.push(messagesToLoad[i]);
+                i++;
+            }
+
+            renderMultiModelGroup(groupedMessages);
+        } else {
+            addMessage('assistant', msg.text, msg.metadata, msg.attachments || []);
+            i++;
+        }
+    }
     updateSessionStats();
 
     conversations = conversations.filter(c => c.id !== conversationId && c.conversationId !== conversationId);
@@ -2330,12 +2283,14 @@ async function loadConversationMessagesFromBackend(conversationId) {
     return (data.messages || []).map(msg => ({
         role: msg.role,
         text: msg.content,
+        model: msg.model,
         metadata: msg.model ? {
             model: msg.model,
             provider: msg.provider,
             ...msg.metadata
         } : null,
-        attachments: []
+        attachments: [],
+        message_group_id: msg.message_group_id
     }));
 }
 
@@ -3149,34 +3104,36 @@ function selectOverrideModel(modelName) {
 }
 
 function updateOverrideDisplay() {
-    const selectedModelNameSpan = document.getElementById('selectedModelName');
-    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
+    const countBadge = document.getElementById('overrideCountBadge');
+    const selectedModelsDisplay = document.getElementById('selectedModelsDisplay');
+    const selectedModelsList = document.getElementById('selectedModelsList');
 
-    if (selectedOverrideModels.length > 0) {
-        if (selectedModelNameSpan) {
-            selectedModelNameSpan.innerHTML = selectedOverrideModels.map(name =>
-                `<span class="model-override-badge" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(142, 60, 44, 0.1); border-radius: 6px; margin-right: 4px; font-size: 12px;">
-                    ${name}
-                    <button onclick="removeOverrideModel('${name}')" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8e3c2c;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    // Update count badge in toolbar
+    if (countBadge) {
+        if (selectedOverrideModels.length > 0) {
+            countBadge.textContent = selectedOverrideModels.length;
+            countBadge.style.display = 'flex';
+        } else {
+            countBadge.style.display = 'none';
+        }
+    }
+
+    // Update selected models display in modal
+    if (selectedModelsDisplay && selectedModelsList) {
+        if (selectedOverrideModels.length > 0) {
+            selectedModelsDisplay.style.display = 'block';
+            selectedModelsList.innerHTML = selectedOverrideModels.map(name =>
+                `<div class="selected-model-chip" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(142, 60, 44, 0.1); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; font-size: 13px; color: #2b1d14; font-weight: 500;">
+                    <span>${name}</span>
+                    <button onclick="removeOverrideModel('${name}')" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8e3c2c; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 6L6 18M6 6l12 12"></path>
                         </svg>
                     </button>
-                </span>`
+                </div>`
             ).join('');
-            selectedModelNameSpan.style.display = 'inline';
-        }
-
-        if (clearOverrideBtn) {
-            clearOverrideBtn.style.display = 'flex';
-        }
-    } else {
-        if (selectedModelNameSpan) {
-            selectedModelNameSpan.style.display = 'none';
-        }
-
-        if (clearOverrideBtn) {
-            clearOverrideBtn.style.display = 'none';
+        } else {
+            selectedModelsDisplay.style.display = 'none';
         }
     }
 }
@@ -3270,9 +3227,9 @@ function init() {
         });
     }
 
-    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
-    if (clearOverrideBtn) {
-        clearOverrideBtn.addEventListener('click', (e) => {
+    const clearAllModels = document.getElementById('clearAllModels');
+    if (clearAllModels) {
+        clearAllModels.addEventListener('click', (e) => {
             e.stopPropagation();
             clearOverrideModel();
         });

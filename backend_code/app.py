@@ -74,7 +74,7 @@ def get_conversation_messages(conversation_id: str) -> list:
     return messages
 
 
-def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None) -> dict:
+def add_message(conversation_id: str, role: str, content: str, model: str = None, provider: str = None, profile_name: str = None, metadata: dict = None, message_group_id: str = None) -> dict:
     message_data = {
         "conversation_id": conversation_id,
         "role": role,
@@ -89,6 +89,8 @@ def add_message(conversation_id: str, role: str, content: str, model: str = None
         message_data["profile_name"] = profile_name
     if metadata:
         message_data["metadata"] = metadata
+    if message_group_id:
+        message_data["message_group_id"] = message_group_id
 
     result = supabase.table("messages").insert(message_data).execute()
 
@@ -248,6 +250,8 @@ async def chat(body: dict, authorization: str = Header(None)):
     router_mode = body.get("router_mode", "auto")
     model_override = body.get("model_override")
     conversation_id = body.get("conversation_id")
+    save_user_message = body.get("save_user_message", True)
+    message_group_id = body.get("message_group_id")
     user = get_user_from_token(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -257,12 +261,13 @@ async def chat(body: dict, authorization: str = Header(None)):
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
 
-    # Add user message to conversation
-    add_message(
-        conversation_id=conversation_id,
-        role="user",
-        content=prompt
-    )
+    # Add user message to conversation (skip for parallel multi-model requests after the first)
+    if save_user_message:
+        add_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=prompt
+        )
     conversation = get_conversation_messages(conversation_id)
 
     # PHASE 1: ROUTING
@@ -275,9 +280,12 @@ async def chat(body: dict, authorization: str = Header(None)):
     response_data = inference.inference(model_choice, conversation)
     inference_time = time.time() - inference_start
 
-    response_text = response_data["text"]
-    input_tokens = response_data.get("input_tokens", 0)
-    output_tokens = response_data.get("output_tokens", 0)
+    response_text = response_data.get("text") or ""
+    if not response_text:
+        raise HTTPException(status_code=500, detail="Model returned empty response")
+
+    input_tokens = response_data.get("input_tokens") or 0
+    output_tokens = response_data.get("output_tokens") or 0
 
     # Calculate cost
     input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
@@ -300,7 +308,8 @@ async def chat(body: dict, authorization: str = Header(None)):
             "cost": total_cost,
             "routing_time_ms": round(routing_time * 1000, 2),
             "inference_time_ms": round(inference_time * 1000, 2)
-        }
+        },
+        message_group_id=message_group_id
     )
 
     # Build response
