@@ -63,7 +63,7 @@ def calculate_model_score(prompt_attrs: Dict[str, float], model_attrs: Dict[str,
     return distance
 
 
-def route_with_gemini(conversation) -> Dict[str, float]:
+async def route_with_gemini(conversation) -> Dict[str, float]:
     """Obtain routing scores using Gemini via the shared inference helper."""
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -86,7 +86,7 @@ JSON:"""
     payload.extend(conversation)
     payload.append({"role": "user", "content": system_prompt})
 
-    response = inference.call_google(router_model, payload)
+    response = await inference.call_google(router_model, payload)
     response_text = response["text"]
     match = re.search(r"\{[^}]+\}", response_text, re.DOTALL)
     if not match:
@@ -106,11 +106,11 @@ def route_with_phi(conversation) -> Dict[str, float]:
     return router.assess_prompt(prompt_text)
 
 
-def route_with_llm(conversation) -> Dict[str, Any]:
+async def route_with_llm(conversation) -> Dict[str, Any]:
     """Route using Gemini API (local Phi router temporarily disabled)."""
     normalized_scores = None
     routing_model = None
-    
+
     # Local PHI router disabled - using Gemini API for routing
     # TODO: Re-enable when GPU support is configured
     # try:
@@ -119,10 +119,10 @@ def route_with_llm(conversation) -> Dict[str, Any]:
     #     normalized_scores = route_with_phi(conversation)
     #     routing_model = "phi"
     # except Exception as e:
-    #     normalized_scores = route_with_gemini(conversation)
+    #     normalized_scores = await route_with_gemini(conversation)
     #     routing_model = "gemini"
-    
-    normalized_scores = route_with_gemini(conversation)
+
+    normalized_scores = await route_with_gemini(conversation)
     routing_model = "gemini"
     
     print("---------")

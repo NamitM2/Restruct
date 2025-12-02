@@ -1331,89 +1331,120 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata) {
         currentConversation.title = title;
     }
 
-    // Generate a unique group ID for this multi-model request
-    const messageGroupId = crypto.randomUUID();
+    // Use SSE streaming from /chat/batch endpoint for multiple models
+    const payload = {
+        prompt,
+        profile: currentProfileName,
+        conversation_id: currentConversation.conversationId,
+        model_overrides: selectedOverrideModels.map(name => modelOverrideMap[name]),
+        user_id: getUserId()
+    };
 
-    // Send requests to all selected models in parallel - each completes independently
-    const modelPromises = selectedOverrideModels.map(async (modelName, index) => {
-        const loadingId = showLoadingInMultiModelPane(multiModelGroupContainer, modelName);
-        console.log(`[${new Date().toISOString()}] Starting request for ${modelName}`);
+    if (attachmentMetadata.length) {
+        payload.attachments = attachmentMetadata;
+    }
 
-        try {
-            const payload = {
-                prompt,
-                profile: currentProfileName,
-                conversation_id: currentConversation.conversationId,
-                save_user_message: index === 0,
-                message_group_id: messageGroupId,
-                router_mode: 'manual',
-                model_override: modelOverrideMap[modelName],
-                user_id: getUserId()
-            };
+    // Show loading indicators for all models
+    const loadingIds = {};
+    selectedOverrideModels.forEach(modelName => {
+        loadingIds[modelName] = showLoadingInMultiModelPane(multiModelGroupContainer, modelName);
+    });
 
-            if (attachmentMetadata.length) {
-                payload.attachments = attachmentMetadata;
+    try {
+        console.log(`[${new Date().toISOString()}] Starting batch request for ${selectedOverrideModels.length} models`);
+
+        const response = await fetch(`${API_URL}/chat/batch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `API request failed (${response.status})`);
+        }
+
+        // Handle SSE stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonData = line.substring(6);
+                    const event = JSON.parse(jsonData);
+
+                    if (event.type === 'metadata') {
+                        console.log(`Batch request metadata:`, event);
+                    } else if (event.type === 'result') {
+                        const modelName = selectedOverrideModels[event.index];
+                        console.log(`[${new Date().toISOString()}] Received response for ${modelName}`);
+
+                        // Remove loading indicator
+                        removeLoadingFromMultiModelPane(loadingIds[modelName]);
+
+                        const routingTime = event.timing?.routing_time || 0;
+                        const responseTime = event.timing?.inference_time || 0;
+
+                        sessionStats.inputTokens += event.usage?.input_tokens || 0;
+                        sessionStats.outputTokens += event.usage?.output_tokens || 0;
+                        sessionStats.modelsUsed.add(event.model);
+                        sessionStats.routingTimes = sessionStats.routingTimes || [];
+                        sessionStats.responseTimes = sessionStats.responseTimes || [];
+                        sessionStats.routingTimes.push(routingTime);
+                        sessionStats.responseTimes.push(responseTime);
+                        sessionStats.totalCost += Number(event.usage?.cost) || 0;
+
+                        addResponseToMultiModelPane(multiModelGroupContainer, modelName, event.output, {
+                            model: event.model,
+                            provider: event.provider,
+                            score: event.routing_metadata?.score,
+                            routingTime: routingTime,
+                            responseTime: responseTime,
+                            inputTokens: event.usage?.input_tokens,
+                            outputTokens: event.usage?.output_tokens
+                        });
+
+                        updateSessionStats();
+                    } else if (event.type === 'error') {
+                        const modelName = selectedOverrideModels[event.index];
+                        console.error(`Error with model ${modelName}:`, event.error);
+                        removeLoadingFromMultiModelPane(loadingIds[modelName]);
+
+                        addResponseToMultiModelPane(multiModelGroupContainer, modelName, `Error: ${event.error}`, {
+                            model: 'error',
+                            provider: 'system'
+                        });
+                    } else if (event.type === 'done') {
+                        console.log(`[${new Date().toISOString()}] All models completed`);
+                    }
+                }
             }
+        }
 
-            const response = await fetch(`${API_URL}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-                body: JSON.stringify(payload)
-            });
+        setLoading(false);
+        promptInput?.focus();
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMsg = errorData.detail || `API request failed (${response.status})`;
-                throw new Error(errorMsg);
-            }
-
-            const data = await response.json();
-            console.log(`[${new Date().toISOString()}] Received response for ${modelName}`);
-
-            // Remove loading and display response immediately as it arrives
-            removeLoadingFromMultiModelPane(loadingId);
-
-            const routingTime = data.timing?.routing_time || 0;
-            const responseTime = data.timing?.inference_time || 0;
-
-            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
-            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
-            sessionStats.modelsUsed.add(data.model);
-            sessionStats.routingTimes = sessionStats.routingTimes || [];
-            sessionStats.responseTimes = sessionStats.responseTimes || [];
-            sessionStats.routingTimes.push(routingTime);
-            sessionStats.responseTimes.push(responseTime);
-            const costIncrement = Number(data.usage?.cost);
-            sessionStats.totalCost += Number.isFinite(costIncrement) ? costIncrement : 0;
-
-            addResponseToMultiModelPane(multiModelGroupContainer, modelName, data.output, {
-                model: data.model,
-                provider: data.provider,
-                score: data.routing_metadata?.score,
-                routingTime: routingTime,
-                responseTime: responseTime,
-                inputTokens: data.usage?.input_tokens,
-                outputTokens: data.usage?.output_tokens
-            });
-
-            updateSessionStats();
-
-        } catch (error) {
-            console.error(`Error with model ${modelName}:`, error);
-            removeLoadingFromMultiModelPane(loadingId);
-
+    } catch (error) {
+        console.error('Batch request error:', error);
+        // Remove all loading indicators and show errors
+        selectedOverrideModels.forEach(modelName => {
+            removeLoadingFromMultiModelPane(loadingIds[modelName]);
             addResponseToMultiModelPane(multiModelGroupContainer, modelName, `Error: ${error.message}`, {
                 model: 'error',
                 provider: 'system'
             });
-        }
-    });
-
-    // Wait for all models to complete before cleaning up
-    Promise.allSettled(modelPromises).then(() => {
+        });
         setLoading(false);
-        promptInput?.focus();
-    });
+    }
 }
 
 // Create a multi-model response group container
@@ -2081,11 +2112,13 @@ async function loadConversation(conversationId) {
     const conversation = conversations.find(c => c.id === conversationId || c.conversationId === conversationId);
     if (!conversation) return;
 
-    // Remove all messages but keep chat-controls
+    // Remove all messages and multi-model groups but keep chat-controls
     const messages = chatContainer.querySelectorAll('.message');
+    const multiModelGroups = chatContainer.querySelectorAll('.multi-model-group');
     const welcomeMsg = chatContainer.querySelector('.welcome-message');
 
     messages.forEach(msg => msg.remove());
+    multiModelGroups.forEach(group => group.remove());
     if (welcomeMsg) welcomeMsg.remove();
 
     // Load messages from backend if we have a backend conversation ID
@@ -2182,11 +2215,13 @@ function startNewConversation() {
         chatContainer.innerHTML = '';
     }
 
-    // Remove all messages but keep chat-controls
+    // Remove all messages and multi-model groups but keep chat-controls
     const messages = chatContainer.querySelectorAll('.message');
+    const multiModelGroups = chatContainer.querySelectorAll('.multi-model-group');
     const welcomeMsg = chatContainer.querySelector('.welcome-message');
 
     messages.forEach(msg => msg.remove());
+    multiModelGroups.forEach(group => group.remove());
     if (welcomeMsg) welcomeMsg.remove();
 
     // Add fresh welcome message after chat-controls

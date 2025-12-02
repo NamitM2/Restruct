@@ -6,11 +6,13 @@ Minimal endpoints, no error handling (errors will bubble up).
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from typing import Optional, List
 from contextlib import asynccontextmanager
 import asyncio
 import os
 import re
+import json
 from uuid import uuid4
 
 import backend_code.router as router
@@ -74,6 +76,8 @@ async def get_conversation_messages(conversation_id: str) -> list:
             msg["metadata"] = message["metadata"]
         if message.get("created_at"):
             msg["created_at"] = message["created_at"]
+        if message.get("message_group_id"):
+            msg["message_group_id"] = message["message_group_id"]
         messages.append(msg)
     return messages
 
@@ -260,7 +264,7 @@ def root():
 
 @app.post("/chat")
 async def chat(body: dict, authorization: str = Header(None)):
-    """Single model chat endpoint."""
+    """Main chat endpoint."""
     import time
 
     prompt = body.get("prompt")
@@ -286,7 +290,7 @@ async def chat(body: dict, authorization: str = Header(None)):
 
     # PHASE 1: ROUTING
     routing_start = time.time()
-    model_choice = resolve_model_choice(router_mode, model_override, conversation)
+    model_choice = await resolve_model_choice(router_mode, model_override, conversation)
     routing_time = time.time() - routing_start
 
     # PHASE 2: INFERENCE
@@ -353,11 +357,11 @@ async def chat(body: dict, authorization: str = Header(None)):
 
 @app.post("/chat/batch")
 async def chat_batch(body: dict, authorization: str = Header(None)):
-    """Batch endpoint for parallel multi-model responses."""
+    """Batch endpoint for parallel multi-model responses with SSE streaming."""
     import time
 
     prompt = body.get("prompt")
-    model_overrides = body.get("model_overrides")  # List of model override strings
+    model_overrides = body.get("model_overrides")
     conversation_id = body.get("conversation_id")
     user = await get_user_from_token(authorization)
     if not user:
@@ -381,89 +385,115 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
     # Generate a unique message group ID for this batch
     message_group_id = str(uuid4())
 
-    # Process all models in parallel
-    async def process_model(model_override: str):
-        try:
-            # PHASE 1: ROUTING
-            routing_start = time.time()
-            model_choice = resolve_model_choice("manual", model_override, conversation)
-            routing_time = time.time() - routing_start
+    async def event_generator():
+        # Send initial metadata event
+        yield f"data: {json.dumps({'type': 'metadata', 'message_group_id': message_group_id, 'conversation_id': conversation_id})}\n\n"
 
-            # PHASE 2: INFERENCE
-            inference_start = time.time()
-            response_data = await inference.inference(model_choice, conversation)
-            inference_time = time.time() - inference_start
+        # Queue to collect results as they complete
+        result_queue = asyncio.Queue()
+        completed_count = 0
+        total_models = len(model_overrides)
 
-            response_text = response_data.get("text") or ""
-            if not response_text:
-                return {
+        async def process_model(model_override: str, index: int):
+            try:
+                # PHASE 1: ROUTING
+                routing_start = time.time()
+                model_choice = await resolve_model_choice("manual", model_override, conversation)
+                routing_time = time.time() - routing_start
+
+                # PHASE 2: INFERENCE
+                inference_start = time.time()
+                response_data = await inference.inference(model_choice, conversation)
+                inference_time = time.time() - inference_start
+
+                response_text = response_data.get("text") or ""
+                if not response_text:
+                    result = {
+                        "type": "error",
+                        "index": index,
+                        "model_override": model_override,
+                        "error": "Model returned empty response"
+                    }
+                    await result_queue.put(result)
+                    return
+
+                input_tokens = response_data.get("input_tokens") or 0
+                output_tokens = response_data.get("output_tokens") or 0
+
+                # Calculate cost
+                input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
+                output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
+                total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+                # Save assistant message to database with full stats
+                await add_message(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=response_text,
+                    model=model_choice["model_name"],
+                    provider=model_choice["vendor"],
+                    profile_name=profile,
+                    metadata={
+                        "score": model_choice.get("score", 0),
+                        "router_mode": "manual",
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "cost": total_cost,
+                        "routing_time_ms": round(routing_time * 1000, 2),
+                        "inference_time_ms": round(inference_time * 1000, 2)
+                    },
+                    message_group_id=message_group_id
+                )
+
+                result = {
+                    "type": "result",
+                    "index": index,
+                    "status": "complete",
                     "model_override": model_override,
-                    "error": "Model returned empty response"
+                    "output": response_text,
+                    "model": model_choice["model_name"],
+                    "provider": model_choice["vendor"],
+                    "routing_metadata": {
+                        "score": model_choice.get("score", 0)
+                    },
+                    "usage": {
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "cost": total_cost
+                    },
+                    "timing": {
+                        "routing_time": round(routing_time * 1000, 2),
+                        "inference_time": round(inference_time * 1000, 2),
+                        "total_time_ms": round((routing_time + inference_time) * 1000, 2)
+                    }
                 }
+                await result_queue.put(result)
 
-            input_tokens = response_data.get("input_tokens") or 0
-            output_tokens = response_data.get("output_tokens") or 0
-
-            # Calculate cost
-            input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
-            output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
-            total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
-
-            # Save assistant message to database with full stats
-            await add_message(
-                conversation_id=conversation_id,
-                role="assistant",
-                content=response_text,
-                model=model_choice["model_name"],
-                provider=model_choice["vendor"],
-                profile_name=profile,
-                metadata={
-                    "score": model_choice.get("score", 0),
-                    "router_mode": "manual",
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": total_cost,
-                    "routing_time_ms": round(routing_time * 1000, 2),
-                    "inference_time_ms": round(inference_time * 1000, 2)
-                },
-                message_group_id=message_group_id
-            )
-
-            return {
-                "status": "complete",
-                "model_override": model_override,
-                "output": response_text,
-                "model": model_choice["model_name"],
-                "provider": model_choice["vendor"],
-                "routing_metadata": {
-                    "score": model_choice.get("score", 0)
-                },
-                "usage": {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": total_cost
-                },
-                "timing": {
-                    "routing_time": round(routing_time * 1000, 2),
-                    "inference_time": round(inference_time * 1000, 2),
-                    "total_time_ms": round((routing_time + inference_time) * 1000, 2)
+            except Exception as e:
+                result = {
+                    "type": "error",
+                    "index": index,
+                    "model_override": model_override,
+                    "error": str(e)
                 }
-            }
-        except Exception as e:
-            return {
-                "model_override": model_override,
-                "error": str(e)
-            }
+                await result_queue.put(result)
 
-    # Execute all model requests in parallel
-    results = await asyncio.gather(*[process_model(model_override) for model_override in model_overrides])
+        # Start all model tasks in parallel
+        tasks = [asyncio.create_task(process_model(override, idx)) for idx, override in enumerate(model_overrides)]
 
-    return {
-        "status": "complete",
-        "conversation_id": conversation_id,
-        "message_group_id": message_group_id,
-        "results": results
-    }
+        # Stream results as they complete
+        while completed_count < total_models:
+            result = await result_queue.get()
+            yield f"data: {json.dumps(result)}\n\n"
+            completed_count += 1
+
+        # Wait for all tasks to complete (should already be done)
+        await asyncio.gather(*tasks)
+
+        # Send completion event
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/conversations")
@@ -486,7 +516,7 @@ async def get_messages(conversation_id: str, authorization: str = Header(None)):
     if not conv.data or conv.data[0]["user_id"] != user.id:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    messages = get_conversation_messages(conversation_id)
+    messages = await get_conversation_messages(conversation_id)
     return {"messages": messages}
 
 
@@ -548,7 +578,7 @@ async def create_profile(body: dict, authorization: str = Header(None)):
     return {"profile": profile}
 
 
-def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation):
+async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation):
     """
     Decide how to obtain a model: router-driven or manual override.
     """
@@ -561,7 +591,7 @@ def resolve_model_choice(router_mode: str, model_override: Optional[str], conver
 
         provider, model_name = model_override.split(":", 1)
         return router.route_specific(provider, model_name)
-    model, model_scores = router.route_with_llm(conversation)
+    model, model_scores = await router.route_with_llm(conversation)
     return model
 
 
