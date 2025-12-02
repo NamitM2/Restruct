@@ -3316,7 +3316,8 @@ body.focus-mode #exitFocusBtn {
 /* Billing, Models & API Tabs */
 #billingTab,
 #apiTab,
-#marketplaceTab {
+#marketplaceTab,
+#trackingTab {
     overflow-y: auto;
     max-height: 100%;
     height: 100%;
@@ -3325,32 +3326,41 @@ body.focus-mode #exitFocusBtn {
 
 #billingTab::-webkit-scrollbar,
 #apiTab::-webkit-scrollbar,
-#marketplaceTab::-webkit-scrollbar {
+#marketplaceTab::-webkit-scrollbar,
+#trackingTab::-webkit-scrollbar {
     width: 8px;
 }
 
 #billingTab::-webkit-scrollbar-track,
 #apiTab::-webkit-scrollbar-track,
-#marketplaceTab::-webkit-scrollbar-track {
+#marketplaceTab::-webkit-scrollbar-track,
+#trackingTab::-webkit-scrollbar-track {
     background: rgba(92, 49, 30, 0.05);
     border-radius: 4px;
 }
 
 #billingTab::-webkit-scrollbar-thumb,
 #apiTab::-webkit-scrollbar-thumb,
-#marketplaceTab::-webkit-scrollbar-thumb {
+#marketplaceTab::-webkit-scrollbar-thumb,
+#trackingTab::-webkit-scrollbar-thumb {
     background: #8e3c2c;
     border-radius: 4px;
 }
 
 #billingTab::-webkit-scrollbar-thumb:hover,
 #apiTab::-webkit-scrollbar-thumb:hover,
-#marketplaceTab::-webkit-scrollbar-thumb:hover {
+#marketplaceTab::-webkit-scrollbar-thumb:hover,
+#trackingTab::-webkit-scrollbar-thumb:hover {
     background: #7a3325;
 }
 
 /* Models Tab */
 #marketplaceTab {
+    padding: 0 40px 32px;
+}
+
+/* Tracking Tab */
+#trackingTab {
     padding: 0 40px 32px;
 }
 
@@ -4628,7 +4638,8 @@ body.focus-mode #exitFocusBtn {
 /* Billing, Models & API Tabs */
 #billingTab,
 #apiTab,
-#marketplaceTab {
+#marketplaceTab,
+#trackingTab {
     overflow-y: auto;
     max-height: 100%;
     height: 100%;
@@ -4637,32 +4648,41 @@ body.focus-mode #exitFocusBtn {
 
 #billingTab::-webkit-scrollbar,
 #apiTab::-webkit-scrollbar,
-#marketplaceTab::-webkit-scrollbar {
+#marketplaceTab::-webkit-scrollbar,
+#trackingTab::-webkit-scrollbar {
     width: 8px;
 }
 
 #billingTab::-webkit-scrollbar-track,
 #apiTab::-webkit-scrollbar-track,
-#marketplaceTab::-webkit-scrollbar-track {
+#marketplaceTab::-webkit-scrollbar-track,
+#trackingTab::-webkit-scrollbar-track {
     background: rgba(92, 49, 30, 0.05);
     border-radius: 4px;
 }
 
 #billingTab::-webkit-scrollbar-thumb,
 #apiTab::-webkit-scrollbar-thumb,
-#marketplaceTab::-webkit-scrollbar-thumb {
+#marketplaceTab::-webkit-scrollbar-thumb,
+#trackingTab::-webkit-scrollbar-thumb {
     background: #8e3c2c;
     border-radius: 4px;
 }
 
 #billingTab::-webkit-scrollbar-thumb:hover,
 #apiTab::-webkit-scrollbar-thumb:hover,
-#marketplaceTab::-webkit-scrollbar-thumb:hover {
+#marketplaceTab::-webkit-scrollbar-thumb:hover,
+#trackingTab::-webkit-scrollbar-thumb:hover {
     background: #7a3325;
 }
 
 /* Models Tab */
 #marketplaceTab {
+    padding: 0 40px 32px;
+}
+
+/* Tracking Tab */
+#trackingTab {
     padding: 0 40px 32px;
 }
 
