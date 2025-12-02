@@ -1044,6 +1044,13 @@ if (chatForm) {
         }));
 
         const currentProfile = profiles[currentProfileName] || profiles['default'];
+
+        // Handle multiple model overrides
+        if (selectedOverrideModels.length > 1) {
+            await handleMultiModelSubmission(prompt, attachmentMetadata, currentProfile);
+            return;
+        }
+
         const payload = {
             prompt,
             profile: currentProfileName,
@@ -1055,8 +1062,8 @@ if (chatForm) {
             },
             max_tokens: 1000,
             temperature: 0.7,
-            router_mode: selectedOverrideModel ? 'manual' : 'auto',
-            model_override: selectedOverrideModel ? modelOverrideMap[selectedOverrideModel] : null
+            router_mode: selectedOverrideModels.length === 1 ? 'manual' : 'auto',
+            model_override: selectedOverrideModels.length === 1 ? modelOverrideMap[selectedOverrideModels[0]] : null
         };
 
         if (attachmentMetadata.length) {
@@ -1272,8 +1279,400 @@ function renderMarkdownAndLatex(text) {
     return html;
 }
 
+// Handle multi-model submission with split-screen display
+async function handleMultiModelSubmission(prompt, attachmentMetadata, currentProfile) {
+    if (promptInput) {
+        promptInput.value = '';
+        promptInput.style.height = 'auto';
+        promptInput.style.overflowY = 'hidden';
+    }
+    setLoading(true);
+
+    const welcomeMsg = chatContainer?.querySelector('.welcome-message');
+    if (welcomeMsg) {
+        welcomeMsg.remove();
+        document.body.classList.add('focus-mode');
+        if (conversationStatsSidebar) {
+            conversationStatsSidebar.classList.add('collapsed');
+        }
+    }
+
+    // Enable split-screen mode
+    enableSplitScreen();
+
+    addMessage('user', prompt, null, attachmentMetadata);
+    resetAttachments();
+
+    // Create conversation if needed
+    if (!currentConversation.conversationId) {
+        const title = truncateTitle(prompt);
+        const convResponse = await fetch(`${API_URL}/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+                user_id: getUserId(),
+                title: title
+            })
+        });
+
+        if (!convResponse.ok) {
+            throw new Error('Failed to create conversation');
+        }
+
+        const convData = await convResponse.json();
+        currentConversation.conversationId = convData.conversation.id;
+        currentConversation.title = title;
+    }
+
+    // Start loading indicators for each model
+    const loadingIds = {};
+    selectedOverrideModels.forEach(modelName => {
+        loadingIds[modelName] = showLoadingInPane(modelName);
+    });
+
+    // Send requests to all selected models simultaneously
+    const responses = await Promise.allSettled(
+        selectedOverrideModels.map(async (modelName) => {
+            const payload = {
+                prompt,
+                profile: currentProfileName,
+                conversation_id: currentConversation.conversationId,
+                priorities: {
+                    latency: currentProfile.latency,
+                    cost: currentProfile.cost,
+                    quality: currentProfile.quality
+                },
+                max_tokens: 1000,
+                temperature: 0.7,
+                router_mode: 'manual',
+                model_override: modelOverrideMap[modelName],
+                user_id: getUserId()
+            };
+
+            if (attachmentMetadata.length) {
+                payload.attachments = attachmentMetadata;
+            }
+
+            const response = await fetch(`${API_URL}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error('API request failed');
+            }
+
+            const data = await response.json();
+            return { modelName, data };
+        })
+    );
+
+    // Process responses and add to split panes
+    const messageGroup = createMessageGroup();
+
+    responses.forEach((result, index) => {
+        const modelName = selectedOverrideModels[index];
+        removeLoadingFromPane(loadingIds[modelName]);
+
+        if (result.status === 'fulfilled') {
+            const { data } = result.value;
+            const routingTime = data.timing?.routing_time || 0;
+            const responseTime = data.timing?.inference_time || 0;
+
+            sessionStats.inputTokens += data.usage?.input_tokens || prompt.split(' ').length * 1.3;
+            sessionStats.outputTokens += data.usage?.output_tokens || data.output.split(' ').length * 1.3;
+            sessionStats.modelsUsed.add(data.model);
+            sessionStats.routingTimes = sessionStats.routingTimes || [];
+            sessionStats.responseTimes = sessionStats.responseTimes || [];
+            sessionStats.routingTimes.push(routingTime);
+            sessionStats.responseTimes.push(responseTime);
+            const costIncrement = Number(data.usage?.cost);
+            sessionStats.totalCost += Number.isFinite(costIncrement) ? costIncrement : 0;
+
+            addMessageToPane(modelName, messageGroup, data.output, {
+                model: data.model,
+                provider: data.provider,
+                score: data.routing_metadata?.score,
+                routingTime: routingTime,
+                responseTime: responseTime,
+                inputTokens: data.usage?.input_tokens,
+                outputTokens: data.usage?.output_tokens
+            });
+        } else {
+            addMessageToPane(modelName, messageGroup, `Error: ${result.reason.message}`, {
+                model: 'error',
+                provider: 'system'
+            });
+        }
+    });
+
+    updateSessionStats();
+    setLoading(false);
+    promptInput?.focus();
+}
+
+function enableSplitScreen() {
+    if (!chatContainer) return;
+
+    chatContainer.classList.add('split-mode');
+    chatContainer.innerHTML = '';
+
+    selectedOverrideModels.forEach(modelName => {
+        const pane = document.createElement('div');
+        pane.className = 'split-pane';
+        pane.dataset.modelName = modelName;
+
+        const header = document.createElement('div');
+        header.className = 'split-pane-header';
+
+        const model = allModels.find(m => m.name === modelName);
+        if (model) {
+            const logo = document.createElement('img');
+            logo.src = model.logo;
+            logo.alt = modelName;
+            logo.style.transform = `scale(${model.logoScale})`;
+            logo.draggable = false;
+            header.appendChild(logo);
+        }
+
+        const title = document.createElement('h4');
+        title.textContent = modelName;
+        header.appendChild(title);
+
+        const content = document.createElement('div');
+        content.className = 'split-pane-content';
+
+        pane.appendChild(header);
+        pane.appendChild(content);
+        chatContainer.appendChild(pane);
+    });
+}
+
+function disableSplitScreen() {
+    if (!chatContainer) return;
+    chatContainer.classList.remove('split-mode');
+}
+
+function showLoadingInPane(modelName) {
+    const loadingId = `loading-${modelName}-${Date.now()}`;
+    const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
+    if (!pane) return loadingId;
+
+    const content = pane.querySelector('.split-pane-content');
+    if (!content) return loadingId;
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.id = loadingId;
+    loadingDiv.innerHTML = `
+        <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+        </div>
+        <span>Generating...</span>
+    `;
+
+    content.appendChild(loadingDiv);
+    return loadingId;
+}
+
+function removeLoadingFromPane(loadingId) {
+    const loadingElement = document.getElementById(loadingId);
+    if (loadingElement) {
+        loadingElement.remove();
+    }
+}
+
+function createMessageGroup() {
+    return {
+        id: `group-${Date.now()}`,
+        models: selectedOverrideModels.slice(),
+        messages: {}
+    };
+}
+
+function addMessageToPane(modelName, messageGroup, content, metadata) {
+    const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
+    if (!pane) return;
+
+    const paneContent = pane.querySelector('.split-pane-content');
+    if (!paneContent) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message message-assistant';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'message-text';
+
+    const htmlContent = renderMarkdownAndLatex(content);
+    textDiv.innerHTML = htmlContent;
+
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(textDiv, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+        });
+    }
+
+    contentDiv.appendChild(textDiv);
+
+    if (metadata) {
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'message-footer';
+
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+        `;
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(content);
+            copyButton.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Copied!
+            `;
+            setTimeout(() => {
+                copyButton.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                `;
+            }, 2000);
+        });
+        footerDiv.appendChild(copyButton);
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'message-info';
+
+        const routingTime = metadata.routingTime || metadata.routing_time_ms;
+        if (routingTime) {
+            const routingSpan = document.createElement('span');
+            routingSpan.className = 'routing-latency';
+            routingSpan.textContent = `${routingTime}ms`;
+            infoDiv.appendChild(routingSpan);
+        }
+
+        const responseTime = metadata.responseTime || metadata.inference_time_ms;
+        if (responseTime) {
+            const responseSpan = document.createElement('span');
+            responseSpan.className = 'response-latency';
+            responseSpan.textContent = `${responseTime}ms`;
+            infoDiv.appendChild(responseSpan);
+        }
+
+        footerDiv.appendChild(infoDiv);
+        contentDiv.appendChild(footerDiv);
+    }
+
+    messageDiv.appendChild(contentDiv);
+    paneContent.appendChild(messageDiv);
+
+    messageGroup.messages[modelName] = {
+        content,
+        metadata
+    };
+
+    currentConversation.messages.push({
+        role: 'assistant',
+        text: content,
+        metadata,
+        modelName,
+        groupId: messageGroup.id
+    });
+}
+
 function addMessage(role, content, metadata = null, attachments = []) {
     if (!chatContainer) return;
+
+    // If in split mode and it's a user message, add to all panes
+    if (chatContainer.classList.contains('split-mode') && role === 'user') {
+        selectedOverrideModels.forEach(modelName => {
+            const pane = document.querySelector(`.split-pane[data-model-name="${modelName}"]`);
+            if (!pane) return;
+
+            const paneContent = pane.querySelector('.split-pane-content');
+            if (!paneContent) return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-user';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+
+            const htmlContent = renderMarkdownAndLatex(content);
+            textDiv.innerHTML = htmlContent;
+
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(textDiv, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            contentDiv.appendChild(textDiv);
+
+            if (attachments && attachments.length) {
+                const attachmentsDiv = document.createElement('div');
+                attachmentsDiv.className = 'message-attachments';
+
+                attachments.forEach(file => {
+                    const pill = document.createElement('div');
+                    pill.className = 'message-attachment';
+
+                    const clip = document.createElement('svg');
+                    clip.setAttribute('viewBox', '0 0 24 24');
+                    clip.setAttribute('fill', 'none');
+                    clip.setAttribute('stroke', '#8e3c2c');
+                    clip.setAttribute('stroke-width', '2');
+                    clip.setAttribute('stroke-linecap', 'round');
+                    clip.setAttribute('stroke-linejoin', 'round');
+                    clip.innerHTML = '<path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07L14.36 4.5a3.5 3.5 0 0 1 4.95 4.95L10 18.76a2 2 0 1 1-2.83-2.83L16.17 6.93"></path>';
+                    pill.appendChild(clip);
+
+                    const label = document.createElement('span');
+                    label.textContent = file.name || 'attachment';
+                    pill.appendChild(label);
+
+                    attachmentsDiv.appendChild(pill);
+                });
+
+                contentDiv.appendChild(attachmentsDiv);
+            }
+
+            messageDiv.appendChild(contentDiv);
+            paneContent.appendChild(messageDiv);
+        });
+
+        currentConversation.messages.push({
+            role,
+            text: content,
+            metadata,
+            attachments
+        });
+        return;
+    }
 
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${role}`;
@@ -1830,6 +2229,12 @@ function startNewConversation() {
 
     // Reset conversation stats
     resetSessionStats();
+
+    // Disable split screen mode if active
+    if (chatContainer.classList.contains('split-mode')) {
+        chatContainer.classList.remove('split-mode');
+        chatContainer.innerHTML = '';
+    }
 
     // Remove all messages but keep chat-controls
     const messages = chatContainer.querySelectorAll('.message');
@@ -2720,39 +3125,91 @@ function populateModelOverrideList(searchTerm = '') {
     });
 }
 
+// Support multiple model overrides (up to 4)
+let selectedOverrideModels = [];
+
 function selectOverrideModel(modelName) {
-    selectedOverrideModel = modelName;
+    // Toggle model selection
+    const index = selectedOverrideModels.indexOf(modelName);
+    if (index > -1) {
+        // Model already selected, remove it
+        selectedOverrideModels.splice(index, 1);
+    } else {
+        // Add model if we haven't reached the limit
+        if (selectedOverrideModels.length < 4) {
+            selectedOverrideModels.push(modelName);
+        } else {
+            // Show a message that max 4 models can be selected
+            return;
+        }
+    }
+
+    updateOverrideDisplay();
+    updateModelCardSelections();
+}
+
+function updateOverrideDisplay() {
     const selectedModelNameSpan = document.getElementById('selectedModelName');
     const clearOverrideBtn = document.getElementById('clearOverrideBtn');
 
-    if (selectedModelNameSpan) {
-        selectedModelNameSpan.textContent = modelName;
-        selectedModelNameSpan.style.display = 'inline';
-    }
+    if (selectedOverrideModels.length > 0) {
+        if (selectedModelNameSpan) {
+            selectedModelNameSpan.innerHTML = selectedOverrideModels.map(name =>
+                `<span class="model-override-badge" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(142, 60, 44, 0.1); border-radius: 6px; margin-right: 4px; font-size: 12px;">
+                    ${name}
+                    <button onclick="removeOverrideModel('${name}')" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8e3c2c;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </span>`
+            ).join('');
+            selectedModelNameSpan.style.display = 'inline';
+        }
 
-    if (clearOverrideBtn) {
-        clearOverrideBtn.style.display = 'flex';
-    }
+        if (clearOverrideBtn) {
+            clearOverrideBtn.style.display = 'flex';
+        }
+    } else {
+        if (selectedModelNameSpan) {
+            selectedModelNameSpan.style.display = 'none';
+        }
 
-    // Close the modal
-    const modal = document.getElementById('modelOverrideModal');
-    if (modal) {
-        modal.classList.remove('active');
+        if (clearOverrideBtn) {
+            clearOverrideBtn.style.display = 'none';
+        }
     }
 }
 
+function removeOverrideModel(modelName) {
+    const index = selectedOverrideModels.indexOf(modelName);
+    if (index > -1) {
+        selectedOverrideModels.splice(index, 1);
+    }
+    updateOverrideDisplay();
+    updateModelCardSelections();
+}
+
+// Make removeOverrideModel available globally for onclick handlers
+window.removeOverrideModel = removeOverrideModel;
+
+function updateModelCardSelections() {
+    document.querySelectorAll('.model-override-card').forEach(card => {
+        const modelName = card.dataset.modelName;
+        if (selectedOverrideModels.includes(modelName)) {
+            card.style.borderColor = '#8e3c2c';
+            card.style.background = 'rgba(142, 60, 44, 0.05)';
+        } else {
+            card.style.borderColor = 'rgba(92, 49, 30, 0.12)';
+            card.style.background = '#fff';
+        }
+    });
+}
+
 function clearOverrideModel() {
-    selectedOverrideModel = null;
-    const selectedModelNameSpan = document.getElementById('selectedModelName');
-    const clearOverrideBtn = document.getElementById('clearOverrideBtn');
-
-    if (selectedModelNameSpan) {
-        selectedModelNameSpan.style.display = 'none';
-    }
-
-    if (clearOverrideBtn) {
-        clearOverrideBtn.style.display = 'none';
-    }
+    selectedOverrideModels = [];
+    updateOverrideDisplay();
+    updateModelCardSelections();
 }
 
 function init() {
