@@ -158,6 +158,10 @@
                     <img src="assets/models-icon.png" alt="Models" class="nav-icon" draggable="false">
                     <span class="nav-label">Models</span>
                 </button>
+                <button class="nav-icon-button" data-tab-target="trackingTab" title="Tracking">
+                    <img src="assets/tracking-icon.png" alt="Tracking" class="nav-icon" draggable="false">
+                    <span class="nav-label">Tracking</span>
+                </button>
                 <button class="nav-icon-button" data-tab-target="dashboardTab" title="Statistics">
                     <img src="assets/stats-icon.png" alt="Stats" class="nav-icon" draggable="false">
                     <span class="nav-label">Statistics</span>
@@ -405,6 +409,43 @@
                             <div id="marketplaceModelsGrid"
                                 style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 24px; padding-bottom: 40px;">
                                 <!-- Models will be populated here by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tracking Tab -->
+                <section id="trackingTab" class="tab-panel" aria-labelledby="Tracking">
+                    <div class="panel-header marketplace-tab-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h2>Usage Tracking</h2>
+                                <p>Track your token usage, generations, and costs across all models.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="marketplace-tab-body">
+                        <div style="max-width: 1400px; margin: 0 auto;">
+                            <!-- Summary Stats -->
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 24px; margin-bottom: 32px;">
+                                <div style="background: linear-gradient(135deg, #8e3c2c 0%, #a8503d 100%); border-radius: 14px; padding: 20px; color: white;">
+                                    <div style="font-size: 13px; font-weight: 500; opacity: 0.9; margin-bottom: 8px;">Total Input Tokens</div>
+                                    <div id="totalInputTokens" style="font-size: 32px; font-weight: 700;">0</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #c98454 0%, #d4a574 100%); border-radius: 14px; padding: 20px; color: white;">
+                                    <div style="font-size: 13px; font-weight: 500; opacity: 0.9; margin-bottom: 8px;">Total Output Tokens</div>
+                                    <div id="totalOutputTokens" style="font-size: 32px; font-weight: 700;">0</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #5b2a1a 0%, #7a3923 100%); border-radius: 14px; padding: 20px; color: white;">
+                                    <div style="font-size: 13px; font-weight: 500; opacity: 0.9; margin-bottom: 8px;">Total Cost</div>
+                                    <div id="totalCost" style="font-size: 32px; font-weight: 700;">$0.00</div>
+                                </div>
+                            </div>
+
+                            <!-- Model Tracking Cards -->
+                            <div id="trackingModelsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-bottom: 40px;">
+                                <!-- Tracking cards will be populated here by JavaScript -->
                             </div>
                         </div>
                     </div>
