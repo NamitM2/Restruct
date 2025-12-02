@@ -1729,6 +1729,95 @@ textarea {
     transition: all 0.3s ease;
 }
 
+/* Split-screen mode for multiple model overrides */
+.chat-container.split-mode {
+    display: flex;
+    gap: 16px;
+    padding: 20px 16px 28px;
+    overflow: hidden;
+}
+
+.split-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(92, 49, 30, 0.08);
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    animation: splitPaneIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes splitPaneIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.split-pane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(92, 49, 30, 0.1);
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.split-pane-header img {
+    width: 60px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.split-pane-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2b1d14;
+}
+
+.split-pane-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* Message group for split responses */
+.message-group {
+    margin-bottom: 32px;
+}
+
+.message-group.user-group .message {
+    margin-bottom: 16px;
+}
+
+.message-group.assistant-group {
+    display: flex;
+    gap: 16px;
+}
+
+.message-group.assistant-group .message {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(92, 49, 30, 0.08);
+}
+
+.message-group.assistant-group .message .message-model-logo {
+    margin-bottom: 12px;
+}
+
 .chat-toolbar {
     position: relative;
     z-index: 10;
@@ -1748,11 +1837,12 @@ textarea {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
 }
 
 .chat-toolbar-group.start {
     justify-self: start;
+    max-width: 600px;
 }
 
 .chat-toolbar-group.center {
@@ -1761,6 +1851,18 @@ textarea {
 
 .chat-toolbar-group.end {
     justify-self: end;
+}
+
+#selectedModelName {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    max-width: 400px;
+}
+
+.model-override-badge {
+    white-space: nowrap;
 }
 
 #enterFocusBtn:hover,
