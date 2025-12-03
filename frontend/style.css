@@ -334,17 +334,21 @@ body {
 }
 
 .wave-transition.active .wave-logo {
-    animation: logoFadeInOut 1.8s ease 0.5s forwards;
+    animation: logoFadeIn 0.4s ease 0.5s forwards;
 }
 
 .wave-transition.exit .wave-logo {
-    animation: logoFadeInOut 0.9s ease 0.2s forwards;
+    opacity: 1;
+    animation: logoFadeOut 0.5s ease 0.1s forwards;
 }
 
-@keyframes logoFadeInOut {
+@keyframes logoFadeIn {
     0% { opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
+    100% { opacity: 1; }
+}
+
+@keyframes logoFadeOut {
+    0% { opacity: 1; }
     100% { opacity: 0; }
 }
 
