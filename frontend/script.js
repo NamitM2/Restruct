@@ -66,9 +66,6 @@ function playWaveTransition(onCover, onExitComplete) {
     waveTransitionTimeouts.forEach(clearTimeout);
     waveTransitionTimeouts = [];
 
-    // Disable color transitions during wave animation
-    document.documentElement.classList.add('disable-transitions');
-
     wave.classList.remove('exit');
     wave.classList.add('active');
 
@@ -82,8 +79,6 @@ function playWaveTransition(onCover, onExitComplete) {
 
         const cleanupTimeout = setTimeout(() => {
             wave.classList.remove('exit');
-            // Re-enable transitions after wave completes
-            document.documentElement.classList.remove('disable-transitions');
             if (typeof onExitComplete === 'function') onExitComplete();
         }, WAVE_EXIT_CLEANUP_MS);
 
