@@ -2575,7 +2575,7 @@ function renderActiveKeys() {
     if (activeApiKeys.length === 0) {
         activeKeysList.innerHTML = `
             <div class="empty-keys-state">
-                <p style="margin: 0; color: rgba(92, 49, 30, 0.5); font-size: 14px;">No active keys yet</p>
+                <p style="margin: 0; color: var(--text-muted); font-size: 14px;">No active keys yet</p>
             </div>
         `;
         return;
@@ -3168,8 +3168,8 @@ function populateModelOverrideList(searchTerm = '') {
             </div>
             <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: center;">${model.name}</h4>
             <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-                <span style="font-size: 11px; font-weight: 500; color: rgba(92, 49, 30, 0.6);">Score:</span>
-                <span style="font-size: 14px; font-weight: 700; color: #8e3c2c;">${model.score}</span>
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Score:</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--accent-primary);">${model.score}</span>
             </div>
         </div>
     `).join('');
@@ -3182,13 +3182,13 @@ function populateModelOverrideList(searchTerm = '') {
         });
 
         card.addEventListener('mouseenter', () => {
-            card.style.borderColor = '#8e3c2c';
+            card.style.borderColor = 'var(--accent-primary)';
             card.style.transform = 'translateY(-2px)';
-            card.style.boxShadow = '0 4px 12px rgba(142, 60, 44, 0.15)';
+            card.style.boxShadow = '0 4px 12px rgba(216, 162, 133, 0.2)';
         });
 
         card.addEventListener('mouseleave', () => {
-            card.style.borderColor = 'rgba(92, 49, 30, 0.12)';
+            card.style.borderColor = 'var(--border-subtle)';
             card.style.transform = 'translateY(0)';
             card.style.boxShadow = 'none';
         });
