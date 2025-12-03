@@ -1893,12 +1893,13 @@ function showLoading() {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'loading';
     loadingDiv.innerHTML = `
-        <div class="loading-dots">
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
+        <div class="wave-bars">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
         </div>
-        <span>Routing...</span>
     `;
 
     messageDiv.appendChild(loadingDiv);
