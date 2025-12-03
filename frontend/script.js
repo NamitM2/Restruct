@@ -36,7 +36,7 @@ function logout() {
 
 const THEME_STORAGE_KEY = 'restruct-theme';
 const WAVE_COVER_DELAY_MS = 650;
-const WAVE_EXIT_DELAY_MS = 1000;
+const WAVE_EXIT_DELAY_MS = 1350;
 const WAVE_EXIT_CLEANUP_MS = 1200;
 let waveTransitionTimeouts = [];
 let isThemeToggling = false;
