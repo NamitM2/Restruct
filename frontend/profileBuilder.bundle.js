@@ -477,7 +477,7 @@ var ProfileBuilder = (() => {
         return React.createElement("div", {
           ref: nodeRef,
           className: `relative rounded-xl border px-3 py-2 transition-all cursor-pointer ${active ? "border-[#8e3c2c] shadow-lg" : isLocal ? "border-[#8e3c2c]" : "border-[rgba(92,49,30,0.12)]"}`,
-          style: { backgroundColor: isLocal ? "#8e3c2c" : "#ffffff", minWidth: "120px" },
+          style: { backgroundColor: isLocal ? "#8e3c2c" : "var(--bg-elevated)", minWidth: "120px" },
           onClick
         }, [
           React.createElement("div", {
@@ -512,7 +512,7 @@ var ProfileBuilder = (() => {
               style: { backgroundColor: isLocal ? enabled ? "rgba(255, 252, 248, 0.9)" : "rgba(255, 252, 248, 0.2)" : enabled ? "#b56747" : "rgba(92, 49, 30, 0.15)" }
             }, React.createElement("span", {
               className: "absolute top-0.5 w-3 h-3 rounded-full shadow transition-transform",
-              style: { left: enabled ? "17px" : "2px", backgroundColor: isLocal ? enabled ? "#8e3c2c" : "#fffcf8" : "#ffffff" }
+              style: { left: enabled ? "17px" : "2px", backgroundColor: isLocal ? (enabled ? "#8e3c2c" : "var(--bg-elevated)") : "var(--bg-elevated)" }
             }))
           ])
         ]);
@@ -945,14 +945,14 @@ var ProfileBuilder = (() => {
         const confidenceScore = (weights.reduce((sum, w) => sum + w.weight, 0) / weights.length * 100).toFixed(1);
         return React.createElement("div", {
           className: "relative h-full w-full flex flex-col",
-          style: { backgroundColor: "#fffefb", cursor: defaultCursor },
+          style: { backgroundColor: "var(--bg-elevated)", cursor: defaultCursor },
           onClick: onDismiss
         }, [
           // Header with tabs
           React.createElement("div", {
             key: "header",
             className: "px-6 py-4 flex items-center justify-between border-b",
-            style: { borderColor: "rgba(92, 49, 30, 0.12)", backgroundColor: "#fffefb" },
+            style: { borderColor: "rgba(92, 49, 30, 0.12)", backgroundColor: "var(--bg-elevated)" },
             onClick: (e) => e.stopPropagation()
           }, [
             React.createElement("h1", {
@@ -1128,7 +1128,7 @@ var ProfileBuilder = (() => {
                   }, systemPrompt ? React.createElement("div", {
                     key: "role",
                     className: "p-3 rounded-lg inline-block text-left",
-                    style: { background: "#fff", border: "1px solid rgba(92, 49, 30, 0.12)" }
+                    style: { background: "var(--bg-elevated)", border: "1px solid rgba(92, 49, 30, 0.12)" }
                   }, [
                     React.createElement("div", {
                       key: "role-name",
@@ -1178,7 +1178,7 @@ var ProfileBuilder = (() => {
                     onChange: (e) => setTestPrompt(e.target.value),
                     placeholder: "Write a complex Python script for data analysis.",
                     className: "flex-1 px-4 py-3 rounded-xl border text-sm",
-                    style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "#fff", color: "#2b1d14" }
+                    style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "var(--bg-elevated)", color: "#2b1d14" }
                   }),
                   React.createElement("button", {
                     key: "send",
@@ -1294,7 +1294,7 @@ var ProfileBuilder = (() => {
                 onChange: (e) => setProfileName(e.target.value),
                 placeholder: "Profile Name",
                 className: "w-full px-3 py-2 rounded-lg border text-sm mb-3",
-                style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "#fff", color: "#2b1d14" }
+                style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "var(--bg-elevated)", color: "#2b1d14" }
               }),
               React.createElement("input", {
                 key: "desc",
@@ -1303,7 +1303,7 @@ var ProfileBuilder = (() => {
                 onChange: (e) => setDescription(e.target.value),
                 placeholder: "Description",
                 className: "w-full px-3 py-2 rounded-lg border text-sm mb-5",
-                style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "#fff", color: "#2b1d14" }
+                style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "var(--bg-elevated)", color: "#2b1d14" }
               }),
               React.createElement("div", {
                 key: "weight-section",

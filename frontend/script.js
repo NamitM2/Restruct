@@ -30,6 +30,109 @@ function logout() {
     showSigninSection();
 }
 
+// ============================================
+// THEME MANAGEMENT
+// ============================================
+
+const THEME_STORAGE_KEY = 'restruct-theme';
+const WAVE_COVER_DELAY_MS = 650;
+const WAVE_EXIT_DELAY_MS = 1000;
+const WAVE_EXIT_CLEANUP_MS = 1200;
+let waveTransitionTimeouts = [];
+let isThemeToggling = false;
+
+function initTheme() {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    const initialTheme = savedTheme || 'light';
+
+    setTheme(initialTheme);
+}
+
+function playWaveTransition(onCover, onExitComplete) {
+    const wave = document.getElementById('waveTransition');
+
+    if (!wave) {
+        if (typeof onCover === 'function') onCover();
+        if (typeof onExitComplete === 'function') onExitComplete();
+        return;
+    }
+
+    // If the wave is already animating, reuse it and run the callbacks without restarting classes
+    if (wave.classList.contains('active') || wave.classList.contains('exit')) {
+        if (typeof onCover === 'function') onCover();
+        return;
+    }
+
+    waveTransitionTimeouts.forEach(clearTimeout);
+    waveTransitionTimeouts = [];
+
+    // Disable color transitions during wave animation
+    document.documentElement.classList.add('disable-transitions');
+
+    wave.classList.remove('exit');
+    wave.classList.add('active');
+
+    const coverTimeout = setTimeout(() => {
+        if (typeof onCover === 'function') onCover();
+    }, WAVE_COVER_DELAY_MS);
+
+    const exitTimeout = setTimeout(() => {
+        wave.classList.remove('active');
+        wave.classList.add('exit');
+
+        const cleanupTimeout = setTimeout(() => {
+            wave.classList.remove('exit');
+            // Re-enable transitions after wave completes
+            document.documentElement.classList.remove('disable-transitions');
+            if (typeof onExitComplete === 'function') onExitComplete();
+        }, WAVE_EXIT_CLEANUP_MS);
+
+        waveTransitionTimeouts.push(cleanupTimeout);
+    }, WAVE_EXIT_DELAY_MS);
+
+    waveTransitionTimeouts.push(coverTimeout, exitTimeout);
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    updateThemeToggleUI();
+}
+
+function toggleTheme() {
+    // Prevent rapid toggling with cooldown
+    if (isThemeToggling) return;
+
+    isThemeToggling = true;
+
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    playWaveTransition(() => setTheme(newTheme), () => {
+        // Reset cooldown after wave completes
+        isThemeToggling = false;
+    });
+}
+
+function updateThemeToggleUI() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const sunIcon = document.querySelector('#themeToggleBtn .sun-icon');
+    const moonIcon = document.querySelector('#themeToggleBtn .moon-icon');
+
+    if (sunIcon && moonIcon) {
+        if (currentTheme === 'dark') {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        } else {
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+        }
+    }
+}
+
+// Initialize theme on page load
+initTheme();
+
 function showSigninSection() {
     const signinSection = document.getElementById('signinSection');
     const appShell = document.getElementById('appShell');
@@ -321,12 +424,7 @@ function setupSigninForm() {
                 localStorage.setItem('user_id', data.user.id);
                 localStorage.setItem('user_email', data.user.email);
 
-                // Show wave transition
-                const wave = document.getElementById('waveTransition');
-                wave.classList.add('active');
-
-                // After wave covers screen, switch to app view
-                setTimeout(() => {
+                const applySignedInState = () => {
                     showAppSection();
                     loadConversationsFromBackend();  // Load user's conversations after login
                     // Update user displays
@@ -339,16 +437,9 @@ function setupSigninForm() {
                     if (userEmailIndicator) userEmailIndicator.textContent = data.user.email;
                     if (navSignInBtn) navSignInBtn.style.display = 'none';
                     if (navSignOutBtn) navSignOutBtn.style.display = 'block';
+                };
 
-                    // Continue wave animation to exit
-                    wave.classList.remove('active');
-                    wave.classList.add('exit');
-
-                    // Remove exit class after animation completes
-                    setTimeout(() => {
-                        wave.classList.remove('exit');
-                    }, 1400);
-                }, 800);
+                playWaveTransition(applySignedInState);
             } else {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -804,11 +895,11 @@ function buildProfileCard(slug, displayName, profileData) {
     card.className = 'profile-card';
     card.dataset.profile = slug;
     card.dataset.profileLabel = displayName;
-    card.style.cssText = 'width: 260px; background: #fff; border-radius: 18px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 18px;';
+    card.style.cssText = 'width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;';
 
     const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
     const editButtonHtml = !isDefault ? `
-        <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+        <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -817,7 +908,7 @@ function buildProfileCard(slug, displayName, profileData) {
         </button>
     ` : '';
     const deleteButtonHtml = !isDefault ? `
-        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid #8e3c2c; border-radius: 8px; background: #8e3c2c; color: #fffef9; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -829,10 +920,10 @@ function buildProfileCard(slug, displayName, profileData) {
     ` : '';
 
     card.innerHTML = `
-        <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #2b1d14;">${displayName}</h4>
+        <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
         <div style="display: flex; gap: 8px;">
             ${editButtonHtml}
-            <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid rgba(92, 49, 30, 0.2); border-radius: 8px; background: white; color: #5b2a1a; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
                 <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
                 Stats
             </button>
@@ -2996,7 +3087,7 @@ function populateMarketplace(sortBy = 'score-desc') {
         }).join('');
 
         return `
-            <div style="background: #fff; border-radius: 14px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 16px; transition: all 0.2s; cursor: default;">
+            <div style="background: var(--bg-elevated); border-radius: 14px; border: 2px solid var(--border-subtle); padding: 16px; transition: all 0.2s; cursor: default;">
                 <div style="display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 8px 0 16px 0; margin-bottom: 14px; height: 36px;">
                     <div></div>
                     <div style="display: flex; justify-content: center;">
@@ -3009,7 +3100,7 @@ function populateMarketplace(sortBy = 'score-desc') {
                 </div>
 
                 <div style="margin-bottom: 12px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h4>
+                    <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: center;">${model.name}</h4>
                     ${capabilitiesHTML}
                 </div>
 
@@ -3075,11 +3166,11 @@ function populateModelOverrideList(searchTerm = '') {
     );
 
     modelList.innerHTML = filteredModels.map(model => `
-        <div class="model-override-card" data-model-name="${model.name}" style="background: #fff; border-radius: 12px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 16px; cursor: pointer; transition: all 0.2s;">
+        <div class="model-override-card" data-model-name="${model.name}" style="background: var(--bg-elevated); border-radius: 12px; border: 2px solid var(--border-subtle); padding: 16px; cursor: pointer; transition: all 0.2s;">
             <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px; height: 40px;">
                 <img src="${model.logo}" alt="${model.provider}" style="width: 80px; height: 40px; object-fit: contain; transform: scale(${model.logoScale});" draggable="false">
             </div>
-            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h4>
+            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: center;">${model.name}</h4>
             <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
                 <span style="font-size: 11px; font-weight: 500; color: rgba(92, 49, 30, 0.6);">Score:</span>
                 <span style="font-size: 14px; font-weight: 700; color: #8e3c2c;">${model.score}</span>
@@ -3151,7 +3242,7 @@ function updateOverrideDisplay() {
         if (selectedOverrideModels.length > 0) {
             selectedModelsDisplay.style.display = 'block';
             selectedModelsList.innerHTML = selectedOverrideModels.map(name =>
-                `<div class="selected-model-chip" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(142, 60, 44, 0.1); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; font-size: 13px; color: #2b1d14; font-weight: 500;">
+                `<div class="selected-model-chip" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(142, 60, 44, 0.1); border: 1px solid rgba(142, 60, 44, 0.2); border-radius: 8px; font-size: 13px; color: var(--text-primary); font-weight: 500;">
                     <span>${name}</span>
                     <button onclick="removeOverrideModel('${name}')" style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8e3c2c; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3182,11 +3273,11 @@ function updateModelCardSelections() {
     document.querySelectorAll('.model-override-card').forEach(card => {
         const modelName = card.dataset.modelName;
         if (selectedOverrideModels.includes(modelName)) {
-            card.style.borderColor = '#8e3c2c';
-            card.style.background = 'rgba(142, 60, 44, 0.05)';
+            card.style.borderColor = 'var(--accent-primary)';
+            card.style.background = 'var(--accent-bg-subtle)';
         } else {
-            card.style.borderColor = 'rgba(92, 49, 30, 0.12)';
-            card.style.background = '#fff';
+            card.style.borderColor = 'var(--border-subtle)';
+            card.style.background = 'var(--bg-elevated)';
         }
     });
 }
@@ -3245,11 +3336,11 @@ function populateTracking(selectedProfile = 'all') {
         const avgCostPerRequest = model.totalCost / model.requestCount;
 
         return `
-            <div style="background: #fff; border-radius: 14px; border: 2px solid rgba(92, 49, 30, 0.12); padding: 16px; transition: all 0.2s;">
+            <div style="background: var(--bg-elevated); border-radius: 14px; border: 2px solid var(--border-subtle); padding: 16px; transition: all 0.2s;">
                 <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px; height: 36px;">
                     <img src="${model.logo}" alt="${model.provider}" style="width: 108px; height: 36px; object-fit: contain; transform: scale(${model.logoScale});" draggable="false">
                 </div>
-                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h3>
+                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: var(--text-primary); text-align: center;">${model.name}</h3>
                 <div style="text-align: center; margin-bottom: 16px;">
                     <span style="font-size: 11px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">${model.requestCount} requests</span>
                 </div>
@@ -3304,22 +3395,19 @@ function init() {
     const trackingProfileButtons = document.querySelectorAll('.tracking-profile-filter');
     trackingProfileButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            trackingProfileButtons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.background = 'white';
-                btn.style.color = '#5b2a1a';
-                btn.style.borderColor = 'rgba(92, 49, 30, 0.2)';
-            });
-
+            trackingProfileButtons.forEach(btn => btn.classList.remove('active'));
             e.target.classList.add('active');
-            e.target.style.background = '#8e3c2c';
-            e.target.style.color = 'white';
-            e.target.style.borderColor = '#8e3c2c';
 
             const selectedProfile = e.target.dataset.profile;
             populateTracking(selectedProfile);
         });
     });
+
+    // Theme toggle button
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
 
     // Model Override Modal
     const modelOverrideBtn = document.getElementById('modelOverrideBtn');
