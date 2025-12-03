@@ -3197,102 +3197,46 @@ function clearOverrideModel() {
     updateModelCardSelections();
 }
 
-function populateTracking() {
-    // Mock tracking data for each model
-    const trackingData = [
-        {
-            name: 'GPT-5',
-            provider: 'OpenAI',
-            logo: 'assets/chatgpt-logo.png',
-            logoScale: '0.9',
-            inputTokens: 145230,
-            outputTokens: 89450,
-            totalCost: 12.45,
-            requestCount: 342
-        },
-        {
-            name: 'GPT-5 Mini',
-            provider: 'OpenAI',
-            logo: 'assets/chatgpt-logo.png',
-            logoScale: '0.9',
-            inputTokens: 234520,
-            outputTokens: 156780,
-            totalCost: 8.92,
-            requestCount: 589
-        },
-        {
-            name: 'GPT-5 Nano',
-            provider: 'OpenAI',
-            logo: 'assets/chatgpt-logo.png',
-            logoScale: '0.9',
-            inputTokens: 98760,
-            outputTokens: 67230,
-            totalCost: 2.15,
-            requestCount: 234
-        },
-        {
-            name: 'Gemini 2.5 Flash Lite',
-            provider: 'Google',
-            logo: 'assets/gemini-logo.png',
-            logoScale: '3.6',
-            inputTokens: 456890,
-            outputTokens: 298450,
-            totalCost: 5.67,
-            requestCount: 823
-        },
-        {
-            name: 'Gemini 2.5 Flash',
-            provider: 'Google',
-            logo: 'assets/gemini-logo.png',
-            logoScale: '3.6',
-            inputTokens: 189340,
-            outputTokens: 123670,
-            totalCost: 4.23,
-            requestCount: 412
-        },
-        {
-            name: 'Gemini 2.5 Pro',
-            provider: 'Google',
-            logo: 'assets/gemini-logo.png',
-            logoScale: '3.6',
-            inputTokens: 78560,
-            outputTokens: 52340,
-            totalCost: 6.89,
-            requestCount: 156
-        },
-        {
-            name: 'Claude 3.5 Sonnet',
-            provider: 'Anthropic',
-            logo: 'assets/claude-logo.png',
-            logoScale: '2.592',
-            inputTokens: 234670,
-            outputTokens: 167890,
-            totalCost: 15.34,
-            requestCount: 478
-        },
-        {
-            name: 'Claude 3.5 Haiku',
-            provider: 'Anthropic',
-            logo: 'assets/claude-logo.png',
-            logoScale: '2.592',
-            inputTokens: 345210,
-            outputTokens: 234560,
-            totalCost: 7.21,
-            requestCount: 612
-        }
-    ];
+function populateTracking(selectedProfile = 'all') {
+    const allTrackingData = {
+        'all': [
+            { name: 'GPT-5', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 145230, outputTokens: 89450, totalCost: 12.45, requestCount: 342 },
+            { name: 'GPT-5 Mini', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 234520, outputTokens: 156780, totalCost: 8.92, requestCount: 589 },
+            { name: 'GPT-5 Nano', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 98760, outputTokens: 67230, totalCost: 2.15, requestCount: 234 },
+            { name: 'Gemini 2.5 Flash Lite', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 456890, outputTokens: 298450, totalCost: 5.67, requestCount: 823 },
+            { name: 'Gemini 2.5 Flash', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 189340, outputTokens: 123670, totalCost: 4.23, requestCount: 412 },
+            { name: 'Gemini 2.5 Pro', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 78560, outputTokens: 52340, totalCost: 6.89, requestCount: 156 },
+            { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', logo: 'assets/claude-logo.png', logoScale: '2.592', inputTokens: 234670, outputTokens: 167890, totalCost: 15.34, requestCount: 478 },
+            { name: 'Claude 3.5 Haiku', provider: 'Anthropic', logo: 'assets/claude-logo.png', logoScale: '2.592', inputTokens: 345210, outputTokens: 234560, totalCost: 7.21, requestCount: 612 }
+        ],
+        'default': [
+            { name: 'GPT-5', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 45230, outputTokens: 29450, totalCost: 4.12, requestCount: 112 },
+            { name: 'Gemini 2.5 Flash', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 89340, outputTokens: 63670, totalCost: 2.45, requestCount: 198 },
+            { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', logo: 'assets/claude-logo.png', logoScale: '2.592', inputTokens: 134670, outputTokens: 97890, totalCost: 8.91, requestCount: 256 }
+        ],
+        'cost-optimized': [
+            { name: 'GPT-5 Mini', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 134520, outputTokens: 96780, totalCost: 4.23, requestCount: 312 },
+            { name: 'GPT-5 Nano', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 98760, outputTokens: 67230, totalCost: 2.15, requestCount: 234 },
+            { name: 'Gemini 2.5 Flash Lite', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 356890, outputTokens: 218450, totalCost: 3.89, requestCount: 567 },
+            { name: 'Claude 3.5 Haiku', provider: 'Anthropic', logo: 'assets/claude-logo.png', logoScale: '2.592', inputTokens: 245210, outputTokens: 174560, totalCost: 4.56, requestCount: 423 }
+        ],
+        'performance': [
+            { name: 'GPT-5', provider: 'OpenAI', logo: 'assets/chatgpt-logo.png', logoScale: '0.9', inputTokens: 100000, outputTokens: 60000, totalCost: 8.33, requestCount: 230 },
+            { name: 'Gemini 2.5 Pro', provider: 'Google', logo: 'assets/gemini-logo.png', logoScale: '3.6', inputTokens: 78560, outputTokens: 52340, totalCost: 6.89, requestCount: 156 },
+            { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', logo: 'assets/claude-logo.png', logoScale: '2.592', inputTokens: 100000, outputTokens: 70000, totalCost: 6.43, requestCount: 222 }
+        ]
+    };
 
-    // Calculate totals
+    const trackingData = allTrackingData[selectedProfile] || allTrackingData['all'];
+
     const totalInput = trackingData.reduce((sum, model) => sum + model.inputTokens, 0);
     const totalOutput = trackingData.reduce((sum, model) => sum + model.outputTokens, 0);
     const totalCost = trackingData.reduce((sum, model) => sum + model.totalCost, 0);
 
-    // Update summary stats
     document.getElementById('totalInputTokens').textContent = totalInput.toLocaleString();
     document.getElementById('totalOutputTokens').textContent = totalOutput.toLocaleString();
     document.getElementById('totalCost').textContent = '$' + totalCost.toFixed(2);
 
-    // Populate tracking cards
     const grid = document.getElementById('trackingModelsGrid');
     if (!grid) return;
 
@@ -3305,12 +3249,10 @@ function populateTracking() {
                 <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px; height: 36px;">
                     <img src="${model.logo}" alt="${model.provider}" style="width: 108px; height: 36px; object-fit: contain; transform: scale(${model.logoScale});" draggable="false">
                 </div>
-
                 <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #2b1d14; text-align: center;">${model.name}</h3>
                 <div style="text-align: center; margin-bottom: 16px;">
                     <span style="font-size: 11px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">${model.requestCount} requests</span>
                 </div>
-
                 <div style="background: rgba(142, 60, 44, 0.04); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span style="font-size: 12px; color: rgba(92, 49, 30, 0.7); font-weight: 500;">Input Tokens</span>
@@ -3326,7 +3268,6 @@ function populateTracking() {
                         <span style="font-size: 14px; color: #5b2a1a; font-weight: 700;">${totalTokens.toLocaleString()}</span>
                     </div>
                 </div>
-
                 <div style="background: linear-gradient(135deg, rgba(142, 60, 44, 0.08) 0%, rgba(212, 165, 116, 0.08) 100%); border-radius: 10px; padding: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 13px; color: #5b2a1a; font-weight: 600;">Total Cost</span>
@@ -3358,6 +3299,27 @@ function init() {
             populateMarketplace(e.target.value);
         });
     }
+
+    // Add event listeners for tracking profile filters
+    const trackingProfileButtons = document.querySelectorAll('.tracking-profile-filter');
+    trackingProfileButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            trackingProfileButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = 'white';
+                btn.style.color = '#5b2a1a';
+                btn.style.borderColor = 'rgba(92, 49, 30, 0.2)';
+            });
+
+            e.target.classList.add('active');
+            e.target.style.background = '#8e3c2c';
+            e.target.style.color = 'white';
+            e.target.style.borderColor = '#8e3c2c';
+
+            const selectedProfile = e.target.dataset.profile;
+            populateTracking(selectedProfile);
+        });
+    });
 
     // Model Override Modal
     const modelOverrideBtn = document.getElementById('modelOverrideBtn');

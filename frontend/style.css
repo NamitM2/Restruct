@@ -3364,6 +3364,19 @@ body.focus-mode #exitFocusBtn {
     padding: 0 40px 32px;
 }
 
+.tracking-profile-filter {
+    transition: all 0.2s ease;
+}
+
+.tracking-profile-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(142, 60, 44, 0.15);
+}
+
+.tracking-profile-filter.active {
+    box-shadow: 0 4px 16px rgba(142, 60, 44, 0.25);
+}
+
 .marketplace-tab-header {
     position: sticky;
     top: 0;
@@ -4684,6 +4697,19 @@ body.focus-mode #exitFocusBtn {
 /* Tracking Tab */
 #trackingTab {
     padding: 0 40px 32px;
+}
+
+.tracking-profile-filter {
+    transition: all 0.2s ease;
+}
+
+.tracking-profile-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(142, 60, 44, 0.15);
+}
+
+.tracking-profile-filter.active {
+    box-shadow: 0 4px 16px rgba(142, 60, 44, 0.25);
 }
 
 .marketplace-tab-header {
