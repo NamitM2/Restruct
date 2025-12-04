@@ -114,13 +114,14 @@ function ProfileBuilderShell() {
 
 // Slider component
 const WeightSlider = ({ label, value, onChange, showWeight = true }) => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     return React.createElement('div', {
         className: 'flex items-center justify-between gap-3'
     }, [
         React.createElement('span', {
             key: 'label',
             className: 'text-sm flex-1',
-            style: { color: '#2b1d14' }
+            style: { color: isDark ? '#c9a38a' : '#2b1d14' }
         }, label),
         React.createElement('input', {
             key: 'slider',
@@ -136,20 +137,21 @@ const WeightSlider = ({ label, value, onChange, showWeight = true }) => {
         showWeight && React.createElement('span', {
             key: 'value',
             className: 'text-xs w-16 text-right',
-            style: { color: 'rgba(43, 29, 20, 0.6)' }
+            style: { color: isDark ? 'rgba(201, 163, 138, 0.8)' : 'rgba(43, 29, 20, 0.6)' }
         }, `Weight ${value.toFixed(2)}`)
     ]);
 };
 
 // Number input component
 const NumberInput = ({ label, value, onChange, step = 1 }) => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     return React.createElement('div', {
         className: 'flex items-center justify-between gap-3'
     }, [
         React.createElement('span', {
             key: 'label',
             className: 'text-sm flex-1',
-            style: { color: '#2b1d14' }
+            style: { color: isDark ? '#c9a38a' : '#2b1d14' }
         }, label),
         React.createElement('input', {
             key: 'input',
@@ -157,14 +159,19 @@ const NumberInput = ({ label, value, onChange, step = 1 }) => {
             value: value,
             step: step,
             onChange: e => onChange(parseFloat(e.target.value) || 0),
-            className: 'w-20 px-2 py-1 text-sm text-right rounded-lg border bg-white',
-            style: { borderColor: 'rgba(92, 49, 30, 0.15)', color: '#2b1d14' }
+            className: 'w-20 px-2 py-1 text-sm text-right rounded-lg border',
+            style: {
+                borderColor: isDark ? 'rgba(201, 163, 138, 0.35)' : 'rgba(92, 49, 30, 0.15)',
+                color: isDark ? '#c9a38a' : '#2b1d14',
+                backgroundColor: isDark ? 'var(--bg-elevated)' : 'white'
+            }
         })
     ]);
 };
 
 // Toggle switch component
 const Toggle = ({ label, icon, enabled, onChange }) => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     return React.createElement('div', {
         className: 'flex items-center justify-between gap-2'
     }, [
@@ -175,12 +182,15 @@ const Toggle = ({ label, icon, enabled, onChange }) => {
             icon && React.createElement('span', {
                 key: 'icon',
                 className: 'w-5 h-5 rounded text-xs flex items-center justify-center font-semibold',
-                style: { backgroundColor: 'rgba(92, 49, 30, 0.1)', color: '#5b2a1a' }
+                style: {
+                    backgroundColor: isDark ? 'rgba(201, 163, 138, 0.15)' : 'rgba(92, 49, 30, 0.1)',
+                    color: isDark ? '#c9a38a' : '#5b2a1a'
+                }
             }, icon),
             React.createElement('span', {
                 key: 'text',
                 className: 'text-sm',
-                style: { color: '#2b1d14' }
+                style: { color: isDark ? '#c9a38a' : '#2b1d14' }
             }, label)
         ]),
         React.createElement('button', {
@@ -188,10 +198,17 @@ const Toggle = ({ label, icon, enabled, onChange }) => {
             type: 'button',
             onClick: () => onChange(!enabled),
             className: 'w-10 h-5 rounded-full transition-colors relative',
-            style: { backgroundColor: enabled ? '#b56747' : 'rgba(92, 49, 30, 0.15)' }
+            style: {
+                backgroundColor: enabled ?
+                    (isDark ? '#f5b899' : '#b56747') :
+                    (isDark ? 'rgba(201, 163, 138, 0.2)' : 'rgba(92, 49, 30, 0.15)')
+            }
         }, React.createElement('span', {
-            className: 'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
-            style: { left: enabled ? '22px' : '2px' }
+            className: 'absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform',
+            style: {
+                left: enabled ? '22px' : '2px',
+                backgroundColor: isDark ? 'var(--bg-elevated)' : 'white'
+            }
         }))
     ]);
 };
@@ -510,10 +527,20 @@ const LocalModelsInfoModal = ({ isOpen, onClose, onEnable }) => {
 
 // Mini node card for graph
 const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal }) => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const borderColor = isDark ? 'rgba(201, 163, 138, 0.35)' : 'rgba(92, 49, 30, 0.12)';
+    const activeBorderColor = isDark ? 'rgba(201, 163, 138, 0.5)' : '#8e3c2c';
+    const titleColor = isLocal ? '#fffcf8' : (isDark ? '#c9a38a' : '#2b1d14');
+    const subtitleColor = isLocal ? 'rgba(255, 252, 248, 0.8)' : (isDark ? 'rgba(201, 163, 138, 0.8)' : 'rgba(43, 29, 20, 0.6)');
+
     return React.createElement('div', {
         ref: nodeRef,
-        className: `relative rounded-xl border px-3 py-2 transition-all cursor-pointer ${active ? 'border-[#8e3c2c] shadow-lg' : isLocal ? 'border-[#8e3c2c]' : 'border-[rgba(92,49,30,0.12)]'}`,
-        style: { backgroundColor: isLocal ? '#8e3c2c' : 'var(--bg-elevated)', minWidth: '120px' },
+        className: `relative rounded-xl border-2 px-3 py-2 transition-all cursor-pointer ${active ? 'shadow-lg' : ''}`,
+        style: {
+            backgroundColor: isLocal ? '#8e3c2c' : 'var(--bg-elevated)',
+            minWidth: '120px',
+            borderColor: active ? activeBorderColor : (isLocal ? activeBorderColor : borderColor)
+        },
         onClick
     }, [
         React.createElement('div', {
@@ -529,12 +556,12 @@ const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasTo
                 React.createElement('p', {
                     key: 'title',
                     className: 'text-sm font-semibold',
-                    style: { color: isLocal ? '#fffcf8' : '#2b1d14' }
+                    style: { color: titleColor }
                 }, title),
                 subtitle && React.createElement('p', {
                     key: 'subtitle',
                     className: 'text-xs',
-                    style: { color: isLocal ? 'rgba(255, 252, 248, 0.8)' : 'rgba(43, 29, 20, 0.6)' }
+                    style: { color: subtitleColor }
                 }, subtitle)
             ]),
             hasToggle && React.createElement('button', {
@@ -695,15 +722,18 @@ const MeshLensBackground = () => {
     const mouseRef = useRef({ x: -1000, y: -1000, isActive: false });
     const gridDimensionsRef = useRef({ cols: 0, rows: 0 });
 
-    const config = useMemo(() => ({
-        gridSize: 35,
-        gravityStrength: 18,
-        influenceRadius: 100,
-        dampening: 0.95,
-        returnSpeed: 0.05,
-        lineColor: 'rgba(92, 49, 30, 0.15)',
-        maxDisplacement: 20
-    }), []);
+    const config = useMemo(() => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            gridSize: 35,
+            gravityStrength: 18,
+            influenceRadius: 100,
+            dampening: 0.95,
+            returnSpeed: 0.05,
+            lineColor: isDark ? 'rgba(201, 163, 138, 0.35)' : 'rgba(92, 49, 30, 0.15)',
+            maxDisplacement: 20
+        };
+    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -1063,7 +1093,7 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             React.createElement('h1', {
                 key: 'title',
                 className: 'text-xl font-semibold flex items-center gap-2',
-                style: { color: '#5b2a1a' }
+                style: { color: 'var(--text-primary)' }
             }, [
                 React.createElement('img', {
                     key: 'icon',
@@ -1118,14 +1148,14 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                         type: 'button',
                         onClick: () => setLeftPanelMode('settings'),
                         className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === 'settings' ? 'bg-white shadow-sm' : ''}`,
-                        style: { color: leftPanelMode === 'settings' ? '#5b2a1a' : 'rgba(43, 29, 20, 0.6)' }
+                        style: { color: leftPanelMode === 'settings' ? 'var(--text-primary)' : 'rgba(43, 29, 20, 0.6)' }
                     }, 'Settings'),
                     React.createElement('button', {
                         key: 'rules',
                         type: 'button',
                         onClick: () => setLeftPanelMode('rules'),
                         className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === 'rules' ? 'bg-white shadow-sm' : ''}`,
-                        style: { color: leftPanelMode === 'rules' ? '#5b2a1a' : 'rgba(43, 29, 20, 0.6)' }
+                        style: { color: leftPanelMode === 'rules' ? 'var(--text-primary)' : 'rgba(43, 29, 20, 0.6)' }
                     }, 'Rules')
                 ]),
 
@@ -1289,7 +1319,7 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                             onChange: e => setTestPrompt(e.target.value),
                             placeholder: 'Write a complex Python script for data analysis.',
                             className: 'flex-1 px-4 py-3 rounded-xl border text-sm',
-                            style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: 'var(--bg-elevated)', color: '#2b1d14' }
+                            style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }
                         }),
                         React.createElement('button', {
                             key: 'send',

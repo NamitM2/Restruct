@@ -5528,6 +5528,34 @@ body.focus-mode #exitFocusBtn {
     border: 2px solid rgba(201, 163, 138, 0.35);
 }
 
+[data-theme="dark"] .wallet-card {
+    border: 2px solid rgba(201, 163, 138, 0.35);
+}
+
+[data-theme="dark"] .metric-card-billing {
+    border: 2px solid rgba(201, 163, 138, 0.35);
+}
+
+[data-theme="dark"] .balance-amount {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .wallet-header h3 {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .metric-value {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .metric-label {
+    color: rgba(201, 163, 138, 0.8);
+}
+
+[data-theme="dark"] .metric-card-billing:hover {
+    border-color: rgba(201, 163, 138, 0.5);
+}
+
 [data-theme="dark"] .metric-label,
 [data-theme="dark"] .conversation-timestamp,
 [data-theme="dark"] .profile-selector-item-desc,
@@ -5606,10 +5634,69 @@ body.focus-mode #exitFocusBtn {
 
 [data-theme="dark"] .routing-lab .routing-card,
 [data-theme="dark"] .routing-lab .control-panel {
-    border-color: var(--border-subtle);
+    border: 2px solid rgba(201, 163, 138, 0.35);
     box-shadow: 0 20px 45px rgba(216, 162, 133, 0.12);
 }
 
 [data-theme="dark"] .routing-timeline p {
     color: var(--text-secondary);
+}
+
+[data-theme="dark"] .badge {
+    background: rgba(201, 163, 138, 0.15);
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .badge.success {
+    background: rgba(201, 163, 138, 0.2);
+    color: #f5b899;
+}
+
+[data-theme="dark"] .badge.neutral {
+    background: rgba(201, 163, 138, 0.15);
+}
+
+[data-theme="dark"] .mix-bar {
+    background: rgba(201, 163, 138, 0.2);
+}
+
+[data-theme="dark"] .mix-bar span {
+    background: linear-gradient(135deg, #e88873, #f5b899);
+}
+
+[data-theme="dark"] .routing-timeline .time {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .chip {
+    background: rgba(201, 163, 138, 0.12);
+}
+
+[data-theme="dark"] .chip span {
+    color: rgba(201, 163, 138, 0.8);
+}
+
+[data-theme="dark"] .model-mix li strong {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .model-mix li small {
+    color: rgba(201, 163, 138, 0.7);
+}
+
+[data-theme="dark"] .mix-value {
+    color: #c9a38a;
+}
+
+[data-theme="dark"] .router-mode {
+    border: 2px solid rgba(201, 163, 138, 0.35);
+    background: rgba(201, 163, 138, 0.05);
+}
+
+[data-theme="dark"] .router-mode legend {
+    color: rgba(201, 163, 138, 0.8);
+}
+
+[data-theme="dark"] .profile-builder-overlay {
+    background: rgba(28, 24, 22, 0.85);
 }
