@@ -25,6 +25,38 @@
             --ink: #2b1d14;
             --muted: rgba(43, 29, 20, 0.7);
             --white: #fffaf5;
+
+            --slider-bg: rgba(142, 60, 44, 0.04);
+            --slider-border: rgba(142, 60, 44, 0.15);
+            --badge-bg: rgba(201, 132, 84, 0.15);
+            --input-focus-shadow: rgba(142, 60, 44, 0.1);
+            --signin-button-hover-shadow: rgba(142, 60, 44, 0.2);
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --error-text: #991b1b;
+        }
+
+        [data-theme="dark"] {
+            --sand-50: #1c1816;
+            --sand-100: #2a2522;
+            --sand-200: #38322e;
+            --sand-400: #463f3a;
+            --clay-400: #f08a6b;
+            --clay-500: #e57350;
+            --clay-600: #d16a4a;
+            --clay-700: #b85e40;
+            --ink: #f5e9e2;
+            --muted: #a89990;
+            --white: #1c1816;
+
+            --slider-bg: rgba(229, 115, 80, 0.1);
+            --slider-border: rgba(229, 115, 80, 0.2);
+            --badge-bg: rgba(229, 115, 80, 0.1);
+            --input-focus-shadow: rgba(229, 115, 80, 0.2);
+            --signin-button-hover-shadow: rgba(229, 115, 80, 0.25);
+            --error-bg: #2a2522;
+            --error-border: #d16a4a;
+            --error-text: #f5e9e2;
         }
 
         * {
@@ -40,6 +72,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Custom scrollbar styling */
@@ -77,9 +110,9 @@
             width: 100%;
             overflow: hidden;
             position: relative;
-            background: rgba(142, 60, 44, 0.04);
-            border-top: 1px solid rgba(142, 60, 44, 0.15);
-            border-bottom: 1px solid rgba(142, 60, 44, 0.15);
+            background: var(--slider-bg);
+            border-top: 1px solid var(--slider-border);
+            border-bottom: 1px solid var(--slider-border);
             padding: 12px 0;
             display: flex;
             align-items: center;
@@ -128,7 +161,7 @@
             flex-shrink: 0;
             padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(201, 132, 84, 0.15);
+            background: var(--badge-bg);
             transition: opacity 0.2s ease;
         }
 
@@ -254,11 +287,15 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--clay-600);
-            box-shadow: 0 0 0 3px rgba(142, 60, 44, 0.1);
+            box-shadow: 0 0 0 3px var(--input-focus-shadow);
         }
 
         .form-group input::placeholder {
             color: rgba(43, 29, 20, 0.4);
+        }
+
+        [data-theme="dark"] .form-group input::placeholder {
+            color: var(--muted);
         }
 
         .signin-button {
@@ -276,10 +313,14 @@
             margin-top: 8px;
         }
 
+        [data-theme="dark"] .signin-button {
+            color: var(--ink);
+        }
+
         .signin-button:hover {
             background: var(--clay-700);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(142, 60, 44, 0.2);
+            box-shadow: 0 4px 12px var(--signin-button-hover-shadow);
         }
 
         .signin-button:active {
@@ -363,12 +404,12 @@
         }
 
         .error-banner {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
             border-radius: 8px;
             padding: 12px 16px;
             margin-bottom: 20px;
-            color: #991b1b;
+            color: var(--error-text);
             font-size: 14px;
             display: none;
             animation: slideIn 0.3s ease;
@@ -395,7 +436,7 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--clay-200);
+            background: var(--sand-200);
         }
 
         .divider span {
@@ -420,6 +461,10 @@
             justify-content: center;
             gap: 12px;
             transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .google-button {
+            color: var(--ink);
         }
 
         .google-button:hover {
@@ -593,6 +638,8 @@
 
                 <div class="divider"><span>or</span></div>
 
+                <button id="themeToggleBtn" class="primary-button" style="background: var(--sand-200); color: var(--ink); margin-bottom: 24px;">Toggle Theme</button>
+
                 <button type="button" class="google-button" id="googleSignIn">
                     <svg viewBox="0 0 24 24" fill="white">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -618,6 +665,27 @@
     </div>
 
     <script>
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const body = document.body;
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.removeItem('theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Apply theme from local storage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            body.setAttribute('data-theme', savedTheme);
+        }
+    </script>
+    <script>
         // Redirect to index.html - sign-in is now integrated there
         window.location.replace('index.html');
     </script>
@@ -635,7 +703,7 @@
                 influenceRadius: 100,
                 dampening: 0.95,
                 returnSpeed: 0.05,
-                lineColor: 'rgba(142, 60, 44, 0.15)',
+                lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim(),
                 maxDisplacement: 20
             };
 

@@ -92,6 +92,12 @@ function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     updateThemeToggleUI();
+
+    // Refresh marketplace models to update colors
+    const modelSortSelect = document.getElementById('modelSortSelect');
+    if (modelSortSelect && typeof populateMarketplace === 'function') {
+        populateMarketplace(modelSortSelect.value);
+    }
 }
 
 function toggleTheme() {
@@ -248,7 +254,7 @@ function initMeshAnimation() {
         influenceRadius: 100,
         dampening: 0.95,
         returnSpeed: 0.05,
-        lineColor: 'rgba(142, 60, 44, 0.15)',
+        lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim(),
         maxDisplacement: 20
     };
 
@@ -3068,19 +3074,35 @@ function populateMarketplace(sortBy = 'score-desc') {
 
         const capabilitiesHTML = Object.entries(model.capabilities).map(([key, value]) => {
             const percentage = (value / 10) * 100;
-            const barColor = value >= 8 ? '#8e3c2c' : value >= 5 ? '#c98454' : '#d4a574';
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const barColor = isDark
+                ? (value >= 8 ? '#e88873' : value >= 5 ? '#f5b899' : '#f5d4b8')
+                : (value >= 8 ? '#8e3c2c' : value >= 5 ? '#c98454' : '#d4a574');
+            const labelColor = isDark ? '#c9a38a' : '#5b2a1a';
+            const valueColor = isDark ? '#f5b899' : '#8e3c2c';
+            const barBg = isDark ? 'rgba(201, 163, 138, 0.2)' : 'rgba(142, 60, 44, 0.1)';
             return `
                 <div style="margin-bottom: 8px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                        <span style="font-size: 10px; color: #5b2a1a; font-weight: 500;">${key}</span>
-                        <span style="font-size: 10px; color: #8e3c2c; font-weight: 600;">${value.toFixed(1)}</span>
+                        <span style="font-size: 10px; color: ${labelColor}; font-weight: 500;">${key}</span>
+                        <span style="font-size: 10px; color: ${valueColor}; font-weight: 600;">${value.toFixed(1)}</span>
                     </div>
-                    <div style="width: 100%; height: 5px; background: rgba(142, 60, 44, 0.1); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 100%; height: 5px; background: ${barBg}; border-radius: 3px; overflow: hidden;">
                         <div style="width: ${percentage}%; height: 100%; background: ${barColor}; transition: width 0.3s;"></div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const pricingHeadingColor = isDark ? 'rgba(201, 163, 138, 0.7)' : 'rgba(43, 29, 20, 0.5)';
+        const pricingLabelColor = isDark ? 'rgba(201, 163, 138, 0.8)' : 'rgba(92, 49, 30, 0.6)';
+        const pricingValueColor = isDark ? '#f5b899' : '#8e3c2c';
+        const pricingBgColor = isDark ? 'rgba(201, 163, 138, 0.12)' : 'rgba(142, 60, 44, 0.05)';
+        const pricingBorderColor = isDark ? 'rgba(201, 163, 138, 0.2)' : 'rgba(142, 60, 44, 0.1)';
+        const maxTokensColor = isDark ? 'rgba(201, 163, 138, 0.7)' : 'rgba(92, 49, 30, 0.5)';
+        const scoreColor = isDark ? '#f5b899' : '#8e3c2c';
+        const scoreLabelColor = isDark ? 'rgba(201, 163, 138, 0.7)' : 'rgba(92, 49, 30, 0.5)';
 
         return `
             <div style="background: var(--bg-elevated); border-radius: 14px; border: 2px solid var(--border-subtle); padding: 16px; transition: all 0.2s; cursor: default;">
@@ -3090,8 +3112,8 @@ function populateMarketplace(sortBy = 'score-desc') {
                         <img src="${model.logo}" alt="${model.provider}" style="width: 108px; height: 36px; object-fit: contain; transform: scale(${logoScale});" draggable="false">
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center;">
-                        <span style="font-size: 9px; font-weight: 500; color: rgba(92, 49, 30, 0.5); text-transform: uppercase; letter-spacing: 0.05em;">Score</span>
-                        <span style="font-size: 16px; font-weight: 700; color: #8e3c2c;">${avgScore}</span>
+                        <span style="font-size: 9px; font-weight: 500; color: ${scoreLabelColor}; text-transform: uppercase; letter-spacing: 0.05em;">Score</span>
+                        <span style="font-size: 16px; font-weight: 700; color: ${scoreColor};">${avgScore}</span>
                     </div>
                 </div>
 
@@ -3100,20 +3122,20 @@ function populateMarketplace(sortBy = 'score-desc') {
                     ${capabilitiesHTML}
                 </div>
 
-                <div style="padding-top: 12px; border-top: 1px solid rgba(142, 60, 44, 0.1);">
-                    <h4 style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(43, 29, 20, 0.5);">Pricing</h4>
+                <div style="padding-top: 12px; border-top: 1px solid ${pricingBorderColor};">
+                    <h4 style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: ${pricingHeadingColor};">Pricing</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div style="background: rgba(142, 60, 44, 0.05); padding: 8px 10px; border-radius: 8px;">
-                            <p style="margin: 0 0 3px 0; font-size: 10px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">Input</p>
-                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #8e3c2c;">$${model.inputCost.toFixed(2)}/M</p>
+                        <div style="background: ${pricingBgColor}; padding: 8px 10px; border-radius: 8px;">
+                            <p style="margin: 0 0 3px 0; font-size: 10px; color: ${pricingLabelColor}; font-weight: 500;">Input</p>
+                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: ${pricingValueColor};">$${model.inputCost.toFixed(2)}/M</p>
                         </div>
-                        <div style="background: rgba(142, 60, 44, 0.05); padding: 8px 10px; border-radius: 8px;">
-                            <p style="margin: 0 0 3px 0; font-size: 10px; color: rgba(92, 49, 30, 0.6); font-weight: 500;">Output</p>
-                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #8e3c2c;">$${model.outputCost.toFixed(2)}/M</p>
+                        <div style="background: ${pricingBgColor}; padding: 8px 10px; border-radius: 8px;">
+                            <p style="margin: 0 0 3px 0; font-size: 10px; color: ${pricingLabelColor}; font-weight: 500;">Output</p>
+                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: ${pricingValueColor};">$${model.outputCost.toFixed(2)}/M</p>
                         </div>
                     </div>
                     <div style="margin-top: 8px; text-align: center;">
-                        <span style="font-size: 10px; color: rgba(92, 49, 30, 0.5);">Max tokens: ${model.maxTokens}</span>
+                        <span style="font-size: 10px; color: ${maxTokensColor};">Max tokens: ${model.maxTokens}</span>
                     </div>
                 </div>
             </div>

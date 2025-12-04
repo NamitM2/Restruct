@@ -53,52 +53,52 @@
 
 /* ===== DARK THEME ===== */
 [data-theme="dark"] {
-    /* Backgrounds - cool dark grays with warm tint */
-    --bg-primary: #1a1614;
-    --bg-secondary: #242220;
-    --bg-tertiary: #2e2b28;
-    --bg-elevated: #3a3734;
+    /* Backgrounds - Deep, warm, and dark */
+    --bg-primary: #1c1816;
+    --bg-secondary: #2a2522;
+    --bg-tertiary: #38322e;
+    --bg-elevated: #463f3a;
 
-    /* Text - align with sidebar tab accent */
-    --text-primary: #d8a285;
-    --text-secondary: #ede8e2;
-    --text-muted: rgba(237, 232, 226, 0.7);
-    --text-on-dark: #fffef9;
+    /* Text - High contrast and warm */
+    --text-primary: #f5e9e2; /* Light beige, high contrast */
+    --text-secondary: #e0d5ce; /* Slightly darker beige */
+    --text-muted: #a89990; /* Muted beige for less emphasis */
+    --text-on-dark: #fffcf8; /* Same as light theme's bg-primary for on-accent text */
 
-    /* Accents - match sidebar tab color */
-    --accent-primary: #d8a285;
-    --accent-hover: #e8b89f;
-    --accent-bg-subtle: rgba(216, 162, 133, 0.16);
+    /* Accents - Terracotta from Logo */
+    --accent-primary: #a34734; /* Terracotta from logo */
+    --accent-hover: #b85e40; /* Lighter terracotta for hover */
+    --accent-bg-subtle: rgba(163, 71, 52, 0.1);
 
     /* Borders */
-    --border-subtle: rgba(216, 162, 133, 0.25);
-    --border-accent-light: rgba(216, 162, 133, 0.4);
-    --border-accent-dashed: rgba(216, 162, 133, 0.5);
+    --border-subtle: rgba(163, 71, 52, 0.2);
+    --border-accent-light: rgba(163, 71, 52, 0.4);
+    --border-accent-dashed: rgba(163, 71, 52, 0.5);
 
     /* Gradients */
-    --gradient-warm: linear-gradient(135deg, rgba(216, 162, 133, 0.2), rgba(226, 177, 150, 0.3));
-    --gradient-terra: linear-gradient(135deg, #d8a285 0%, #e8b89f 100%);
-    --gradient-clay: linear-gradient(135deg, #e4bfa2 0%, #f0cdb0 100%);
-    --gradient-dark: linear-gradient(135deg, #61564f 0%, #74665e 100%);
+    --gradient-warm: linear-gradient(135deg, rgba(163, 71, 52, 0.1), rgba(184, 94, 64, 0.15));
+    --gradient-terra: linear-gradient(135deg, #a34734 0%, #b85e40 100%);
+    --gradient-clay: linear-gradient(135deg, #b85e40 0%, #d8af7c 100%);
+    --gradient-dark: linear-gradient(135deg, #38322e 0%, #463f3a 100%);
 
     /* Shadows */
-    --shadow-accent: rgba(212, 150, 122, 0.25);
+    --shadow-accent: rgba(163, 71, 52, 0.25);
     --shadow-card: rgba(0, 0, 0, 0.3);
 
-    /* Legacy variables */
-    --sand-50: #242220;
-    --sand-100: #2e2b28;
-    --sand-200: #3a3734;
-    --clay-400: #e8bfa5;
-    --clay-500: #e0b295;
-    --clay-600: #d8a285;
-    --clay-700: #e8b89f;
-    --ink: #d8a285;
-    --white: #1a1614;
+    /* Legacy variables - Mapped to the new palette */
+    --sand-50: #2a2522;
+    --sand-100: #38322e;
+    --sand-200: #463f3a;
+    --clay-400: #b85e40;
+    --clay-500: #a34734;
+    --clay-600: #d16a4a;
+    --clay-700: #b85e40;
+    --ink: #f5e9e2;
+    --white: #1c1816;
 
     /* Mesh and edge colors - brighter for dark mode */
-    --mesh-line-color: rgba(216, 162, 133, 0.5);
-    --edge-idle-color: rgba(216, 162, 133, 0.65);
+    --mesh-line-color: rgba(229, 115, 80, 0.4);
+    --edge-idle-color: rgba(229, 115, 80, 0.6);
 }
 
 /* ============================================
@@ -1419,7 +1419,7 @@ textarea {
 .mix-bar span {
     display: block;
     height: 100%;
-    background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
+    background: linear-gradient(135deg, #a34734, #c4836a);
     border-radius: inherit;
 }
 

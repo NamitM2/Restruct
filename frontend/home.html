@@ -25,6 +25,40 @@
             --ink: #2b1d14;
             --muted: rgba(43, 29, 20, 0.7);
             --white: #fffaf5;
+
+            --slider-bg: rgba(142, 60, 44, 0.04);
+            --slider-border: rgba(142, 60, 44, 0.15);
+            --badge-bg: rgba(201, 132, 84, 0.15);
+            --problem-icon-bg: rgba(142, 60, 44, 0.1);
+            --download-button-hover-bg: rgba(142, 60, 44, 0.05);
+            --feature-visual-inner-bg: linear-gradient(135deg, rgba(201, 132, 84, 0.2), rgba(142, 60, 44, 0.1));
+            --primary-button-hover-shadow: 0 6px 16px rgba(142, 60, 44, 0.3);
+            --mesh-line-color: 'rgba(142, 60, 44, 0.15)';
+            --profile-card-shadow: 0 4px 12px rgba(43, 29, 20, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --sand-50: #1c1816;
+            --sand-100: #2a2522;
+            --sand-200: #38322e;
+            --sand-400: #463f3a;
+            --clay-400: #f08a6b;
+            --clay-500: #e57350;
+            --clay-600: #d16a4a;
+            --clay-700: #b85e40;
+            --ink: #f5e9e2;
+            --muted: #a89990;
+            --white: #1c1816;
+
+            --slider-bg: rgba(229, 115, 80, 0.1);
+            --slider-border: rgba(229, 115, 80, 0.2);
+            --badge-bg: rgba(229, 115, 80, 0.1);
+            --problem-icon-bg: rgba(229, 115, 80, 0.1);
+            --download-button-hover-bg: rgba(229, 115, 80, 0.1);
+            --feature-visual-inner-bg: linear-gradient(135deg, rgba(229, 115, 80, 0.1), rgba(240, 138, 107, 0.15));
+            --primary-button-hover-shadow: 0 6px 16px rgba(229, 115, 80, 0.25);
+            --mesh-line-color: 'rgba(229, 115, 80, 0.4)';
+            --profile-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -39,6 +73,7 @@
             color: var(--ink);
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Custom scrollbar styling */
@@ -121,9 +156,9 @@
             width: 100%;
             overflow: hidden;
             position: relative;
-            background: rgba(142, 60, 44, 0.04);
-            border-top: 1px solid rgba(142, 60, 44, 0.15);
-            border-bottom: 1px solid rgba(142, 60, 44, 0.15);
+            background: var(--slider-bg);
+            border-top: 1px solid var(--slider-border);
+            border-bottom: 1px solid var(--slider-border);
             padding: 12px 0;
             display: flex;
             align-items: center;
@@ -143,7 +178,7 @@
             flex-shrink: 0;
             padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(201, 132, 84, 0.15);
+            background: var(--badge-bg);
             transition: opacity 0.2s ease;
         }
 
@@ -277,10 +312,14 @@
             display: inline-block;
         }
 
+        [data-theme="dark"] .primary-button {
+            color: var(--ink);
+        }
+
         .primary-button:hover {
             background: var(--clay-700);
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(142, 60, 44, 0.3);
+            box-shadow: var(--primary-button-hover-shadow);
         }
 
         .download-section {
@@ -320,7 +359,7 @@
 
         .download-button:hover {
             border-color: var(--clay-600);
-            background: rgba(142, 60, 44, 0.05);
+            background: var(--download-button-hover-bg);
             transform: translateY(-1px);
         }
 
@@ -391,7 +430,7 @@
         .problem-icon {
             width: 48px;
             height: 48px;
-            background: rgba(142, 60, 44, 0.1);
+            background: var(--problem-icon-bg);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -446,6 +485,10 @@
             font-size: 28px;
             font-weight: 700;
             color: var(--white);
+        }
+
+        [data-theme="dark"] .step-number {
+            color: var(--ink);
         }
 
         .step-card h3 {
@@ -513,7 +556,7 @@
         .feature-visual-inner {
             width: 100%;
             height: 200px;
-            background: linear-gradient(135deg, rgba(201, 132, 84, 0.2), rgba(142, 60, 44, 0.1));
+            background: var(--feature-visual-inner-bg);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -541,6 +584,10 @@
             font-size: 14px;
             font-weight: 600;
             color: var(--white);
+        }
+
+        [data-theme="dark"] .routing-node {
+            color: var(--ink);
         }
 
         .routing-node.input { background: var(--clay-600); left: 15%; top: 50%; transform: translateY(-50%); }
@@ -626,7 +673,7 @@
             border: 2px solid var(--sand-200);
             border-radius: 12px;
             padding: 12px;
-            box-shadow: 0 4px 12px rgba(43, 29, 20, 0.1);
+            box-shadow: var(--profile-card-shadow);
             transition: all 0.5s ease;
         }
 
@@ -746,12 +793,24 @@
             padding: 100px 40px;
         }
 
+        [data-theme="dark"] .stats-section {
+            color: var(--ink);
+        }
+
         .stats-section .section-title {
             color: var(--white);
         }
 
+        [data-theme="dark"] .stats-section .section-title {
+            color: var(--ink);
+        }
+
         .stats-section .section-subtitle {
             color: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] .stats-section .section-subtitle {
+            color: var(--muted);
         }
 
         .stats-grid {
@@ -774,9 +833,17 @@
             margin-bottom: 12px;
         }
 
+        [data-theme="dark"] .stat-number {
+            color: var(--ink);
+        }
+
         .stat-label {
             font-size: 18px;
             color: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] .stat-label {
+            color: var(--muted);
         }
 
         /* Final CTA Section */
@@ -884,6 +951,7 @@
 
             <div class="cta-buttons reveal delay-2">
                 <a href="index.html" class="primary-button">Try Restruct</a>
+                <button id="themeToggleBtn" class="primary-button" style="background: var(--sand-200); color: var(--ink);">Toggle Theme</button>
             </div>
 
             <div class="download-section reveal delay-3">
@@ -1186,7 +1254,7 @@
                 influenceRadius: 100,
                 dampening: 0.95,
                 returnSpeed: 0.05,
-                lineColor: 'rgba(142, 60, 44, 0.15)',
+                lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim(),
                 maxDisplacement: 20
             };
 
@@ -1315,6 +1383,27 @@
         // Initialize both mesh edges
         initMesh('meshCanvasLeft', 'meshLeft');
         initMesh('meshCanvasRight', 'meshRight');
+    </script>
+    <script>
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const body = document.body;
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.removeItem('theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Apply theme from local storage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            body.setAttribute('data-theme', savedTheme);
+        }
     </script>
 </body>
 </html>

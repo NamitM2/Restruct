@@ -24,6 +24,38 @@
             --ink: #2b1d14;
             --muted: rgba(43, 29, 20, 0.7);
             --white: #fffaf5;
+
+            --slider-bg: rgba(142, 60, 44, 0.04);
+            --slider-border: rgba(142, 60, 44, 0.15);
+            --badge-bg: rgba(201, 132, 84, 0.15);
+            --input-focus-shadow: rgba(142, 60, 44, 0.1);
+            --signup-button-hover-shadow: rgba(142, 60, 44, 0.2);
+            --error-text: #c94444;
+            --popup-overlay-bg: rgba(43, 29, 20, 0.5);
+            --popup-shadow: 0 20px 60px rgba(43, 29, 20, 0.3);
+        }
+
+        [data-theme="dark"] {
+            --sand-50: #1c1816;
+            --sand-100: #2a2522;
+            --sand-200: #38322e;
+            --sand-400: #463f3a;
+            --clay-400: #f08a6b;
+            --clay-500: #e57350;
+            --clay-600: #d16a4a;
+            --clay-700: #b85e40;
+            --ink: #f5e9e2;
+            --muted: #a89990;
+            --white: #1c1816;
+
+            --slider-bg: rgba(229, 115, 80, 0.1);
+            --slider-border: rgba(229, 115, 80, 0.2);
+            --badge-bg: rgba(229, 115, 80, 0.1);
+            --input-focus-shadow: rgba(229, 115, 80, 0.2);
+            --signup-button-hover-shadow: rgba(229, 115, 80, 0.25);
+            --error-text: #f08a6b;
+            --popup-overlay-bg: rgba(28, 24, 22, 0.7);
+            --popup-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -39,6 +71,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Custom scrollbar styling */
@@ -76,9 +109,9 @@
             width: 100%;
             overflow: hidden;
             position: relative;
-            background: rgba(142, 60, 44, 0.04);
-            border-top: 1px solid rgba(142, 60, 44, 0.15);
-            border-bottom: 1px solid rgba(142, 60, 44, 0.15);
+            background: var(--slider-bg);
+            border-top: 1px solid var(--slider-border);
+            border-bottom: 1px solid var(--slider-border);
             padding: 12px 0;
             display: flex;
             align-items: center;
@@ -133,7 +166,7 @@
             flex-shrink: 0;
             padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(201, 132, 84, 0.15);
+            background: var(--badge-bg);
             transition: opacity 0.2s ease;
         }
 
@@ -250,19 +283,23 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--clay-600);
-            box-shadow: 0 0 0 3px rgba(142, 60, 44, 0.1);
+            box-shadow: 0 0 0 3px var(--input-focus-shadow);
         }
 
         .form-group input::placeholder {
             color: rgba(43, 29, 20, 0.4);
         }
 
+        [data-theme="dark"] .form-group input::placeholder {
+            color: var(--muted);
+        }
+
         .form-group .error {
-            border-color: #c94444;
+            border-color: var(--error-text);
         }
 
         .error-message {
-            color: #c94444;
+            color: var(--error-text);
             font-size: 13px;
             margin-top: 6px;
             display: none;
@@ -283,10 +320,14 @@
             margin-top: 8px;
         }
 
+        [data-theme="dark"] .signup-button {
+            color: var(--ink);
+        }
+
         .signup-button:hover {
             background: var(--clay-700);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(142, 60, 44, 0.2);
+            box-shadow: 0 4px 12px var(--signup-button-hover-shadow);
         }
 
         .signup-button:active {
@@ -316,7 +357,7 @@
         .popup-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(43, 29, 20, 0.5);
+            background: var(--popup-overlay-bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -338,7 +379,7 @@
             max-width: 400px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(43, 29, 20, 0.3);
+            box-shadow: var(--popup-shadow);
             transform: scale(0.8) translateY(20px);
             opacity: 0;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
@@ -375,6 +416,10 @@
             fill: none;
         }
 
+        [data-theme="dark"] .popup-icon svg {
+            stroke: var(--ink);
+        }
+
         .popup-title {
             font-size: 24px;
             font-weight: 700;
@@ -402,6 +447,10 @@
             transition: all 0.2s ease;
         }
 
+        [data-theme="dark"] .popup-button {
+            color: var(--ink);
+        }
+
         .popup-button:hover {
             background: var(--clay-700);
             transform: translateY(-1px);
@@ -419,7 +468,7 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--clay-200);
+            background: var(--sand-200);
         }
 
         .divider span {
@@ -444,6 +493,10 @@
             justify-content: center;
             gap: 12px;
             transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .google-button {
+            color: var(--ink);
         }
 
         .google-button:hover {
@@ -539,6 +592,8 @@
 
                 <div class="divider"><span>or</span></div>
 
+                <button id="themeToggleBtn" class="primary-button" style="background: var(--sand-200); color: var(--ink); margin-bottom: 24px; width: 100%;">Toggle Theme</button>
+
                 <button type="button" class="google-button" id="googleSignUp">
                     <svg viewBox="0 0 24 24" fill="white">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -568,8 +623,211 @@
             <p class="popup-message">Account created successfully! Please check your email to confirm your account, then sign in.</p>
             <button class="popup-button" onclick="window.location.href='signin.html'">Go to Sign In</button>
         </div>
-    </div>
+                lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim() || 'rgba(142, 60, 44, 0.15)',
+                maxDisplacement: 20
+            };
 
+            let points = [];
+            let originalPoints = [];
+            let gridDimensions = { cols: 0, rows: 0 };
+            let mouse = { x: -1000, y: -1000, isActive: false };
+
+            function resizeCanvas() {
+                const rect = container.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                initializeGrid();
+            }
+
+            function initializeGrid() {
+                points = [];
+                originalPoints = [];
+                const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+                const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+                gridDimensions = { cols, rows };
+
+                for (let i = 0; i < cols; i++) {
+                    for (let j = 0; j < rows; j++) {
+                        const x = i * config.gridSize;
+                        const y = j * config.gridSize;
+                        points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
+                        originalPoints.push({ x, y });
+                    }
+                }
+            }
+
+            function updatePoints() {
+                points.forEach((point, index) => {
+                    const original = originalPoints[index];
+                    const dx = mouse.x - point.x;
+                    const dy = mouse.y - point.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (mouse.isActive && distance < config.influenceRadius) {
+                        const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                        const angle = Math.atan2(dy, dx);
+                        point.vx += Math.cos(angle) * force * 0.01;
+                        point.vy += Math.sin(angle) * force * 0.01;
+                    } else {
+                        point.vx += (original.x - point.x) * config.returnSpeed;
+                        point.vy += (original.y - point.y) * config.returnSpeed;
+                    }
+
+                    point.vx *= config.dampening;
+                    point.vy *= config.dampening;
+                    point.x += point.vx;
+                    point.y += point.vy;
+
+                    const dispX = point.x - original.x;
+                    const dispY = point.y - original.y;
+                    const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+
+                    if (displacement > config.maxDisplacement) {
+                        const scale = config.maxDisplacement / displacement;
+                        point.x = original.x + dispX * scale;
+                        point.y = original.y + dispY * scale;
+                    }
+                });
+            }
+
+            function drawMesh() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const { cols, rows } = gridDimensions;
+                if (!cols || !rows || points.length === 0) return;
+
+                ctx.strokeStyle = config.lineColor;
+                ctx.lineWidth = 1;
+
+                for (let j = 0; j < rows; j++) {
+                    ctx.beginPath();
+                    for (let i = 0; i < cols; i++) {
+                        const index = i * rows + j;
+                        const point = points[index];
+                        if (!point) continue;
+                        if (i === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+
+                for (let i = 0; i < cols; i++) {
+                    ctx.beginPath();
+                    for (let j = 0; j < rows; j++) {
+                        const index = i * rows + j;
+                        const point = points[index];
+                        if (!point) continue;
+                        if (j === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            function animate() {
+                updatePoints();
+                drawMesh();
+                requestAnimationFrame(animate);
+            }
+
+            const parentElement = container.parentElement;
+
+            window.addEventListener('resize', resizeCanvas);
+            if (parentElement) {
+                parentElement.addEventListener('mousemove', (e) => {
+                    const rect = container.getBoundingClientRect();
+                    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
+                });
+                parentElement.addEventListener('mouseleave', () => {
+                    mouse.isActive = false;
+                });
+            }
+
+            setTimeout(() => {
+                resizeCanvas();
+                requestAnimationFrame(animate);
+            }, 50);
+        })();
+
+        // Form submit handler
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordError = document.getElementById('passwordError');
+            const confirmInput = document.getElementById('confirmPassword');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            // Reset error state
+            passwordError.style.display = 'none';
+            confirmInput.classList.remove('error');
+
+            // Check password match
+            if (password !== confirmPassword) {
+                passwordError.style.display = 'block';
+                confirmInput.classList.add('error');
+                return;
+            }
+
+            // Check password length
+            if (password.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters';
+                passwordError.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+
+            const response = await fetch('/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                if (data.session && data.session.access_token) {
+                    localStorage.setItem('access_token', data.session.access_token);
+                    localStorage.setItem('refresh_token', data.session.refresh_token);
+                    localStorage.setItem('user_id', data.user.id);
+                    localStorage.setItem('user_email', data.user.email);
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('emailPopup').classList.add('active');
+                }
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                alert(data.detail || 'Sign up failed. Email may already be registered.');
+            }
+        });
+    </script>
+    <script>
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const body = document.body;
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.removeItem('theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Apply theme from local storage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            body.setAttribute('data-theme', savedTheme);
+        }
+    </script>
     <script>
         // Mesh Animation
         (function() {
