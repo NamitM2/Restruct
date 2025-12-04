@@ -254,7 +254,7 @@ function initMeshAnimation() {
         influenceRadius: 100,
         dampening: 0.95,
         returnSpeed: 0.05,
-        lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim(),
+        lineColor: 'rgba(92, 49, 30, 0.15)',
         maxDisplacement: 20
     };
 
