@@ -355,7 +355,38 @@
                                 <div id="communityProfilesGrid" class="community-profiles-grid"></div>
                             </div>
                         </div>
-                    </div>
+                        <!-- Profile Stats Modal -->
+                        <div id="profileStatsModal" class="profile-stats-modal">
+                            <div class="profile-stats-dialog">
+                                <div class="profile-stats-header">
+                                    <div>
+                                        <p class="label" style="margin: 0; opacity: 0.7;">Profile stats</p>
+                                        <h3 id="statsProfileName" style="margin: 4px 0 0 0; font-size: 18px;">Profile</h3>
+                                    </div>
+                                    <button id="closeProfileStats" class="profile-stats-close" aria-label="Close stats">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                                <div class="profile-stats-grid">
+                                    <div class="stats-chip">
+                                        <span class="community-metric-label">Tokens routed</span>
+                                        <span id="statsTokensRouted" class="community-metric-value">0</span>
+                                    </div>
+                                    <div class="stats-chip">
+                                        <span class="community-metric-label">Tokens generated</span>
+                                        <span id="statsTokensGenerated" class="community-metric-value">0</span>
+                                    </div>
+                                    <div class="stats-chip">
+                                        <span class="community-metric-label">Total spend</span>
+                                        <span id="statsSpend" class="community-metric-value">$0</span>
+                                    </div>
+                                    <div class="stats-chip">
+                                        <span class="community-metric-label">Global tokens routed</span>
+                                        <span id="statsGlobalRouted" class="community-metric-value">N/A</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

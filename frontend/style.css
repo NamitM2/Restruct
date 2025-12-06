@@ -1674,18 +1674,18 @@ textarea {
 .community-profiles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
+    gap: 20px;
 }
 
 .community-profile-card {
-    background: var(--bg-elevated);
+    background: linear-gradient(180deg, rgba(142, 60, 44, 0.06) 0%, rgba(142, 60, 44, 0.02) 100%);
     border: 2px solid var(--border-subtle);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 18px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    box-shadow: 0 6px 18px var(--shadow-card);
+    gap: 14px;
+    box-shadow: 0 8px 22px var(--shadow-card);
     transition: all 0.2s ease;
     position: relative;
 }
@@ -1696,7 +1696,13 @@ textarea {
     box-shadow: 0 10px 28px rgba(142, 60, 44, 0.15);
 }
 
-.community-profile-header {
+.community-card-top {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.community-title-row {
     display: flex;
     justify-content: space-between;
     gap: 12px;
@@ -1704,7 +1710,7 @@ textarea {
 }
 
 .community-profile-title {
-    margin: 6px 0 4px 0;
+    margin: 0;
     font-size: 16px;
     color: var(--text-primary);
     line-height: 1.2;
@@ -1719,11 +1725,15 @@ textarea {
 .community-profile-metrics {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
+}
+
+.community-metric-chip {
     padding: 12px;
-    border: 1px dashed var(--border-accent-dashed);
     border-radius: 12px;
-    background: var(--accent-bg-subtle);
+    border: 1px solid var(--border-accent-light);
+    background: var(--bg-elevated);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .community-metric-label {
@@ -1738,18 +1748,6 @@ textarea {
 .community-metric-value {
     font-weight: 700;
     color: var(--text-primary);
-}
-
-.profile-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(142, 60, 44, 0.08);
-    color: var(--clay-700);
-    font-size: 12px;
-    font-weight: 600;
 }
 
 .community-add-btn {
@@ -1781,6 +1779,99 @@ textarea {
 .community-add-btn .add-icon {
     font-size: 16px;
     line-height: 1;
+}
+
+.profile-publish-btn {
+    border: 1px solid var(--border-accent-light);
+    background: var(--bg-elevated);
+    color: var(--accent-primary);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-publish-btn:hover {
+    border-color: var(--accent-primary);
+    background: rgba(142, 60, 44, 0.08);
+}
+
+.profile-publish-btn.published {
+    background: var(--accent-primary);
+    color: var(--text-on-dark);
+    border-color: var(--accent-primary);
+}
+
+.profile-stats-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    backdrop-filter: blur(4px);
+}
+
+.profile-stats-modal.active {
+    display: flex;
+    animation: fadeIn 0.2s ease;
+}
+
+.profile-stats-dialog {
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    padding: 20px;
+    width: min(480px, 90vw);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.25s ease;
+}
+
+.profile-stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.profile-stats-close {
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.profile-stats-close:hover {
+    background: rgba(142, 60, 44, 0.08);
+}
+
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.stats-chip {
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-accent-light);
+    background: var(--bg-elevated);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .profile-description {
