@@ -302,15 +302,8 @@
 
                 <!-- Routing Controls Tab -->
                 <section id="routingControlsTab" class="tab-panel" aria-labelledby="Routing Controls">
-                    <div class="routing-lab">
-                        <div class="panel-header">
-                            <div>
-                                <h2>Routing controls</h2>
-                                <p>Configure how Restruct selects models for each prompt.</p>
-                            </div>
-                            <button class="ghost-button" type="button">Export routing log</button>
-                        </div>
-
+                    <div class="marketplace-tab-body">
+                        <div class="routing-lab">
                         <!-- Profile Builder CTA -->
                         <div
                             style="background: linear-gradient(135deg, rgba(201, 132, 84, 0.08), rgba(181, 103, 71, 0.12)); border: 2px solid var(--border-accent-light); border-radius: 24px; padding: 24px 40px 20px 40px; margin-bottom: 24px; text-align: center;">
@@ -327,62 +320,15 @@
                             </button>
                         </div>
 
-                        <div style="max-width: 1200px; margin: 0 auto;">
+                        <div style="width: 100%; margin: 0;">
                             <h3
                                 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(43, 29, 20, 0.5); margin-bottom: 20px;">
                                 Your Profiles</h3>
 
                             <div style="max-height: 450px; overflow-y: auto; padding-right: 8px;">
-                                <div id="profilesGrid" style="display: flex; flex-wrap: wrap; gap: 16px;">
-                                    <div class="profile-card active" data-profile="default" data-profile-label="Default"
-                                        style="width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--accent-primary); padding: 18px;">
-                                        <h4
-                                            style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                                            Default</h4>
-                                        <div style="display: flex; gap: 8px;">
-                                            <button class="profile-stats-btn" title="View statistics"
-                                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                                <img src="assets/stats-icon.png" alt="Stats"
-                                                    style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
-                                                Stats
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="profile-card" data-profile="cost-optimized"
-                                        data-profile-label="Cost Optimized"
-                                        style="width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;">
-                                        <h4
-                                            style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                                            Cost Optimized</h4>
-                                        <div style="display: flex; gap: 8px;">
-                                            <button class="profile-stats-btn" title="View statistics"
-                                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                                <img src="assets/stats-icon.png" alt="Stats"
-                                                    style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
-                                                Stats
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="profile-card" data-profile="performance-first"
-                                        data-profile-label="Performance First"
-                                        style="width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;">
-                                        <h4
-                                            style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                                            Performance First</h4>
-                                        <div style="display: flex; gap: 8px;">
-                                            <button class="profile-stats-btn" title="View statistics"
-                                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                                                <img src="assets/stats-icon.png" alt="Stats"
-                                                    style="width: 12px; height: 12px; opacity: 0.7;" draggable="false">
-                                                Stats
-                                            </button>
-                                        </div>
-                                    </div>
-
+                                <div id="profilesGrid" class="profiles-grid">
                                     <div id="createNewProfileCard"
-                                        style="width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px dashed var(--border-accent-dashed); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; min-height: 100px;">
+                                        style="background: var(--bg-elevated); border-radius: 18px; border: 2px dashed var(--border-accent-dashed); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; min-height: 100px;">
                                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                             style="margin-bottom: 12px; opacity: 0.6;">
@@ -394,7 +340,22 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="community-profiles-wrapper">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                                    <h3
+                                        style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(43, 29, 20, 0.5); margin: 0;">
+                                        Community Profiles</h3>
+                                    <div class="community-search">
+                                        <input id="communityProfilesSearch" type="text" placeholder="Search community profiles..."
+                                            aria-label="Search community profiles">
+                                    </div>
+                                </div>
+                                <p style="margin: 12px 0 16px 0; color: var(--text-muted); font-size: 14px;">Discover user-made routing presets. Add any to your profiles or open them in the lab.</p>
+                                <div id="communityProfilesGrid" class="community-profiles-grid"></div>
+                            </div>
                         </div>
+                    </div>
                     </div>
                 </section>
 

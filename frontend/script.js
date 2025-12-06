@@ -574,6 +574,8 @@ const modelSelect = document.getElementById('modelSelect');
 
 // Profile controls
 const profilesGrid = document.getElementById('profilesGrid');
+const communityProfilesGrid = document.getElementById('communityProfilesGrid');
+const communityProfilesSearch = document.getElementById('communityProfilesSearch');
 const newProfileBtn = document.getElementById('newProfileBtn');
 const createNewProfileCard = document.getElementById('createNewProfileCard');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -690,10 +692,11 @@ function wireTabs() {
 
 // Profile management
 const profiles = {
-    'default': { latency: 'medium', cost: 'medium', quality: 'medium', description: 'Balanced' },
-    'cost-optimized': { latency: 'low', cost: 'high', quality: 'low', description: 'Minimize costs' },
-    'performance-first': { latency: 'high', cost: 'low', quality: 'high', description: 'Best quality responses' }
+    'default': { name: 'Default', latency: 'medium', cost: 'medium', quality: 'medium', description: 'Balanced' },
+    'cost-optimized': { name: 'Cost Optimized', latency: 'low', cost: 'high', quality: 'low', description: 'Minimize costs' },
+    'performance-first': { name: 'Performance First', latency: 'high', cost: 'low', quality: 'high', description: 'Best quality responses' }
 };
+const baseProfileOrder = ['default', 'cost-optimized', 'performance-first'];
 
 function updatePriorityDisplays() {
     if (latencyValue) latencyValue.textContent = capitalizeFirst(latencyPriority.value);
@@ -715,7 +718,7 @@ function loadProfileToModal(profileName) {
     qualityPriority.value = profile.quality;
     updatePriorityDisplays();
 
-    const displayName = profileName.split('-').map(capitalizeFirst).join(' ');
+    const displayName = profile.name || profileName.split('-').map(capitalizeFirst).join(' ');
     modalProfileName.value = displayName;
 
     const isDefaultProfile = ['default', 'cost-optimized', 'performance-first'].includes(profileName);
@@ -756,6 +759,12 @@ function updateProfileBadges(card, profile) {
     badges.innerHTML = '';
 }
 
+function getProfileDisplayName(profileName) {
+    const profile = profiles[profileName];
+    if (profile?.name) return profile.name;
+    return profileName.split('-').map(capitalizeFirst).join(' ');
+}
+
 function setActiveProfile(profileName) {
     document.querySelectorAll('.profile-card').forEach(card => {
         const isActive = card.dataset.profile === profileName;
@@ -772,34 +781,117 @@ function setActiveProfile(profileName) {
     const profileIndicator = document.getElementById('currentProfileName');
     if (profileIndicator) {
         const activeCard = document.querySelector(`.profile-card[data-profile="${profileName}"]`);
-        const displayName = activeCard ? activeCard.dataset.profileLabel : profileName;
+        const displayName = activeCard ? activeCard.dataset.profileLabel : getProfileDisplayName(profileName);
         profileIndicator.textContent = displayName;
     }
+}
+
+function openProfileInBuilder(profileName) {
+    const profileData = profiles[profileName] || {};
+    setActiveProfile(profileName);
+    if (window.profileBuilderOverlay?.open) {
+        window.profileBuilderOverlay.open({
+            profile: {
+                name: profileData.name || getProfileDisplayName(profileName),
+                description: profileData.description,
+                graph_state: profileData.graph_state,
+                user_id: profileData.user_id
+            }
+        });
+    }
+}
+
+function buildProfileCard(slug, displayName, profileData) {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.dataset.profile = slug;
+    card.dataset.profileLabel = displayName;
+    card.style.cssText = 'background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;';
+
+    const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
+    const routeButtonHtml = `
+        <button class="profile-route-btn" title="Edit in routing lab" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit
+        </button>
+    `;
+    const statsButtonHtml = `
+        <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+            Stats
+        </button>
+    `;
+    const deleteButtonHtml = !isDefault ? `
+        <button class="profile-delete-btn" title="Delete profile" aria-label="Delete profile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        </button>
+    ` : '';
+
+    card.innerHTML = `
+        <div class="profile-card-header">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
+            ${deleteButtonHtml}
+        </div>
+        <div style="display: flex; gap: 8px;">
+            ${routeButtonHtml}
+            ${statsButtonHtml}
+        </div>
+    `;
+    return card;
+}
+
+function renderYourProfiles() {
+    if (!profilesGrid) return;
+    const createCard = createNewProfileCard;
+    if (createCard && createCard.parentElement === profilesGrid) {
+        createCard.remove();
+    }
+
+    profilesGrid.innerHTML = '';
+    const orderedProfiles = [
+        ...baseProfileOrder.filter(slug => profiles[slug]),
+        ...Object.keys(profiles).filter(slug => !baseProfileOrder.includes(slug))
+    ];
+
+    orderedProfiles.forEach(slug => {
+        const card = buildProfileCard(slug, getProfileDisplayName(slug), profiles[slug]);
+        profilesGrid.appendChild(card);
+    });
+
+    if (createCard) {
+        profilesGrid.appendChild(createCard);
+    }
+
+    if (orderedProfiles.length && (!currentProfileName || !profiles[currentProfileName])) {
+        currentProfileName = orderedProfiles[0];
+    }
+    if (currentProfileName) {
+        setActiveProfile(currentProfileName);
+    }
+}
+
+if (profilesGrid) {
+    renderYourProfiles();
 }
 
 // Profile card clicks
 if (profilesGrid) {
     profilesGrid.addEventListener('click', (e) => {
-        const editBtn = e.target.closest('.profile-edit-btn, .profile-action-btn');
-        if (editBtn) {
+        const routeBtn = e.target.closest('.profile-route-btn');
+        if (routeBtn) {
             e.stopPropagation();
-            const card = editBtn.closest('.profile-card');
+            const card = routeBtn.closest('.profile-card');
             if (card) {
                 const profileName = card.dataset.profile;
-                const profileData = profiles[profileName];
-                setActiveProfile(profileName);
-                if (profileData?.graph_state) {
-                    window.profileBuilderOverlay?.open({
-                        profile: {
-                            name: profileData.name || card.dataset.profileLabel || profileName,
-                            description: profileData.description,
-                            graph_state: profileData.graph_state,
-                            user_id: profileData.user_id
-                        }
-                    });
-                } else {
-                    openProfileModal(profileName);
-                }
+                openProfileInBuilder(profileName);
             }
             return;
         }
@@ -882,56 +974,72 @@ function derivePriorityLevels(graphState) {
     return levels;
 }
 
-function appendProfileCardToGrid(card) {
-    if (!profilesGrid) return;
-    if (createNewProfileCard && profilesGrid.contains(createNewProfileCard)) {
-        profilesGrid.insertBefore(card, createNewProfileCard);
-    } else {
-        profilesGrid.appendChild(card);
-    }
+function generateMockCommunityProfiles() {
+    const names = [
+        'Ultra Cost Saver', 'Code Generator Pro', 'Speed Demon', 'Research Assistant', 'Creative Writer',
+        'Data Cruncher', 'Enterprise Guard', 'Context King', 'Prompt Whisperer', 'Latency Slayer',
+        'Polyglot Translator', 'Doc Summarizer', 'Productivity Booster', 'Secure Chat', 'Brainstorm Buddy',
+        'Support Sidekick', 'Ops Automator', 'QA Reviewer', 'Email Polisher', 'API Tutor',
+        'Visionary', 'Audio Sage', 'Synthetic QA', 'Notebook Ninja', 'Benchmark Beast'
+    ];
+    const publishers = [
+        'Alex Rivera', 'Sarah Chen', 'Priya Nair', 'Liam O\'Connor', 'Maya Patel',
+        'Jonas Keller', 'Mina Park', 'Diego Alvarez', 'Casey Jordan', 'Samira Rahman'
+    ];
+
+    const generated = Array.from({ length: 100 }, (_, i) => {
+        const name = `${names[i % names.length]} v${Math.floor(i / names.length) + 1}`;
+        const tokensRouted = Math.max(15000, 195000 - i * 1200);
+        const tokensGenerated = Math.round(tokensRouted * (1.05 + (i % 7) * 0.03));
+        const publisher = i % 6 === 0 ? 'Anonymous' : publishers[i % publishers.length];
+        const slug = `${slugifyProfileName(name)}-${i}`;
+        return {
+            id: slug,
+            name,
+            publisher,
+            tokensRouted,
+            tokensGenerated
+        };
+    });
+
+    return generated.sort((a, b) => b.tokensRouted - a.tokensRouted);
 }
 
-function buildProfileCard(slug, displayName, profileData) {
-    const card = document.createElement('div');
-    card.className = 'profile-card';
-    card.dataset.profile = slug;
-    card.dataset.profileLabel = displayName;
-    card.style.cssText = 'width: 260px; background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;';
+const communityProfiles = generateMockCommunityProfiles();
 
-    const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
-    const editButtonHtml = !isDefault ? `
-        <button class="profile-action-btn" title="Edit profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Edit
-        </button>
-    ` : '';
-    const deleteButtonHtml = !isDefault ? `
-        <button class="profile-delete-btn" title="Delete profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-            Delete
-        </button>
-    ` : '';
+function renderCommunityProfiles(list = communityProfiles) {
+    if (!communityProfilesGrid) return;
+    communityProfilesGrid.innerHTML = '';
 
-    card.innerHTML = `
-        <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
-        <div style="display: flex; gap: 8px;">
-            ${editButtonHtml}
-            <button class="profile-stats-btn" title="View statistics" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-                <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
-                Stats
-            </button>
-            ${deleteButtonHtml}
-        </div>
-    `;
-    return card;
+    list.forEach(profile => {
+        const added = Boolean(profiles[profile.id]);
+        const card = document.createElement('div');
+        card.className = 'community-profile-card';
+        card.dataset.slug = profile.id;
+        card.innerHTML = `
+            <div class="community-profile-header">
+                <div>
+                    <div class="profile-tag">User made</div>
+                    <h4 class="community-profile-title">${profile.name}</h4>
+                    <p class="community-profile-publisher">Published by: ${profile.publisher}</p>
+                </div>
+                <button class="community-add-btn ${added ? 'added' : ''}" data-slug="${profile.id}" title="${added ? 'Added' : 'Add to your profiles'}">
+                    ${added ? '<span class="add-icon">✔</span>' : '<span class="add-icon">＋</span>'}
+                </button>
+            </div>
+            <div class="community-profile-metrics">
+                <div>
+                    <span class="community-metric-label">Tokens routed</span>
+                    <span class="community-metric-value">${formatNumber(profile.tokensRouted)}</span>
+                </div>
+                <div>
+                    <span class="community-metric-label">Tokens generated</span>
+                    <span class="community-metric-value">${formatNumber(profile.tokensGenerated)}</span>
+                </div>
+            </div>
+        `;
+        communityProfilesGrid.appendChild(card);
+    });
 }
 
 if (newProfileBtn) {
@@ -943,6 +1051,44 @@ if (newProfileBtn) {
 if (createNewProfileCard) {
     createNewProfileCard.addEventListener('click', () => {
         window.profileBuilderOverlay?.open();
+    });
+}
+
+if (communityProfilesGrid) {
+    renderCommunityProfiles();
+    communityProfilesGrid.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('.community-add-btn');
+        if (!addBtn) return;
+        const slug = addBtn.dataset.slug;
+        const communityProfile = communityProfiles.find(p => p.id === slug);
+        if (!communityProfile) return;
+
+        if (!profiles[slug]) {
+            profiles[slug] = {
+                name: communityProfile.name,
+                latency: 'medium',
+                cost: 'medium',
+                quality: 'medium',
+                description: `Community profile by ${communityProfile.publisher}`
+            };
+            renderYourProfiles();
+        }
+
+        addBtn.classList.add('added');
+        addBtn.innerHTML = '<span class="add-icon">✔</span>';
+    });
+}
+
+if (communityProfilesSearch) {
+    communityProfilesSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = communityProfiles.filter(profile => {
+            return (
+                profile.name.toLowerCase().includes(query) ||
+                profile.publisher.toLowerCase().includes(query)
+            );
+        });
+        renderCommunityProfiles(filtered);
     });
 }
 
@@ -968,8 +1114,7 @@ window.addEventListener('routing-profile:created', (event) => {
         existing.remove();
     }
 
-    const card = buildProfileCard(slug, displayName, profiles[slug]);
-    appendProfileCardToGrid(card);
+    renderYourProfiles();
     setActiveProfile(slug);
 });
 
@@ -1044,6 +1189,15 @@ if (confirmDeleteBtn) {
 
         if (currentProfileName === profileName) {
             setActiveProfile('default');
+        }
+
+        // Reset community card button if it came from community list
+        if (communityProfilesGrid) {
+            const communityButton = communityProfilesGrid.querySelector(`.community-add-btn[data-slug="${profileName}"]`);
+            if (communityButton) {
+                communityButton.classList.remove('added');
+                communityButton.innerHTML = '<span class="add-icon">＋</span>';
+            }
         }
 
         closeDeleteModal();
