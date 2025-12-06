@@ -576,6 +576,13 @@ const modelSelect = document.getElementById('modelSelect');
 const profilesGrid = document.getElementById('profilesGrid');
 const communityProfilesGrid = document.getElementById('communityProfilesGrid');
 const communityProfilesSearch = document.getElementById('communityProfilesSearch');
+const profileStatsModal = document.getElementById('profileStatsModal');
+const closeProfileStats = document.getElementById('closeProfileStats');
+const statsProfileName = document.getElementById('statsProfileName');
+const statsTokensRouted = document.getElementById('statsTokensRouted');
+const statsTokensGenerated = document.getElementById('statsTokensGenerated');
+const statsSpend = document.getElementById('statsSpend');
+const statsGlobalRouted = document.getElementById('statsGlobalRouted');
 const newProfileBtn = document.getElementById('newProfileBtn');
 const createNewProfileCard = document.getElementById('createNewProfileCard');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -697,6 +704,11 @@ const profiles = {
     'performance-first': { name: 'Performance First', latency: 'high', cost: 'low', quality: 'high', description: 'Best quality responses' }
 };
 const baseProfileOrder = ['default', 'cost-optimized', 'performance-first'];
+const profileStats = {
+    'default': { tokensRouted: 125000, tokensGenerated: 98000, spend: 235.12, globalRouted: 480000, published: false },
+    'cost-optimized': { tokensRouted: 89000, tokensGenerated: 76000, spend: 142.55, globalRouted: null, published: false },
+    'performance-first': { tokensRouted: 142000, tokensGenerated: 130000, spend: 412.44, globalRouted: 620000, published: true }
+};
 
 function updatePriorityDisplays() {
     if (latencyValue) latencyValue.textContent = capitalizeFirst(latencyPriority.value);
@@ -809,6 +821,12 @@ function buildProfileCard(slug, displayName, profileData) {
     card.style.cssText = 'background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;';
 
     const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
+    const isPublished = profileStats[slug]?.published;
+    const publishButtonHtml = `
+        <button class="profile-publish-btn ${isPublished ? 'published' : ''}" data-profile="${slug}" title="${isPublished ? 'Published' : 'Publish'}" aria-label="Publish profile">
+            ${isPublished ? 'Published' : 'Publish'}
+        </button>
+    `;
     const routeButtonHtml = `
         <button class="profile-route-btn" title="Edit in routing lab" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -837,6 +855,7 @@ function buildProfileCard(slug, displayName, profileData) {
 
     card.innerHTML = `
         <div class="profile-card-header">
+            ${publishButtonHtml}
             <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
             ${deleteButtonHtml}
         </div>
@@ -902,7 +921,7 @@ if (profilesGrid) {
             const card = statsBtn.closest('.profile-card');
             if (card) {
                 const profileName = card.dataset.profile;
-                console.log('Stats for profile:', profileName);
+                openProfileStatsModal(profileName);
             }
             return;
         }
@@ -921,6 +940,16 @@ if (profilesGrid) {
 
         const card = e.target.closest('.profile-card');
         if (!card) return;
+
+        const publishBtn = e.target.closest('.profile-publish-btn');
+        if (publishBtn) {
+            const profileName = publishBtn.dataset.profile;
+            profileStats[profileName] = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null };
+            profileStats[profileName].published = true;
+            publishBtn.classList.add('published');
+            publishBtn.textContent = 'Published';
+            return;
+        }
 
         const profileName = card.dataset.profile;
         setActiveProfile(profileName);
@@ -1017,22 +1046,21 @@ function renderCommunityProfiles(list = communityProfiles) {
         card.className = 'community-profile-card';
         card.dataset.slug = profile.id;
         card.innerHTML = `
-            <div class="community-profile-header">
-                <div>
-                    <div class="profile-tag">User made</div>
+            <div class="community-card-top">
+                <div class="community-title-row">
                     <h4 class="community-profile-title">${profile.name}</h4>
-                    <p class="community-profile-publisher">Published by: ${profile.publisher}</p>
+                    <button class="community-add-btn ${added ? 'added' : ''}" data-slug="${profile.id}" title="${added ? 'Added' : 'Add to your profiles'}">
+                        ${added ? '<span class="add-icon">✔</span>' : '<span class="add-icon">＋</span>'}
+                    </button>
                 </div>
-                <button class="community-add-btn ${added ? 'added' : ''}" data-slug="${profile.id}" title="${added ? 'Added' : 'Add to your profiles'}">
-                    ${added ? '<span class="add-icon">✔</span>' : '<span class="add-icon">＋</span>'}
-                </button>
+                <p class="community-profile-publisher">${profile.publisher === 'Anonymous' ? 'Anonymous' : `By ${profile.publisher}`}</p>
             </div>
             <div class="community-profile-metrics">
-                <div>
+                <div class="community-metric-chip">
                     <span class="community-metric-label">Tokens routed</span>
                     <span class="community-metric-value">${formatNumber(profile.tokensRouted)}</span>
                 </div>
-                <div>
+                <div class="community-metric-chip">
                     <span class="community-metric-label">Tokens generated</span>
                     <span class="community-metric-value">${formatNumber(profile.tokensGenerated)}</span>
                 </div>
@@ -1071,6 +1099,13 @@ if (communityProfilesGrid) {
                 quality: 'medium',
                 description: `Community profile by ${communityProfile.publisher}`
             };
+            profileStats[slug] = {
+                tokensRouted: communityProfile.tokensRouted,
+                tokensGenerated: communityProfile.tokensGenerated,
+                spend: Math.max(25, Math.round(communityProfile.tokensRouted / 1000) / 2),
+                globalRouted: null,
+                published: false
+            };
             renderYourProfiles();
         }
 
@@ -1089,6 +1124,32 @@ if (communityProfilesSearch) {
             );
         });
         renderCommunityProfiles(filtered);
+    });
+}
+
+function openProfileStatsModal(profileName) {
+    const profile = profiles[profileName];
+    const stats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+    if (statsProfileName) statsProfileName.textContent = profile?.name || getProfileDisplayName(profileName);
+    if (statsTokensRouted) statsTokensRouted.textContent = formatNumber(stats.tokensRouted || 0);
+    if (statsTokensGenerated) statsTokensGenerated.textContent = formatNumber(stats.tokensGenerated || 0);
+    if (statsSpend) statsSpend.textContent = `$${(stats.spend || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (statsGlobalRouted) statsGlobalRouted.textContent = stats.published && stats.globalRouted ? formatNumber(stats.globalRouted) : 'N/A';
+
+    if (profileStatsModal) profileStatsModal.classList.add('active');
+}
+
+function closeProfileStatsModal() {
+    if (profileStatsModal) profileStatsModal.classList.remove('active');
+}
+
+if (closeProfileStats) {
+    closeProfileStats.addEventListener('click', closeProfileStatsModal);
+}
+
+if (profileStatsModal) {
+    profileStatsModal.addEventListener('click', (e) => {
+        if (e.target === profileStatsModal) closeProfileStatsModal();
     });
 }
 
@@ -1181,6 +1242,7 @@ if (confirmDeleteBtn) {
 
         const profileName = profileToDelete.name;
         delete profiles[profileName];
+        delete profileStats[profileName];
 
         const card = document.querySelector(`[data-profile="${profileName}"]`);
         if (card) {
