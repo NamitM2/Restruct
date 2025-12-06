@@ -216,41 +216,35 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                 className: 'flex-1 relative overflow-hidden'
             }, [
                 React.createElement(MeshLensBackground, { key: 'mesh' }),
-                React.createElement('div', {
-                    key: 'test',
-                    className: 'p-4 border-b',
-                    style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
+                React.createElement('svg', {
+                    key: 'edges',
+                    className: 'agentic-edges pointer-events-none',
+                    viewBox: '0 0 100 40',
+                    preserveAspectRatio: 'none',
+                    style: { position: 'absolute', inset: 0 }
                 }, [
-                    React.createElement('h3', {
-                        key: 'title',
-                        className: 'text-xs font-semibold uppercase tracking-wider mb-3',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Test Flow'),
-                    React.createElement('div', {
-                        key: 'prompt-label',
-                        className: 'text-xs mb-2',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Type a prompt...'),
-                    React.createElement('div', {
-                        key: 'input-container',
-                        className: 'flex gap-2'
-                    }, [
-                        React.createElement('input', {
-                            key: 'input',
-                            type: 'text',
-                            value: testPrompt,
-                            onChange: e => setTestPrompt(e.target.value),
-                            placeholder: 'Write a function to parse logs...',
-                            className: 'flex-1 px-4 py-3 rounded-xl border text-sm',
-                            style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }
-                        }),
-                        React.createElement('button', {
-                            key: 'send',
-                            type: 'button',
-                            className: 'w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90',
-                            style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8', fontSize: '1.2rem', fontWeight: '700' }
-                        }, 'ƒ+`')
-                    ])
+                    React.createElement('polyline', {
+                        key: 'edge-line',
+                        points: '10,20 40,20 60,20 90,20',
+                        fill: 'none',
+                        stroke: '#c4836a',
+                        strokeWidth: 2,
+                        strokeLinecap: 'round',
+                        strokeDasharray: '6 6',
+                        strokeOpacity: 0.45,
+                        vectorEffect: 'non-scaling-stroke'
+                    }),
+                    React.createElement('polyline', {
+                        key: 'loop',
+                        points: '88,20 88,10 12,10 12,20',
+                        fill: 'none',
+                        stroke: '#c4836a',
+                        strokeWidth: 1.5,
+                        strokeLinecap: 'round',
+                        strokeDasharray: '5 5',
+                        strokeOpacity: 0.35,
+                        vectorEffect: 'non-scaling-stroke'
+                    })
                 ]),
                 React.createElement('div', {
                     key: 'flow',
