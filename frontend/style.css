@@ -5949,3 +5949,57 @@ body.focus-mode #exitFocusBtn {
 [data-theme="dark"] .profile-builder-overlay {
     background: rgba(28, 24, 22, 0.85);
 }
+
+/* Code Flow builder */
+.agentic-model {
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: grab;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+}
+
+.agentic-model:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.agentic-nodes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.agentic-node {
+    border: 1px dashed var(--border-accent-dashed);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(142, 60, 44, 0.04);
+}
+
+.agentic-drop-target {
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.agentic-drop-target.drag-hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(142, 60, 44, 0.15);
+}
+
+.agentic-drop-target[data-slot][data-model] {
+    color: var(--text-primary);
+    font-weight: 600;
+}
