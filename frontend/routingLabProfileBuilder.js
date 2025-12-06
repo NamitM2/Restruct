@@ -92,6 +92,191 @@ const ruleActions = [
     { id: 'useGpt4oOpus', label: 'use GPT-4o or Claude Opus' },
 ];
 
+const codeFlowModels = [
+    'Claude Opus 4.5',
+    'GPT 5.1 Codex Max Low',
+    'Gemini 3 Pro',
+    'GPT-4.1',
+    'Claude 3.5 Sonnet',
+    'Llama 3.1 70B',
+    'Mistral Large',
+    'Qwen2.5 Coder',
+    'Gemini 2 Flash'
+];
+
+const defaultCodeFlow = {
+    planning: 'Claude Opus 4.5',
+    execution: 'GPT 5.1 Codex Max Low',
+    verification: 'Gemini 3 Pro'
+};
+
+function CodeFlowBuilder({ onDismiss, initialOptions }) {
+    const initialFlow = initialOptions?.profile?.flow || defaultCodeFlow;
+    const [flow, setFlow] = useState(initialFlow);
+    const [testPrompt, setTestPrompt] = useState('');
+
+    const handleDrop = (slot, model) => {
+        setFlow(prev => ({ ...prev, [slot]: model }));
+    };
+
+    const handleSave = () => {
+        if (initialOptions?.onSave) {
+            initialOptions.onSave({ name: initialOptions?.profile?.name || 'Code Flow', flow });
+        }
+        onDismiss();
+    };
+
+    const renderDrop = (slot, label) => React.createElement('div', {
+        key: slot,
+        className: 'agentic-node flex flex-col gap-2',
+        onDragOver: (e) => { e.preventDefault(); },
+        onDrop: (e) => {
+            e.preventDefault();
+            const model = e.dataTransfer.getData('text/plain');
+            if (model) handleDrop(slot, model);
+        }
+    }, [
+        React.createElement('p', { key: 'label', className: 'community-metric-label', style: { margin: 0 } }, label),
+        React.createElement('div', {
+            key: 'target',
+            className: 'agentic-drop-target',
+            'data-slot': slot
+        }, flow[slot] || 'Drag model here')
+    ]);
+
+    return React.createElement('div', {
+        className: 'relative h-full w-full flex flex-col',
+        style: { backgroundColor: 'var(--bg-elevated)', cursor: defaultCursor },
+        onClick: onDismiss
+    }, [
+        React.createElement('div', {
+            key: 'header',
+            className: 'px-6 py-4 flex items-center justify-between border-b',
+            style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'var(--bg-elevated)' },
+            onClick: e => e.stopPropagation()
+        }, [
+            React.createElement('h1', {
+                key: 'title',
+                className: 'text-xl font-semibold flex items-center gap-2',
+                style: { color: 'var(--text-primary)' }
+            }, [
+                React.createElement('img', {
+                    key: 'icon',
+                    src: 'assets/routing-controls-icon.png',
+                    alt: 'Code Flow',
+                    className: 'w-6 h-6'
+                }),
+                'Code Flow'
+            ]),
+            React.createElement('div', { key: 'actions', className: 'flex items-center gap-3' }, [
+                React.createElement('button', {
+                    key: 'cancel',
+                    type: 'button',
+                    onClick: onDismiss,
+                    className: 'px-4 py-2 text-sm rounded-lg border transition hover:bg-[rgba(92,49,30,0.04)]',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.2)', color: 'rgba(43, 29, 20, 0.7)' }
+                }, 'Cancel'),
+                React.createElement('button', {
+                    key: 'save',
+                    type: 'button',
+                    onClick: handleSave,
+                    className: 'px-5 py-2 text-sm font-semibold rounded-lg shadow-lg transition hover:opacity-90',
+                    style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                }, 'Save Flow')
+            ])
+        ]),
+        React.createElement('div', {
+            key: 'main',
+            className: 'flex-1 flex overflow-hidden',
+            onClick: e => e.stopPropagation()
+        }, [
+            React.createElement('div', {
+                key: 'palette',
+                className: 'w-72 border-r p-5 flex-shrink-0 overflow-y-auto',
+                style: { borderColor: 'rgba(92, 49, 30, 0.12)', backgroundColor: 'rgba(92, 49, 30, 0.02)' }
+            }, [
+                React.createElement('h3', {
+                    key: 'palette-title',
+                    className: 'text-sm font-semibold uppercase tracking-wider mb-3',
+                    style: { color: 'rgba(43, 29, 20, 0.6)' }
+                }, 'Models'),
+                React.createElement('div', { key: 'palette-list', className: 'flex flex-col gap-2' },
+                    codeFlowModels.map(m => React.createElement('button', {
+                        key: m,
+                        type: 'button',
+                        draggable: true,
+                        onDragStart: (e) => e.dataTransfer.setData('text/plain', m),
+                        className: 'agentic-model',
+                        style: { textAlign: 'left' }
+                    }, m))
+                )
+            ]),
+            React.createElement('div', {
+                key: 'graph',
+                className: 'flex-1 relative overflow-hidden'
+            }, [
+                React.createElement(MeshLensBackground, { key: 'mesh' }),
+                React.createElement('div', {
+                    key: 'test',
+                    className: 'p-4 border-b',
+                    style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
+                }, [
+                    React.createElement('h3', {
+                        key: 'title',
+                        className: 'text-xs font-semibold uppercase tracking-wider mb-3',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Test Flow'),
+                    React.createElement('div', {
+                        key: 'prompt-label',
+                        className: 'text-xs mb-2',
+                        style: { color: 'rgba(43, 29, 20, 0.5)' }
+                    }, 'Type a prompt...'),
+                    React.createElement('div', {
+                        key: 'input-container',
+                        className: 'flex gap-2'
+                    }, [
+                        React.createElement('input', {
+                            key: 'input',
+                            type: 'text',
+                            value: testPrompt,
+                            onChange: e => setTestPrompt(e.target.value),
+                            placeholder: 'Write a function to parse logs...',
+                            className: 'flex-1 px-4 py-3 rounded-xl border text-sm',
+                            style: { borderColor: 'rgba(92, 49, 30, 0.15)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }
+                        }),
+                        React.createElement('button', {
+                            key: 'send',
+                            type: 'button',
+                            className: 'w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90',
+                            style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8', fontSize: '1.2rem', fontWeight: '700' }
+                        }, 'ƒ+`')
+                    ])
+                ]),
+                React.createElement('div', {
+                    key: 'flow',
+                    className: 'absolute inset-0 flex items-center justify-center p-8'
+                }, [
+                    React.createElement('div', {
+                        key: 'nodes',
+                        className: 'agentic-nodes',
+                        style: { width: '100%' }
+                    }, [
+                        renderDrop('planning', 'Planning'),
+                        renderDrop('execution', 'Execution'),
+                        renderDrop('verification', 'Verification & Summary')
+                    ])
+                ])
+            ]),
+            React.createElement('div', {
+                key: 'right-panel',
+                className: 'w-72 border-l p-5 flex-shrink-0',
+                style: { borderColor: 'rgba(92, 49, 30, 0.12)' }
+            }, null)
+        ])
+    ]);
+}
+
+
 function ProfileBuilderShell() {
     const [state, setState] = useState({ visible: false, options: {} });
 
@@ -880,6 +1065,10 @@ const MeshLensBackground = () => {
 };
 
 function ProfileBuilder({ onDismiss, initialOptions }) {
+    if (initialOptions?.mode === 'codeflow') {
+        return React.createElement(CodeFlowBuilder, { onDismiss, initialOptions });
+    }
+
     const [leftPanelMode, setLeftPanelMode] = useState('settings'); // 'settings' or 'rules'
     const [profileName, setProfileName] = useState('');
     const [description, setDescription] = useState('');

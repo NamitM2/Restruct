@@ -576,6 +576,7 @@ const modelSelect = document.getElementById('modelSelect');
 const profilesGrid = document.getElementById('profilesGrid');
 const communityProfilesGrid = document.getElementById('communityProfilesGrid');
 const communityProfilesSearch = document.getElementById('communityProfilesSearch');
+const codeFlowProfilesGrid = document.getElementById('codeFlowProfilesGrid');
 const profileStatsModal = document.getElementById('profileStatsModal');
 const closeProfileStats = document.getElementById('closeProfileStats');
 const statsProfileName = document.getElementById('statsProfileName');
@@ -709,6 +710,17 @@ const profileStats = {
     'cost-optimized': { tokensRouted: 89000, tokensGenerated: 76000, spend: 142.55, globalRouted: null, published: false },
     'performance-first': { tokensRouted: 142000, tokensGenerated: 130000, spend: 412.44, globalRouted: 620000, published: true }
 };
+const codeFlowProfiles = {
+    'default-code-flow': {
+        name: 'Default Coding Flow',
+        flow: {
+            planning: 'Claude Opus 4.5',
+            execution: 'GPT 5.1 Codex Max Low',
+            verification: 'Gemini 3 Pro'
+        }
+    }
+};
+profileStats['default-code-flow'] = profileStats['default-code-flow'] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
 
 function updatePriorityDisplays() {
     if (latencyValue) latencyValue.textContent = capitalizeFirst(latencyPriority.value);
@@ -901,6 +913,144 @@ if (profilesGrid) {
     renderYourProfiles();
 }
 
+function buildCodeFlowCard(slug, profile) {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.dataset.codeflowProfile = slug;
+    card.style.cssText = 'background: var(--bg-elevated); border-radius: 18px; border: 2px solid var(--border-subtle); padding: 18px;';
+
+    const deleteBtnHtml = slug === 'default-code-flow' ? '' : `
+        <button class="profile-delete-btn" title="Delete profile" aria-label="Delete profile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        </button>
+    `;
+
+    card.innerHTML = `
+        <div class="profile-card-header">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${profile.name}</h4>
+            <div class="profile-card-actions-row">
+                ${deleteBtnHtml}
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="codeflow-edit-btn profile-route-btn" data-slug="${slug}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Edit</button>
+            <button class="codeflow-stats-btn profile-stats-btn" data-slug="${slug}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                <img src="assets/stats-icon.png" alt="Stats" style="width: 12px; height: 12px; opacity: 0.7;">
+                Stats
+            </button>
+        </div>
+    `;
+    return card;
+}
+
+function renderCodeFlowProfiles() {
+    if (!codeFlowProfilesGrid) return;
+    codeFlowProfilesGrid.innerHTML = '';
+    const ordered = ['default-code-flow', ...Object.keys(codeFlowProfiles).filter(k => k !== 'default-code-flow')];
+
+    ordered.forEach(slug => {
+        const profile = codeFlowProfiles[slug];
+        if (!profile) return;
+        const card = buildCodeFlowCard(slug, profile);
+        codeFlowProfilesGrid.appendChild(card);
+    });
+
+    const createCard = document.getElementById('createNewCodeFlowProfileCard');
+    if (createCard) {
+        createCard.remove();
+    }
+    const newCard = document.createElement('div');
+    newCard.id = 'createNewCodeFlowProfileCard';
+    newCard.className = 'profile-card';
+    newCard.style.cssText = 'background: var(--bg-elevated); border-radius: 18px; border: 2px dashed var(--border-accent-dashed); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; min-height: 100px;';
+    newCard.innerHTML = `
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="margin-bottom: 12px; opacity: 0.6;">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <p style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-secondary);">Create new code flow</p>
+    `;
+    codeFlowProfilesGrid.appendChild(newCard);
+}
+
+function openCodeFlowBuilder(slug) {
+    const profile = codeFlowProfiles[slug];
+    if (!profile) return;
+    profiles[slug] = profiles[slug] || { name: profile.name };
+    profileStats[slug] = profileStats[slug] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+
+    if (window.profileBuilderOverlay?.open) {
+        window.profileBuilderOverlay.open({
+            mode: 'codeflow',
+            profile: {
+                name: profile.name,
+                flow: profile.flow
+            },
+            onSave: (updated) => {
+                if (updated?.flow) {
+                    codeFlowProfiles[slug].flow = updated.flow;
+                }
+                if (updated?.name) {
+                    codeFlowProfiles[slug].name = updated.name;
+                    profiles[slug].name = updated.name;
+                }
+                renderCodeFlowProfiles();
+            }
+        });
+    }
+}
+
+if (codeFlowProfilesGrid) {
+    renderCodeFlowProfiles();
+    codeFlowProfilesGrid.addEventListener('click', (e) => {
+        const createCard = e.target.closest('#createNewCodeFlowProfileCard');
+        if (createCard) {
+            const slug = `codeflow-${Date.now()}`;
+            codeFlowProfiles[slug] = {
+                name: 'New Code Flow',
+                flow: { planning: '', execution: '', verification: '' }
+            };
+            profileStats[slug] = { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+            renderCodeFlowProfiles();
+            openCodeFlowBuilder(slug);
+            return;
+        }
+
+        const card = e.target.closest('.profile-card');
+        if (!card) return;
+        const slug = card.dataset.codeflowProfile;
+        if (!slug) return;
+
+        const deleteBtn = e.target.closest('.profile-delete-btn');
+        if (deleteBtn) {
+            if (slug === 'default-code-flow') return;
+            delete codeFlowProfiles[slug];
+            delete profileStats[slug];
+            renderCodeFlowProfiles();
+            return;
+        }
+
+        const editBtn = e.target.closest('.codeflow-edit-btn');
+        if (editBtn) {
+            openCodeFlowBuilder(slug);
+            return;
+        }
+
+        const statsBtn = e.target.closest('.codeflow-stats-btn');
+        if (statsBtn) {
+            profiles[slug] = profiles[slug] || { name: codeFlowProfiles[slug]?.name || slug };
+            openProfileStatsModal(slug);
+            return;
+        }
+    });
+}
 // Profile card clicks
 if (profilesGrid) {
     profilesGrid.addEventListener('click', (e) => {
