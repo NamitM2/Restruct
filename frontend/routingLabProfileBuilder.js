@@ -1,5 +1,5 @@
 const React = window.React;
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
 const { createRoot } = window.ReactDOM;
 
 const controllerListeners = [];
@@ -107,100 +107,152 @@ const codeFlowModels = [
 function CodeFlowBuilder({ onDismiss, initialOptions }) {
     // Initial nodes based on default flow or passed options
     const initialNodes = [
-        { id: 'planning', label: 'Planning', desc: 'Analyzes requirements & creates architecture', x: 100, y: 200, model: initialOptions?.profile?.flow?.planning || null },
-        { id: 'execution', label: 'Execution', desc: 'Writes the actual code implementation', x: 400, y: 200, model: initialOptions?.profile?.flow?.execution || null },
-        { id: 'verification', label: 'Verification', desc: 'Reviews code & fixes security issues', x: 700, y: 200, model: initialOptions?.profile?.flow?.verification || null }
+        { id: 'user-prompt', label: 'Your Prompt', desc: 'Starting input', x: 100, y: 200, model: null, isStart: true },
+        { id: 'planning', label: 'Planning', desc: 'Analyzes requirements & creates architecture', x: 400, y: 200, model: initialOptions?.profile?.flow?.planning || null },
+        { id: 'execution', label: 'Execution', desc: 'Writes the actual code implementation', x: 700, y: 200, model: initialOptions?.profile?.flow?.execution || null },
+        { id: 'verification', label: 'Verification', desc: 'Reviews code & fixes security issues', x: 1000, y: 200, model: initialOptions?.profile?.flow?.verification || null }
     ];
 
     const [nodes, setNodes] = useState(initialNodes);
     const [edges, setEdges] = useState([
+        { from: 'user-prompt', to: 'planning' },
         { from: 'planning', to: 'execution' },
-        { from: 'execution', to: 'verification' }
+        { from: 'execution', to: 'verification' },
+        { from: 'verification', to: 'planning', condition: 'fails' }
     ]);
 
-    const [draggedModel, setDraggedModel] = useState(null);
     const [draggedNode, setDraggedNode] = useState(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [connectingNode, setConnectingNode] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-    const [rightPanelTab, setRightPanelTab] = useState('models'); // 'models' or 'custom'
-
-    // New Node Form State
-    const [newNodeLabel, setNewNodeLabel] = useState('');
-    const [newNodeDesc, setNewNodeDesc] = useState('');
-    const [newNodePrompt, setNewNodePrompt] = useState('');
+    const [selectedNodeId, setSelectedNodeId] = useState(null);
+    // Removed rightPanelTab, draggedModel, newNodeLabel, etc. as they are no longer used in the main flow
 
     const canvasRef = useRef(null);
 
-    // Handle dropping a model onto a node
-    const handleModelDrop = (nodeId, modelName) => {
-        setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, model: modelName } : n));
-        setDraggedModel(null);
-    };
-
-    // --- Node Dragging & Connection Logic (Global Listeners) ---
+    // Inject custom cursor styles
     useEffect(() => {
-        const handleWindowMouseMove = (e) => {
-            if (!canvasRef.current) return;
-
-            // Handle Node Dragging
-            if (draggedNode) {
-                e.preventDefault();
-                const rect = canvasRef.current.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                setNodes(prev => prev.map(n => {
-                    if (n.id === draggedNode) {
-                        return {
-                            ...n,
-                            x: mouseX - dragOffset.x,
-                            y: mouseY - dragOffset.y
-                        };
-                    }
-                    return n;
-                }));
-            }
-
-            // Handle Connection Line
-            if (connectingNode) {
-                const rect = canvasRef.current.getBoundingClientRect();
-                setMousePos({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                });
-            }
-        };
-
-        const handleWindowMouseUp = () => {
-            if (draggedNode) setDraggedNode(null);
-            if (connectingNode) setConnectingNode(null);
-        };
-
-        if (draggedNode || connectingNode) {
-            window.addEventListener('mousemove', handleWindowMouseMove);
-            window.addEventListener('mouseup', handleWindowMouseUp);
-        }
-
+        const style = document.createElement('style');
+        style.innerHTML = cursorStyles;
+        document.head.appendChild(style);
         return () => {
-            window.removeEventListener('mousemove', handleWindowMouseMove);
-            window.removeEventListener('mouseup', handleWindowMouseUp);
+            document.head.removeChild(style);
         };
-    }, [draggedNode, connectingNode, dragOffset]);
+    }, []);
 
-    const handleNodeMouseDown = (e, nodeId) => {
-        e.stopPropagation();
-        const node = nodes.find(n => n.id === nodeId);
-        if (node && canvasRef.current) {
+    // --- Node Dragging Logic (Simple Mouse Events) ---
+    // We are reverting to simple onMouseMove/onMouseUp on the container to avoid pointer capture issues
+
+    // --- Node Dragging & Connection Logic (Window Listeners) ---
+    const dragRef = useRef({
+        isDragging: false,
+        isConnecting: false,
+        nodeId: null,
+        offsetX: 0,
+        offsetY: 0
+    });
+
+    const handleWindowMouseMove = useCallback((e) => {
+        if (!canvasRef.current) return;
+
+        // Safety check for ref content
+        if (!dragRef.current) return;
+
+        const { isDragging, isConnecting, nodeId, offsetX, offsetY } = dragRef.current;
+
+        if (isDragging && nodeId) {
+            e.preventDefault();
             const rect = canvasRef.current.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
-            setDragOffset({
-                x: mouseX - node.x,
-                y: mouseY - node.y
+
+            setNodes(prev => {
+                // Optimization: Don't update if position hasn't changed significantly?
+                // For now, just map.
+                return prev.map(n => {
+                    if (n.id === nodeId) {
+                        return { ...n, x: mouseX - offsetX, y: mouseY - offsetY };
+                    }
+                    return n;
+                });
             });
-            setDraggedNode(nodeId);
         }
+
+        if (isConnecting) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        }
+    }, []);
+
+    const handleWindowMouseUp = useCallback((e) => {
+        const { isDragging, isConnecting } = dragRef.current;
+        if (isDragging || isConnecting) {
+            window.removeEventListener('mousemove', handleWindowMouseMove);
+            window.removeEventListener('mouseup', handleWindowMouseUp);
+
+            // Reset cursor
+            document.body.style.cursor = '';
+
+            dragRef.current = { isDragging: false, isConnecting: false, nodeId: null, offsetX: 0, offsetY: 0 };
+            setDraggedNode(null);
+            setConnectingNode(null);
+        }
+    }, [handleWindowMouseMove]);
+
+    // Cleanup listeners on unmount
+    useEffect(() => {
+        return () => {
+            window.removeEventListener('mousemove', handleWindowMouseMove);
+            window.removeEventListener('mouseup', handleWindowMouseUp);
+            document.body.style.cursor = ''; // Ensure cursor is reset
+        };
+    }, [handleWindowMouseMove, handleWindowMouseUp]);
+
+    const handleMouseDown = (e, nodeId) => {
+        e.stopPropagation();
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node || !canvasRef.current) return;
+
+        const rect = canvasRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        dragRef.current = {
+            isDragging: true,
+            isConnecting: false,
+            nodeId: nodeId,
+            offsetX: mouseX - node.x,
+            offsetY: mouseY - node.y
+        };
+
+        // Set global cursor for professional feel
+        document.body.style.cursor = 'grabbing';
+
+        setDraggedNode(nodeId);
+        window.addEventListener('mousemove', handleWindowMouseMove);
+        window.addEventListener('mouseup', handleWindowMouseUp);
+    };
+
+    // Old handlers removed - replaced by window listeners
+    const handleMouseMove = () => { };
+    const handleMouseUp = () => { };
+
+    const startConnection = (e, nodeId) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        dragRef.current = {
+            isDragging: false,
+            isConnecting: true,
+            nodeId: nodeId,
+            offsetX: 0,
+            offsetY: 0
+        };
+
+        setConnectingNode(nodeId);
+
+        window.addEventListener('mousemove', handleWindowMouseMove);
+        window.addEventListener('mouseup', handleWindowMouseUp);
     };
 
     const handleCanvasDragOver = (e) => {
@@ -212,13 +264,12 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
     };
 
     // Handle connections
-    const startConnection = (e, nodeId) => {
-        e.stopPropagation();
-        setConnectingNode(nodeId);
-    };
+
 
     const completeConnection = (e, targetNodeId) => {
-        e.stopPropagation();
+        // Do NOT stop propagation here, or the window mouseUp listener won't fire, causing stuck dragging.
+        // e.stopPropagation(); 
+
         if (connectingNode && connectingNode !== targetNodeId) {
             // Check if edge already exists
             if (!edges.find(edge => edge.from === connectingNode && edge.to === targetNodeId)) {
@@ -250,10 +301,46 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
     };
 
     // Delete Node
+    // Delete Node
     const deleteNode = (e, nodeId) => {
         e.stopPropagation();
+        const nodeToDelete = nodes.find(n => n.id === nodeId);
+
         setNodes(prev => prev.filter(n => n.id !== nodeId));
-        setEdges(prev => prev.filter(edge => edge.from !== nodeId && edge.to !== nodeId));
+
+        // Update edges to preserve "broken" state instead of removing them
+        setEdges(prev => prev.map(edge => {
+            if (edge.from === nodeId) {
+                return { ...edge, fromNodeMissing: true, ghostFrom: { x: nodeToDelete.x, y: nodeToDelete.y } };
+            }
+            if (edge.to === nodeId) {
+                return { ...edge, toNodeMissing: true, ghostTo: { x: nodeToDelete.x, y: nodeToDelete.y } };
+            }
+            return edge;
+        }));
+    };
+
+    // Split Edge to Add Condition
+    const splitEdge = (edge, midX, midY) => {
+        const newId = `condition-${Date.now()}`;
+        const newNode = {
+            id: newId,
+            label: 'Condition',
+            desc: 'Check',
+            condition: 'If criteria met',
+            x: midX - 120, // Center the node (width 240/2 = 120)
+            y: midY - 60,  // Center the node (height ~120/2 = 60)
+            isCondition: true,
+            model: null
+        };
+
+        setNodes(prev => [...prev, newNode]);
+        setEdges(prev => {
+            const newEdges = prev.filter(e => e !== edge);
+            newEdges.push({ from: edge.from, to: newId });
+            newEdges.push({ from: newId, to: edge.to });
+            return newEdges;
+        });
     };
 
     const handleSave = () => {
@@ -320,89 +407,6 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
 
         // Main Content
         React.createElement('div', { className: 'flex-1 flex overflow-hidden' }, [
-            // Sidebar (Model Palette)
-            React.createElement('div', {
-                className: 'w-80 border-r flex flex-col',
-                style: { borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-elevated)' }
-            }, [
-                // Sidebar Tabs
-                React.createElement('div', { className: 'flex border-b', style: { borderColor: 'var(--border-subtle)' } }, [
-                    React.createElement('button', {
-                        className: `flex-1 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'models' ? 'text-clay-600 border-b-2 border-clay-600' : 'text-muted hover:text-primary'}`,
-                        onClick: () => setRightPanelTab('models')
-                    }, 'Models'),
-                    React.createElement('button', {
-                        className: `flex-1 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'custom' ? 'text-clay-600 border-b-2 border-clay-600' : 'text-muted hover:text-primary'}`,
-                        onClick: () => setRightPanelTab('custom')
-                    }, 'Add Node')
-                ]),
-
-                // Tab Content
-                rightPanelTab === 'models' ? React.createElement('div', { className: 'flex-1 overflow-y-auto p-4 space-y-3' },
-                    codeFlowModels.map(m => React.createElement('div', {
-                        key: m.name,
-                        draggable: true,
-                        onDragStart: (e) => {
-                            e.dataTransfer.setData('text/plain', m.name);
-                            setDraggedModel(m.name);
-                        },
-                        onDragEnd: () => setDraggedModel(null),
-                        className: 'p-4 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:border-clay-400 hover:shadow-md group',
-                        style: {
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderColor: 'var(--border-subtle)'
-                        }
-                    }, [
-                        React.createElement('div', { className: 'flex items-center gap-3' }, [
-                            React.createElement('img', {
-                                src: m.logo,
-                                className: 'w-8 h-8 rounded-lg object-contain transition-transform group-hover:scale-110',
-                                style: { background: 'var(--bg-tertiary)' }
-                            }),
-                            React.createElement('span', { className: 'font-medium text-sm', style: { color: 'var(--text-primary)' } }, m.name)
-                        ])
-                    ]))
-                ) : React.createElement('div', { className: 'flex-1 overflow-y-auto p-6 space-y-4' }, [
-                    React.createElement('div', {}, [
-                        React.createElement('label', { className: 'block text-xs uppercase font-bold mb-2 text-muted' }, 'Node Name'),
-                        React.createElement('input', {
-                            type: 'text',
-                            value: newNodeLabel,
-                            onChange: e => setNewNodeLabel(e.target.value),
-                            placeholder: 'e.g., Security Scan',
-                            className: 'w-full px-3 py-2 rounded-lg border bg-secondary focus:border-clay-500 outline-none',
-                            style: { borderColor: 'var(--border-subtle)' }
-                        })
-                    ]),
-                    React.createElement('div', {}, [
-                        React.createElement('label', { className: 'block text-xs uppercase font-bold mb-2 text-muted' }, 'Description'),
-                        React.createElement('input', {
-                            type: 'text',
-                            value: newNodeDesc,
-                            onChange: e => setNewNodeDesc(e.target.value),
-                            placeholder: 'Brief description of task',
-                            className: 'w-full px-3 py-2 rounded-lg border bg-secondary focus:border-clay-500 outline-none',
-                            style: { borderColor: 'var(--border-subtle)' }
-                        })
-                    ]),
-                    React.createElement('div', {}, [
-                        React.createElement('label', { className: 'block text-xs uppercase font-bold mb-2 text-muted' }, 'System Prompt'),
-                        React.createElement('textarea', {
-                            value: newNodePrompt,
-                            onChange: e => setNewNodePrompt(e.target.value),
-                            placeholder: 'Define the specific instructions for this step...',
-                            className: 'w-full px-3 py-2 rounded-lg border bg-secondary focus:border-clay-500 outline-none h-32 resize-none',
-                            style: { borderColor: 'var(--border-subtle)' }
-                        })
-                    ]),
-                    React.createElement('button', {
-                        onClick: addCustomNode,
-                        className: 'w-full py-2.5 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95',
-                        style: { background: 'var(--clay-600)' }
-                    }, 'Add Node to Graph')
-                ])
-            ]),
-
             // Canvas (Graph)
             React.createElement('div', {
                 ref: canvasRef,
@@ -416,35 +420,165 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                 // Mesh Background
                 React.createElement(MeshLensBackground, { key: 'mesh' }),
 
+                // Floating "Drag to add node" Button
+                React.createElement('div', {
+                    className: 'absolute top-6 left-6 z-20 p-4 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:border-clay-400 hover:shadow-md group flex items-center justify-center gap-3',
+                    style: {
+                        backgroundColor: 'var(--bg-elevated)',
+                        borderColor: 'var(--border-subtle)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    },
+                    onMouseDown: (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Create new node immediately
+                        const id = `node-${Date.now()}`;
+                        const rect = canvasRef.current.getBoundingClientRect();
+
+                        // Calculate position relative to canvas (start somewhat near top-left or mouse)
+                        // But since we are in sidebar, we need to map mouse to canvas.
+                        // Let's start it at the mouse position relative to canvas.
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+
+                        const newNode = {
+                            id,
+                            label: 'New Node',
+                            desc: 'Configure this step',
+                            prompt: '',
+                            x: mouseX - 120, // Center horizontally (width 240)
+                            y: mouseY - 60,  // Center vertically
+                            model: null
+                        };
+
+                        setNodes(prev => [...prev, newNode]);
+
+                        // Start dragging immediately
+                        dragRef.current = {
+                            isDragging: true,
+                            isConnecting: false,
+                            nodeId: id,
+                            offsetX: 120, // Center offset
+                            offsetY: 60
+                        };
+
+                        document.body.style.cursor = 'grabbing';
+                        setDraggedNode(id);
+                        window.addEventListener('mousemove', handleWindowMouseMove);
+                        window.addEventListener('mouseup', handleWindowMouseUp);
+                    }
+                }, [
+                    React.createElement('span', { className: 'font-bold text-sm', style: { color: 'var(--text-primary)' } }, 'Drag to add node')
+                ]),
+
                 // SVG Layer for Edges
                 React.createElement('svg', {
                     className: 'absolute inset-0 pointer-events-none z-0',
                     style: { width: '100%', height: '100%' }
                 }, [
                     // Existing Edges
+                    // Existing Edges
                     ...edges.map((edge, i) => {
                         const fromNode = nodes.find(n => n.id === edge.from);
                         const toNode = nodes.find(n => n.id === edge.to);
-                        if (!fromNode || !toNode) return null;
-                        return React.createElement('line', {
-                            key: i,
-                            x1: fromNode.x + 140, y1: fromNode.y + 80, // Center of node (approx width 280, height 160)
-                            x2: toNode.x + 140, y2: toNode.y + 80,
-                            stroke: 'var(--clay-400)',
-                            strokeWidth: '2',
-                            strokeDasharray: '8 8',
-                            strokeOpacity: '0.6'
-                        });
+
+                        // Handle missing nodes (broken edges)
+                        let x1, y1, x2, y2;
+                        let isBroken = false;
+
+                        if (fromNode) {
+                            x1 = fromNode.x + 120;
+                            y1 = fromNode.y + 60;
+                        } else if (edge.ghostFrom) {
+                            x1 = edge.ghostFrom.x + 120;
+                            y1 = edge.ghostFrom.y + 60;
+                            isBroken = true;
+                        } else {
+                            return null; // Should not happen if logic is correct
+                        }
+
+                        if (toNode) {
+                            x2 = toNode.x + 120;
+                            y2 = toNode.y + 60;
+                        } else if (edge.ghostTo) {
+                            x2 = edge.ghostTo.x + 120;
+                            y2 = edge.ghostTo.y + 60;
+                            isBroken = true;
+                        } else {
+                            return null;
+                        }
+
+                        const pathD = getCurvedPath(x1, y1, x2, y2);
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2; // Approximate mid for label
+
+                        return React.createElement('g', { key: i }, [
+                            React.createElement('path', {
+                                d: pathD,
+                                stroke: isBroken ? '#ef4444' : (edge.condition ? 'var(--accent-primary)' : 'var(--clay-400)'),
+                                strokeWidth: '2',
+                                fill: 'none',
+                                strokeDasharray: edge.condition ? '5 5' : '8 8',
+                                strokeOpacity: isBroken ? '0.8' : '0.6'
+                            }),
+                            // Condition Label
+                            edge.condition && !isBroken && React.createElement('foreignObject', {
+                                x: midX - 40,
+                                y: midY - 12,
+                                width: 80,
+                                height: 24,
+                                style: { overflow: 'visible' }
+                            }, React.createElement('div', {
+                                className: 'px-2 py-0.5 rounded-md text-[10px] font-bold text-center border shadow-sm',
+                                style: {
+                                    background: 'var(--bg-elevated)',
+                                    color: 'var(--accent-primary)',
+                                    borderColor: 'var(--accent-primary)'
+                                }
+                            }, edge.condition)),
+                            // Broken Edge Label
+                            isBroken && React.createElement('foreignObject', {
+                                x: midX - 50,
+                                y: midY - 12,
+                                width: 100,
+                                height: 24,
+                                style: { overflow: 'visible' }
+                            }, React.createElement('div', {
+                                className: 'px-2 py-0.5 rounded-md text-[10px] font-bold text-center border shadow-sm bg-red-50 text-red-600 border-red-200'
+                            }, 'No connection')),
+                            // Split Handle (Add Condition)
+                            !isBroken && !edge.condition && React.createElement('foreignObject', {
+                                x: midX - 10,
+                                y: midY - 10,
+                                width: 20,
+                                height: 20,
+                                style: { overflow: 'visible' }
+                            }, React.createElement('button', {
+                                className: 'w-5 h-5 rounded-full bg-white border border-clay-400 flex items-center justify-center text-clay-600 hover:bg-clay-50 hover:scale-110 transition-all shadow-sm cursor-pointer',
+                                title: 'Add Condition Node',
+                                onClick: (e) => {
+                                    e.stopPropagation();
+                                    splitEdge(edge, midX, midY);
+                                }
+                            }, '+'))
+                        ]);
                     }),
                     // Active Connection Line
                     connectingNode && (() => {
                         const fromNode = nodes.find(n => n.id === connectingNode);
                         if (!fromNode) return null;
-                        return React.createElement('line', {
-                            x1: fromNode.x + 140, y1: fromNode.y + 80,
-                            x2: mousePos.x, y2: mousePos.y,
+
+                        const x1 = fromNode.x + 120;
+                        const y1 = fromNode.y + 60;
+                        const x2 = mousePos.x;
+                        const y2 = mousePos.y;
+
+                        return React.createElement('path', {
+                            d: getCurvedPath(x1, y1, x2, y2),
                             stroke: 'var(--clay-600)',
                             strokeWidth: '2',
+                            fill: 'none',
                             strokeDasharray: '5 5'
                         });
                     })()
@@ -459,30 +593,21 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                         style: {
                             left: node.x,
                             top: node.y,
-                            width: '280px',
+                            width: '240px', // Reduced width
                             cursor: draggedNode === node.id ? 'grabbing' : 'grab',
                             userSelect: 'none'
                         },
-                        onMouseDown: (e) => handleNodeMouseDown(e, node.id),
+                        onMouseDown: (e) => handleMouseDown(e, node.id),
                         onMouseUp: (e) => completeConnection(e, node.id)
                     }, [
                         // Drop Zone Card
                         React.createElement('div', {
-                            className: `relative w-full p-5 rounded-2xl border-2 transition-all duration-300 ${draggedModel ? 'border-dashed' : ''}`,
+                            className: `relative w-full p-4 rounded-2xl border transition-all duration-300 group`,
                             style: {
-                                backgroundColor: 'var(--bg-elevated)',
-                                borderColor: isActive ? 'var(--clay-600)' : (draggedModel ? 'var(--clay-300)' : 'var(--border-subtle)'),
-                                boxShadow: isActive ? '0 10px 30px -10px rgba(142, 60, 44, 0.2)' : 'none',
-                                minHeight: '160px'
-                            },
-                            onDragOver: (e) => { e.preventDefault(); e.currentTarget.style.transform = 'scale(1.02)'; },
-                            onDragLeave: (e) => { e.currentTarget.style.transform = 'scale(1)'; },
-                            onDrop: (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                e.currentTarget.style.transform = 'scale(1)';
-                                const m = e.dataTransfer.getData('text/plain');
-                                if (m) handleModelDrop(node.id, m);
+                                backgroundColor: node.isStart ? 'var(--bg-secondary)' : 'var(--bg-elevated)',
+                                borderColor: isActive ? 'var(--clay-600)' : (node.isStart ? 'transparent' : 'var(--border-subtle)'),
+                                boxShadow: isActive ? '0 10px 20px -5px rgba(0,0,0,0.1)' : '0 2px 4px -1px rgba(0,0,0,0.05)',
+                                minHeight: '120px'
                             }
                         }, [
                             // Header
@@ -491,61 +616,202 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                                     React.createElement('h3', { className: 'font-bold text-sm', style: { color: 'var(--text-primary)' } }, node.label),
                                     React.createElement('p', { className: 'text-xs', style: { color: 'var(--text-muted)' } }, node.desc)
                                 ]),
-                                // Delete Button
-                                React.createElement('button', {
-                                    className: 'text-muted hover:text-red-500 transition-colors',
-                                    onClick: (e) => deleteNode(e, node.id)
-                                }, '×')
+                                // Actions
+                                !node.isStart && React.createElement('div', { className: 'flex items-center gap-1' }, [
+                                    // Edit Button
+                                    React.createElement('button', {
+                                        className: 'text-muted hover:text-clay-600 transition-colors p-1 rounded hover:bg-clay-50/10',
+                                        title: 'Edit Node',
+                                        onClick: (e) => {
+                                            e.stopPropagation();
+                                            setSelectedNodeId(node.id);
+                                        }
+                                    }, React.createElement('svg', { width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+                                        React.createElement('path', { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' }),
+                                        React.createElement('path', { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' })
+                                    )),
+                                    // Connect Button
+                                    React.createElement('button', {
+                                        className: 'text-muted hover:text-clay-600 transition-colors p-1 rounded hover:bg-clay-50/10 cursor-crosshair',
+                                        title: 'Drag to connect',
+                                        onMouseDown: (e) => startConnection(e, node.id)
+                                    }, React.createElement('svg', { width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+                                        React.createElement('path', { d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' }),
+                                        React.createElement('path', { d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' })
+                                    )),
+                                    // Delete Button
+                                    React.createElement('button', {
+                                        className: 'text-muted hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50/10',
+                                        onClick: (e) => deleteNode(e, node.id)
+                                    }, '×')
+                                ])
                             ]),
 
-                            // Content (Selected Model or Placeholder)
-                            node.model ? React.createElement('div', {
-                                className: 'p-3 rounded-xl flex items-center gap-4',
-                                style: { background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }
+                            // Content
+                            node.isStart ? React.createElement('div', {
+                                className: 'flex items-center justify-center h-12 mt-2'
                             }, [
-                                React.createElement('img', {
-                                    src: getModelLogo(node.model),
-                                    className: 'w-10 h-10 rounded-lg object-contain', // Bigger logo
-                                    style: { background: 'var(--bg-tertiary)' }
-                                }),
+                                React.createElement('div', {
+                                    className: 'w-10 h-10 rounded-full flex items-center justify-center',
+                                    style: { background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }
+                                }, '➜')
+                            ]) : node.isCondition ? React.createElement('div', {
+                                className: 'flex flex-col items-center justify-center h-16 mt-2'
+                            }, [
+                                React.createElement('div', {
+                                    className: 'w-12 h-12 rotate-45 border-2 flex items-center justify-center mb-1',
+                                    style: { borderColor: 'var(--accent-primary)', background: 'var(--bg-elevated)' }
+                                }, React.createElement('span', { className: '-rotate-45 text-lg font-bold', style: { color: 'var(--accent-primary)' } }, '?')),
+                                React.createElement('span', { className: 'text-[10px] text-muted text-center max-w-[180px] truncate' }, node.condition)
+                            ]) : (node.model ? React.createElement('div', {
+                                className: 'flex items-center gap-3 mt-2',
+                            }, [
+                                React.createElement('div', { className: 'relative flex-shrink-0' }, [
+                                    React.createElement('div', {
+                                        className: 'absolute inset-0 blur-md opacity-20 rounded-full',
+                                        style: { background: 'var(--clay-600)' }
+                                    }),
+                                    React.createElement('img', {
+                                        src: getModelLogo(node.model),
+                                        className: 'relative w-12 h-12 object-contain',
+                                    })
+                                ]),
                                 React.createElement('div', { className: 'flex-1 min-w-0' }, [
                                     React.createElement('span', {
                                         className: 'block text-sm font-bold truncate',
                                         style: { color: 'var(--text-primary)' }
                                     }, node.model),
                                     React.createElement('span', {
-                                        className: 'block text-xs text-muted truncate'
-                                    }, 'Active Model')
-                                ]),
-                                React.createElement('button', {
-                                    className: 'text-xs hover:text-red-500',
-                                    onClick: (e) => { e.stopPropagation(); handleModelDrop(node.id, null); }
-                                }, '×')
+                                        className: 'block text-[10px] text-muted uppercase tracking-wider'
+                                    }, 'Active')
+                                ])
                             ]) : React.createElement('div', {
-                                className: 'flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-xl',
+                                className: 'flex items-center justify-center h-12 border-2 border-dashed rounded-lg mt-2 gap-2',
                                 style: { borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }
                             }, [
-                                React.createElement('span', { className: 'text-xs uppercase tracking-wider' }, 'Drop Model')
-                            ]),
-
-                            // Connector Handle (Output)
-                            React.createElement('div', {
-                                className: 'absolute -right-3 top-1/2 w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-crosshair hover:scale-110 transition-transform',
-                                style: {
-                                    background: 'var(--bg-elevated)',
-                                    borderColor: 'var(--clay-600)',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)'
-                                },
-                                onMouseDown: (e) => startConnection(e, node.id)
-                            }, React.createElement('div', { className: 'w-2 h-2 rounded-full bg-clay-600' }))
+                                React.createElement('span', { className: 'text-xs font-medium' }, 'No Model Selected')
+                            ]))
                         ])
                     ]);
                 })
-            ])
+            ]),
+
+            // Configuration Modal
+            selectedNodeId && (() => {
+                const node = nodes.find(n => n.id === selectedNodeId);
+                if (!node) return null;
+
+                return React.createElement('div', {
+                    className: 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm',
+                    onClick: () => setSelectedNodeId(null)
+                }, [
+                    React.createElement('div', {
+                        className: 'w-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col',
+                        style: { backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' },
+                        onClick: e => e.stopPropagation()
+                    }, [
+                        // Header
+                        React.createElement('div', {
+                            className: 'px-6 py-4 border-b flex items-center justify-between',
+                            style: { borderColor: 'var(--border-subtle)' }
+                        }, [
+                            React.createElement('h3', { className: 'font-bold text-lg', style: { color: 'var(--text-primary)' } }, node.isCondition ? 'Configure Condition' : 'Configure Node'),
+                            React.createElement('button', {
+                                onClick: () => setSelectedNodeId(null),
+                                className: 'text-muted hover:text-primary'
+                            }, '×')
+                        ]),
+                        // Body
+                        React.createElement('div', { className: 'p-6 flex flex-col gap-4' }, [
+                            // Label Input
+                            React.createElement('div', {}, [
+                                React.createElement('label', { className: 'block text-xs font-bold uppercase mb-1 text-muted' }, node.isCondition ? 'Condition Name' : 'Node Name'),
+                                React.createElement('input', {
+                                    className: 'w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none',
+                                    style: { borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' },
+                                    value: node.label,
+                                    onChange: e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: e.target.value } : n))
+                                })
+                            ]),
+                            // Condition Specific Inputs
+                            node.isCondition ? React.createElement('div', {}, [
+                                React.createElement('label', { className: 'block text-xs font-bold uppercase mb-1 text-muted' }, 'Condition (English)'),
+                                React.createElement('textarea', {
+                                    className: 'w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none h-24 resize-none',
+                                    style: { borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' },
+                                    value: node.condition || '',
+                                    onChange: e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, condition: e.target.value } : n)),
+                                    placeholder: 'e.g. If the code fails validation...'
+                                })
+                            ]) : [
+                                // Standard Node Inputs
+                                // Description Input
+                                React.createElement('div', { key: 'desc' }, [
+                                    React.createElement('label', { className: 'block text-xs font-bold uppercase mb-1 text-muted' }, 'Description'),
+                                    React.createElement('input', {
+                                        className: 'w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none',
+                                        style: { borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' },
+                                        value: node.desc,
+                                        onChange: e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, desc: e.target.value } : n))
+                                    })
+                                ]),
+                                // Model Selection
+                                React.createElement('div', { key: 'model' }, [
+                                    React.createElement('label', { className: 'block text-xs font-bold uppercase mb-1 text-muted' }, 'Model'),
+                                    React.createElement('div', { className: 'grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1' },
+                                        codeFlowModels.map(model =>
+                                            React.createElement('button', {
+                                                key: model.name,
+                                                onClick: () => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, model: model.name } : n)),
+                                                className: `p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${node.model === model.name ? 'ring-2 ring-clay-500 border-transparent bg-clay-50/10' : 'hover:border-clay-400'}`,
+                                                style: { borderColor: node.model === model.name ? 'transparent' : 'var(--border-subtle)' }
+                                            }, [
+                                                React.createElement('img', { src: model.logo, className: 'w-8 h-8 object-contain' }),
+                                                React.createElement('div', {}, [
+                                                    React.createElement('div', { className: 'font-bold text-sm', style: { color: 'var(--text-primary)' } }, model.name),
+                                                    React.createElement('div', { className: 'text-[10px] text-muted' }, 'AI Model')
+                                                ])
+                                            ])
+                                        )
+                                    )
+                                ]),
+                                // Prompt Input
+                                React.createElement('div', { key: 'prompt' }, [
+                                    React.createElement('label', { className: 'block text-xs font-bold uppercase mb-1 text-muted' }, 'System Prompt'),
+                                    React.createElement('textarea', {
+                                        className: 'w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none h-32 resize-none',
+                                        style: { borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' },
+                                        value: node.prompt,
+                                        onChange: e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, prompt: e.target.value } : n)),
+                                        placeholder: 'Enter instructions for this step...'
+                                    })
+                                ])
+                            ]
+                        ]),
+                        // Footer
+                        React.createElement('div', {
+                            className: 'px-6 py-4 border-t flex justify-end',
+                            style: { borderColor: 'var(--border-subtle)' }
+                        }, [
+                            React.createElement('button', {
+                                onClick: () => setSelectedNodeId(null),
+                                className: 'px-6 py-2 rounded-xl font-bold text-white shadow-lg shadow-clay-500/20',
+                                style: { background: 'var(--clay-600)' }
+                            }, 'Done')
+                        ])
+                    ])
+                ]);
+            })()
         ])
     ]);
 }
+
+// Helper for curved edges
+const getCurvedPath = (x1, y1, x2, y2) => {
+    const dx = Math.abs(x2 - x1);
+    const controlX = dx * 0.5; // Control point distance
+    return `M ${x1} ${y1} C ${x1 + controlX} ${y1}, ${x2 - controlX} ${y2}, ${x2} ${y2}`;
+};
 
 function ProfileBuilderShell() {
     const [state, setState] = useState({ visible: false, options: {} });
@@ -1290,9 +1556,14 @@ const MeshLensBackground = () => {
         };
 
         const animate = () => {
-            updatePoints();
-            drawMesh();
-            rafRef.current = requestAnimationFrame(animate);
+            try {
+                updatePoints();
+                drawMesh();
+                rafRef.current = requestAnimationFrame(animate);
+            } catch (e) {
+                console.error("Mesh animation error:", e);
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            }
         };
 
         const handleMouseMove = (e) => {
@@ -1311,9 +1582,15 @@ const MeshLensBackground = () => {
         }, 50);
 
         window.addEventListener('resize', resizeCanvas);
-        if (parentElement) {
-            parentElement.addEventListener('mousemove', handleMouseMove);
-            parentElement.addEventListener('mouseleave', handleMouseLeave);
+
+        // Only attach if parentElement exists and is valid
+        if (parentElement && parentElement.addEventListener) {
+            try {
+                parentElement.addEventListener('mousemove', handleMouseMove);
+                parentElement.addEventListener('mouseleave', handleMouseLeave);
+            } catch (e) {
+                console.warn("Could not attach mesh listeners to parent");
+            }
         }
 
         return () => {
@@ -1327,6 +1604,10 @@ const MeshLensBackground = () => {
         };
     }, [config]);
 
+    // Safety check: if refs are not ready, return null to avoid crash
+    // But we can't check refs in render easily as they are populated after render.
+    // The useEffect handles the null check.
+
     return React.createElement('div', {
         ref: containerRef,
         className: 'absolute inset-0 overflow-hidden pointer-events-none',
@@ -1336,7 +1617,13 @@ const MeshLensBackground = () => {
 
 function ProfileBuilder({ onDismiss, initialOptions }) {
     if (initialOptions?.mode === 'codeflow') {
-        return React.createElement(CodeFlowBuilder, { onDismiss, initialOptions });
+        // Wrap in a simple error boundary logic or just return
+        try {
+            return React.createElement(CodeFlowBuilder, { onDismiss, initialOptions });
+        } catch (e) {
+            console.error("CodeFlowBuilder render error:", e);
+            return React.createElement('div', { className: 'p-8 text-white' }, "Error loading Code Flow Designer");
+        }
     }
 
     const [leftPanelMode, setLeftPanelMode] = useState('settings'); // 'settings' or 'rules'
