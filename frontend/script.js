@@ -584,6 +584,8 @@ const statsTokensRouted = document.getElementById('statsTokensRouted');
 const statsTokensGenerated = document.getElementById('statsTokensGenerated');
 const statsSpend = document.getElementById('statsSpend');
 const statsGlobalRouted = document.getElementById('statsGlobalRouted');
+const statsGlobalGenerated = document.getElementById('statsGlobalGenerated');
+const statsMessagesRouted = document.getElementById('statsMessagesRouted');
 const newProfileBtn = document.getElementById('newProfileBtn');
 const createNewProfileCard = document.getElementById('createNewProfileCard');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -706,9 +708,9 @@ const profiles = {
 };
 const baseProfileOrder = ['default', 'cost-optimized', 'performance-first'];
 const profileStats = {
-    'default': { tokensRouted: 125000, tokensGenerated: 98000, spend: 235.12, globalRouted: 480000, published: false },
-    'cost-optimized': { tokensRouted: 89000, tokensGenerated: 76000, spend: 142.55, globalRouted: null, published: false },
-    'performance-first': { tokensRouted: 142000, tokensGenerated: 130000, spend: 412.44, globalRouted: 620000, published: true }
+    'default': { tokensRouted: 125000, tokensGenerated: 98000, spend: 235.12, globalRouted: 480000, globalGenerated: 380000, published: false, messageCount: 0 },
+    'cost-optimized': { tokensRouted: 89000, tokensGenerated: 76000, spend: 142.55, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 },
+    'performance-first': { tokensRouted: 142000, tokensGenerated: 130000, spend: 412.44, globalRouted: 620000, globalGenerated: 500000, published: true, messageCount: 0 }
 };
 const codeFlowProfiles = {
     'default-code-flow': {
@@ -720,7 +722,7 @@ const codeFlowProfiles = {
         }
     }
 };
-profileStats['default-code-flow'] = profileStats['default-code-flow'] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+profileStats['default-code-flow'] = profileStats['default-code-flow'] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
 
 function updatePriorityDisplays() {
     if (latencyValue) latencyValue.textContent = capitalizeFirst(latencyPriority.value);
@@ -984,7 +986,7 @@ function openCodeFlowBuilder(slug) {
     const profile = codeFlowProfiles[slug];
     if (!profile) return;
     profiles[slug] = profiles[slug] || { name: profile.name };
-    profileStats[slug] = profileStats[slug] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+    profileStats[slug] = profileStats[slug] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
 
     if (window.profileBuilderOverlay?.open) {
         window.profileBuilderOverlay.open({
@@ -1017,7 +1019,7 @@ if (codeFlowProfilesGrid) {
                 name: 'New Code Flow',
                 flow: { planning: '', execution: '', verification: '' }
             };
-            profileStats[slug] = { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
+            profileStats[slug] = { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
             renderCodeFlowProfiles();
             openCodeFlowBuilder(slug);
             return;
@@ -1094,10 +1096,7 @@ if (profilesGrid) {
         const publishBtn = e.target.closest('.profile-publish-btn');
         if (publishBtn) {
             const profileName = publishBtn.dataset.profile;
-            profileStats[profileName] = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null };
-            profileStats[profileName].published = true;
-            publishBtn.classList.add('published');
-            publishBtn.textContent = 'Published';
+            publishProfile(profileName, publishBtn);
             return;
         }
 
@@ -1254,7 +1253,9 @@ if (communityProfilesGrid) {
                 tokensGenerated: communityProfile.tokensGenerated,
                 spend: Math.max(25, Math.round(communityProfile.tokensRouted / 1000) / 2),
                 globalRouted: null,
-                published: false
+                globalGenerated: null,
+                published: false,
+                messageCount: 0
             };
             renderYourProfiles();
         }
@@ -1277,16 +1278,123 @@ if (communityProfilesSearch) {
     });
 }
 
-function openProfileStatsModal(profileName) {
+function setProfileStatsDisplay({ profileName, displayName, userStats, globalStats, published }) {
+    if (statsProfileName) statsProfileName.textContent = displayName || getProfileDisplayName(profileName);
+    if (statsTokensRouted) statsTokensRouted.textContent = formatNumber(userStats?.tokens_routed || 0);
+    if (statsTokensGenerated) statsTokensGenerated.textContent = formatNumber(userStats?.tokens_generated || 0);
+    if (statsSpend) statsSpend.textContent = `$${(userStats?.spend || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (statsMessagesRouted) statsMessagesRouted.textContent = formatNumber(userStats?.message_count || 0);
+    const showGlobal = published && globalStats;
+    if (statsGlobalRouted) statsGlobalRouted.textContent = showGlobal ? formatNumber(globalStats?.tokens_routed || 0) : 'N/A';
+    if (statsGlobalGenerated) statsGlobalGenerated.textContent = showGlobal ? formatNumber(globalStats?.tokens_generated || 0) : 'N/A';
+}
+
+async function openProfileStatsModal(profileName) {
     const profile = profiles[profileName];
-    const stats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, published: false };
-    if (statsProfileName) statsProfileName.textContent = profile?.name || getProfileDisplayName(profileName);
-    if (statsTokensRouted) statsTokensRouted.textContent = formatNumber(stats.tokensRouted || 0);
-    if (statsTokensGenerated) statsTokensGenerated.textContent = formatNumber(stats.tokensGenerated || 0);
-    if (statsSpend) statsSpend.textContent = `$${(stats.spend || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    if (statsGlobalRouted) statsGlobalRouted.textContent = stats.published && stats.globalRouted ? formatNumber(stats.globalRouted) : 'N/A';
+    const fallbackStats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
+    const displayName = profile?.name || getProfileDisplayName(profileName);
+
+    // Optimistically show zeros while fetching
+    setProfileStatsDisplay({
+        profileName,
+        displayName,
+        userStats: { tokens_routed: 0, tokens_generated: 0, spend: 0, message_count: 0 },
+        globalStats: null,
+        published: false
+    });
+
+    try {
+        const response = await fetch(`${API_URL}/profiles/${encodeURIComponent(profileName)}/stats`, {
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        });
+        if (!response.ok) throw new Error('Failed to load stats');
+        const data = await response.json();
+        setProfileStatsDisplay({
+            profileName,
+            displayName,
+            userStats: data.stats?.user,
+            globalStats: data.stats?.global,
+            published: !!data.profile?.published
+        });
+    } catch (err) {
+        // Fall back to in-memory mock stats if API fails
+        setProfileStatsDisplay({
+            profileName,
+            displayName,
+            userStats: {
+                tokens_routed: fallbackStats.tokensRouted,
+                tokens_generated: fallbackStats.tokensGenerated,
+                spend: fallbackStats.spend,
+                message_count: fallbackStats.messageCount
+            },
+            globalStats: fallbackStats.published ? {
+                tokens_routed: fallbackStats.globalRouted,
+                tokens_generated: fallbackStats.globalGenerated
+            } : null,
+            published: fallbackStats.published
+        });
+    }
 
     if (profileStatsModal) profileStatsModal.classList.add('active');
+}
+
+async function publishProfile(profileName, buttonEl) {
+    const profile = profiles[profileName] || {};
+    const fallbackStats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
+
+    // Optimistic UI state
+    if (buttonEl) {
+        buttonEl.disabled = true;
+        const originalText = buttonEl.textContent;
+        buttonEl.dataset.originalText = originalText;
+        buttonEl.textContent = 'Publishing...';
+    }
+
+    const body = { published: true };
+    let succeeded = false;
+
+    try {
+        const response = await fetch(`${API_URL}/profiles/${encodeURIComponent(profileName)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Publish failed (${response.status})`);
+        }
+
+        const data = await response.json();
+        profileStats[profileName] = {
+            ...fallbackStats,
+            published: true
+        };
+        profiles[profileName] = {
+            ...profile,
+            supabase_id: data.profile?.id || profile.supabase_id,
+            user_id: data.profile?.user_id || profile.user_id
+        };
+        succeeded = true;
+    } catch (err) {
+        // Fallback: if no backend record exists (default/local profiles), keep local state
+        if (profileName === 'default' || profileName === 'cost-optimized' || profileName === 'performance-first') {
+            profileStats[profileName] = { ...fallbackStats, published: true };
+            succeeded = true;
+        } else {
+            console.error('Publish failed', err);
+            alert('Could not publish profile. Please try again.');
+        }
+    }
+
+    if (buttonEl) {
+        buttonEl.disabled = false;
+        if (succeeded) {
+            buttonEl.classList.add('published');
+            buttonEl.textContent = 'Published';
+        } else {
+            buttonEl.textContent = buttonEl.dataset.originalText || 'Publish';
+        }
+    }
 }
 
 function closeProfileStatsModal() {

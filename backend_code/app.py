@@ -14,6 +14,7 @@ import os
 import re
 import json
 from uuid import uuid4
+from datetime import datetime, timedelta, timezone
 
 import backend_code.router as router
 import backend_code.inference as inference
@@ -194,6 +195,219 @@ def get_routing_profiles(user_id: str) -> List[dict]:
     return result.data
 
 
+def _normalize_limit(val):
+    try:
+        if val is None:
+            return None
+        return float(val)
+    except Exception:
+        return None
+
+
+def update_routing_profile(slug: str, user_id: str, updates: dict) -> Optional[dict]:
+    """Update a routing profile owned by the user and return the updated row."""
+    result = (
+        supabase.table("routing_profiles")
+        .update(updates)
+        .eq("slug", slug)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if not result.data:
+        return None
+    return result.data[0]
+
+
+def _aggregate_message_totals(messages: list) -> dict:
+    """Sum token and cost metadata for a set of assistant messages."""
+    totals = {
+        "tokens_routed": 0,
+        "tokens_generated": 0,
+        "spend": 0.0,
+        "message_count": 0
+    }
+    for msg in messages:
+        # Only count assistant responses which carry billing + token metadata
+        if msg.get("role") and msg.get("role") != "assistant":
+            continue
+        metadata = msg.get("metadata") or {}
+        totals["tokens_routed"] += metadata.get("input_tokens", 0) or 0
+        totals["tokens_generated"] += metadata.get("output_tokens", 0) or 0
+        totals["spend"] += metadata.get("cost", 0) or 0
+        totals["message_count"] += 1
+    return totals
+
+
+async def get_profile_limits(profile_slug: str) -> dict:
+    """Fetch hard limits from a profile's graph_state, if stored in Supabase."""
+
+    def _load():
+        return (
+            supabase.table("routing_profiles")
+            .select("graph_state, user_id, published")
+            .eq("slug", profile_slug)
+            .limit(1)
+            .execute()
+        )
+
+    result = await asyncio.to_thread(_load)
+    row = result.data[0] if result and result.data else None
+    if not row:
+        return {}
+
+    graph_state = row.get("graph_state") or {}
+    limits = graph_state.get("hardLimits") or graph_state.get("hard_limits") or {}
+
+    # Backward compatibility for older keys
+    max_output_tokens = limits.get("maxOutputTokens") or limits.get("max_output_tokens")
+    max_cost = limits.get("maxCostPerCall") or limits.get("max_cost_per_call")
+
+    return {
+        "max_cost_per_call": _normalize_limit(max_cost),
+        "max_output_tokens_per_call": _normalize_limit(max_output_tokens),
+        "daily_spend_limit": _normalize_limit(limits.get("dailySpendLimit") or limits.get("daily_spend_limit")),
+        "daily_output_tokens": _normalize_limit(limits.get("dailyOutputTokens") or limits.get("daily_output_tokens")),
+        "owner_id": row.get("user_id"),
+        "published": row.get("published"),
+    }
+
+
+async def _get_user_conversation_ids(user_id: str) -> List[str]:
+    def _load():
+        return supabase.table("conversations").select("id").eq("user_id", user_id).execute()
+
+    result = await asyncio.to_thread(_load)
+    return [row["id"] for row in (result.data or [])]
+
+
+async def get_user_daily_usage(profile_slug: str, user_id: str) -> dict:
+    """Return totals for the last 24h for this user and profile."""
+    conversation_ids = await _get_user_conversation_ids(user_id)
+    if not conversation_ids:
+        return {"tokens_routed": 0, "tokens_generated": 0, "spend": 0.0, "message_count": 0}
+
+    since = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+
+    def _load():
+        return (
+            supabase.table("messages")
+            .select("metadata, role, created_at")
+            .eq("profile_name", profile_slug)
+            .in_("conversation_id", conversation_ids)
+            .eq("role", "assistant")
+            .gte("created_at", since)
+            .execute()
+        )
+
+    result = await asyncio.to_thread(_load)
+    return _aggregate_message_totals(result.data or [])
+
+
+async def get_profile_usage(profile_slug: str, user_id: str) -> dict:
+    """Compute per-user and global stats for a routing profile."""
+
+    def _load_profile():
+        # Use * so the call still works even if new columns are added later
+        return (
+            supabase.table("routing_profiles")
+            .select("*")
+            .eq("slug", profile_slug)
+            .limit(1)
+            .execute()
+        )
+
+    def _load_user_conversations():
+        return (
+            supabase.table("conversations")
+            .select("id")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+    profile_row = await asyncio.to_thread(_load_profile)
+    profile_data = profile_row.data[0] if profile_row.data else {}
+
+    user_conversations = await asyncio.to_thread(_load_user_conversations)
+    conversation_ids = [row["id"] for row in (user_conversations.data or [])]
+
+    user_totals = {
+        "tokens_routed": 0,
+        "tokens_generated": 0,
+        "spend": 0.0,
+        "message_count": 0
+    }
+
+    if conversation_ids:
+        def _load_user_messages():
+            return (
+                supabase.table("messages")
+                .select("metadata, role")
+                .eq("profile_name", profile_slug)
+                .in_("conversation_id", conversation_ids)
+                .eq("role", "assistant")
+                .execute()
+            )
+
+        user_messages = await asyncio.to_thread(_load_user_messages)
+        user_totals = _aggregate_message_totals(user_messages.data or [])
+
+    published = bool(profile_data.get("published"))
+    global_totals = None
+
+    if published:
+        def _load_global_messages():
+            return (
+                supabase.table("messages")
+                .select("metadata, role")
+                .eq("profile_name", profile_slug)
+                .eq("role", "assistant")
+                .execute()
+            )
+
+        global_messages = await asyncio.to_thread(_load_global_messages)
+        global_totals = _aggregate_message_totals(global_messages.data or [])
+
+    return {
+        "profile": {
+            "slug": profile_slug,
+            "published": published,
+            "owner_id": profile_data.get("user_id")
+        },
+        "stats": {
+            "user": user_totals,
+            "global": global_totals
+        }
+    }
+
+
+async def enforce_usage_limits(profile_slug: str, user_id: str, usage: dict):
+    """Raise HTTPException if the request would exceed any hard limits."""
+    limits = await get_profile_limits(profile_slug)
+    if not limits:
+        return  # No stored limits or profile not found
+
+    # Per-call checks
+    if limits.get("max_cost_per_call") is not None and usage.get("cost", 0) > limits["max_cost_per_call"]:
+        raise HTTPException(status_code=400, detail="Cost per call exceeds profile limit")
+
+    if limits.get("max_output_tokens_per_call") is not None and usage.get("output_tokens", 0) > limits["max_output_tokens_per_call"]:
+        raise HTTPException(status_code=400, detail="Output tokens per call exceed profile limit")
+
+    # Daily checks (user scoped)
+    if limits.get("daily_spend_limit") is None and limits.get("daily_output_tokens") is None:
+        return
+
+    daily_usage = await get_user_daily_usage(profile_slug, user_id)
+
+    if limits.get("daily_spend_limit") is not None:
+        if daily_usage.get("spend", 0) + usage.get("cost", 0) > limits["daily_spend_limit"]:
+            raise HTTPException(status_code=400, detail="Daily spend limit exceeded for this profile")
+
+    if limits.get("daily_output_tokens") is not None:
+        if daily_usage.get("tokens_generated", 0) + usage.get("output_tokens", 0) > limits["daily_output_tokens"]:
+            raise HTTPException(status_code=400, detail="Daily output token limit exceeded for this profile")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Pre-load the local LLM router on startup for faster first request."""
@@ -310,6 +524,11 @@ async def chat(body: dict, authorization: str = Header(None)):
     output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
     total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
 
+    await enforce_usage_limits(profile, user_id, {
+        "cost": total_cost,
+        "output_tokens": output_tokens
+    })
+
     # Save assistant message to database with full stats
     await add_message(
         conversation_id=conversation_id,
@@ -424,6 +643,11 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
                 input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
                 output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
                 total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+                await enforce_usage_limits(profile, user_id, {
+                    "cost": total_cost,
+                    "output_tokens": output_tokens
+                })
 
                 # Save assistant message to database with full stats
                 await add_message(
@@ -576,6 +800,36 @@ async def create_profile(body: dict, authorization: str = Header(None)):
     )
 
     return {"profile": profile}
+
+
+@app.get("/profiles/{profile_slug}/stats")
+async def profile_stats(profile_slug: str, authorization: str = Header(None)):
+    """Return per-user and global usage for a routing profile."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    usage = await get_profile_usage(profile_slug, user.id)
+    return usage
+
+
+@app.patch("/profiles/{profile_slug}")
+async def update_profile(profile_slug: str, body: dict, authorization: str = Header(None)):
+    """Update a routing profile (currently used for publish/unpublish)."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    allowed_fields = {"published"}
+    updates = {k: v for k, v in body.items() if k in allowed_fields}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    updated = update_routing_profile(profile_slug, user.id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Profile not found or not owned by user")
+
+    return {"profile": updated}
 
 
 async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation):

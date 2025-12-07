@@ -3,8 +3,17 @@ Test inference functions with edge cases.
 """
 
 import os
-from inference import call_google, call_anthropic, call_openai
-from models_config import MODELS
+import sys
+
+CURRENT_DIR = os.path.dirname(__file__)
+PARENT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
+ROOT_DIR = os.path.abspath(os.path.join(PARENT_DIR, os.pardir))
+for path in (ROOT_DIR, PARENT_DIR):
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+from backend_code.inference import call_google, call_anthropic, call_openai
+from backend_code.models_config import MODELS
 
 
 def test_google_basic():
