@@ -42,6 +42,9 @@
     --clay-500: #a5634f;
     --clay-600: #8b4f3f;
     --clay-700: #5e342a;
+    --clay-800: #45221b;
+    --clay-100: #fcece6;
+    --clay-300: #dcb8aa;
     --ink: #3d2a1f;
     --muted: rgba(61, 42, 31, 0.65);
     --white: #fffcf8;
@@ -99,6 +102,9 @@
     --clay-500: #a34734;
     --clay-600: #d16a4a;
     --clay-700: #b85e40;
+    --clay-800: #8b4f3f;
+    --clay-100: #3a2e2b;
+    --clay-300: #5e342a;
     --ink: #f5e9e2;
     --white: #1c1816;
 
