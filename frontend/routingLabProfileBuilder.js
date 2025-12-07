@@ -74,10 +74,10 @@ const defaultWeights = [
 ];
 
 const defaultHardLimits = {
-    maxCostPerCall: 300,
-    maxOutputTokens: 10000,
-    maxLatency: 0.20,
-    maxRateLimits: 0,
+    maxCostPerCall: null,
+    maxOutputTokens: null,
+    dailySpendLimit: null,
+    dailyOutputTokens: null,
 };
 
 const ruleConditions = [
@@ -108,9 +108,9 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
     // Initial nodes based on default flow or passed options
     const initialNodes = [
         { id: 'user-prompt', label: 'Your Prompt', desc: 'Starting input', x: 100, y: 200, model: null, isStart: true },
-        { id: 'planning', label: 'Planning', desc: 'Analyzes requirements & creates architecture', x: 400, y: 200, model: initialOptions?.profile?.flow?.planning || null },
-        { id: 'execution', label: 'Execution', desc: 'Writes the actual code implementation', x: 700, y: 200, model: initialOptions?.profile?.flow?.execution || null },
-        { id: 'verification', label: 'Verification', desc: 'Reviews code & fixes security issues', x: 1000, y: 200, model: initialOptions?.profile?.flow?.verification || null }
+        { id: 'planning', label: 'Planning', desc: 'Analyzes requirements & creates architecture', x: 500, y: 200, model: initialOptions?.profile?.flow?.planning || null },
+        { id: 'execution', label: 'Execution', desc: 'Writes the actual code implementation', x: 900, y: 200, model: initialOptions?.profile?.flow?.execution || null },
+        { id: 'verification', label: 'Verification', desc: 'Reviews code & fixes security issues', x: 700, y: 500, model: initialOptions?.profile?.flow?.verification || null }
     ];
 
     const [nodes, setNodes] = useState(initialNodes);
@@ -127,6 +127,9 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [selectedNodeId, setSelectedNodeId] = useState(null);
     // Removed rightPanelTab, draggedModel, newNodeLabel, etc. as they are no longer used in the main flow
+
+    const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
+    const [isPanning, setIsPanning] = useState(false);
 
     const canvasRef = useRef(null);
 
@@ -158,17 +161,33 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
         // Safety check for ref content
         if (!dragRef.current) return;
 
-        const { isDragging, isConnecting, nodeId, offsetX, offsetY } = dragRef.current;
+        const { isDragging, isConnecting, isPanning, nodeId, offsetX, offsetY, startX, startY, initialTransform, hasMoved } = dragRef.current;
+
+        if (isPanning) {
+            e.preventDefault();
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            setTransform({ ...initialTransform, x: initialTransform.x + dx, y: initialTransform.y + dy });
+            return;
+        }
 
         if (isDragging && nodeId) {
             e.preventDefault();
+
+            // Check for movement to distinguish click vs drag
+            if (!hasMoved) {
+                const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+                if (dist > 5) {
+                    dragRef.current.hasMoved = true;
+                }
+            }
+
             const rect = canvasRef.current.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            // Apply inverse transform to mouse coordinates
+            const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+            const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
 
             setNodes(prev => {
-                // Optimization: Don't update if position hasn't changed significantly?
-                // For now, just map.
                 return prev.map(n => {
                     if (n.id === nodeId) {
                         return { ...n, x: mouseX - offsetX, y: mouseY - offsetY };
@@ -180,20 +199,30 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
 
         if (isConnecting) {
             const rect = canvasRef.current.getBoundingClientRect();
-            setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+            // Apply inverse transform to mouse coordinates
+            const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+            const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+            setMousePos({ x: mouseX, y: mouseY });
         }
-    }, []);
+    }, [transform]);
 
     const handleWindowMouseUp = useCallback((e) => {
-        const { isDragging, isConnecting } = dragRef.current;
-        if (isDragging || isConnecting) {
+        const { isDragging, isConnecting, isPanning, hasMoved, nodeId } = dragRef.current;
+        if (isDragging || isConnecting || isPanning) {
             window.removeEventListener('mousemove', handleWindowMouseMove);
             window.removeEventListener('mouseup', handleWindowMouseUp);
 
             // Reset cursor
             document.body.style.cursor = '';
 
-            dragRef.current = { isDragging: false, isConnecting: false, nodeId: null, offsetX: 0, offsetY: 0 };
+            if (isPanning) setIsPanning(false);
+
+            // Handle Click (Select Node)
+            if (isDragging && !hasMoved && nodeId) {
+                setSelectedNodeId(nodeId);
+            }
+
+            dragRef.current = { isDragging: false, isConnecting: false, isPanning: false, nodeId: null, offsetX: 0, offsetY: 0 };
             setDraggedNode(null);
             setConnectingNode(null);
         }
@@ -214,15 +243,19 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
         if (!node || !canvasRef.current) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        // Apply inverse transform
+        const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+        const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
 
         dragRef.current = {
             isDragging: true,
             isConnecting: false,
             nodeId: nodeId,
             offsetX: mouseX - node.x,
-            offsetY: mouseY - node.y
+            offsetY: mouseY - node.y,
+            startX: e.clientX,
+            startY: e.clientY,
+            hasMoved: false
         };
 
         // Set global cursor for professional feel
@@ -341,6 +374,7 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
             newEdges.push({ from: newId, to: edge.to });
             return newEdges;
         });
+        setSelectedNodeId(newId);
     };
 
     const handleSave = () => {
@@ -372,113 +406,139 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
         return model ? model.logo : 'assets/models-icon.png';
     };
 
+    const handleWheel = (e) => {
+        if (e.ctrlKey || e.metaKey || true) { // Always zoom on wheel for now
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const newZoom = Math.min(Math.max(0.1, transform.k - e.deltaY * zoomSensitivity), 5);
+            setTransform(prev => ({ ...prev, k: newZoom }));
+        }
+    };
+
+    const handleCanvasMouseDown = (e) => {
+        // Start panning
+        if (e.button === 0) { // Left click on background
+            dragRef.current = {
+                isDragging: false,
+                isConnecting: false,
+                isPanning: true,
+                startX: e.clientX,
+                startY: e.clientY,
+                initialTransform: { ...transform }
+            };
+            setIsPanning(true);
+            document.body.style.cursor = 'grabbing';
+            window.addEventListener('mousemove', handleWindowMouseMove);
+            window.addEventListener('mouseup', handleWindowMouseUp);
+        }
+    };
+
     return React.createElement('div', {
-        className: 'fixed inset-0 z-50 flex flex-col',
-        style: { backgroundColor: 'var(--bg-primary)' }
+        className: 'fixed inset-0 z-50 flex flex-col bg-white animate-fade-in',
+        style: { fontFamily: "'Space Grotesk', sans-serif" }
     }, [
         // Header
-        React.createElement('div', {
-            className: 'px-8 py-5 flex items-center justify-between border-b',
-            style: { borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-elevated)' }
+        React.createElement('header', {
+            className: 'h-16 border-b flex items-center justify-between px-6 bg-white z-20 relative shadow-sm',
+            style: { borderColor: 'var(--border-subtle)' }
         }, [
-            React.createElement('div', { className: 'flex items-center gap-4' }, [
+            React.createElement('div', { className: 'flex items-center gap-3' }, [
                 React.createElement('div', {
-                    className: 'w-10 h-10 rounded-xl flex items-center justify-center',
-                    style: { background: 'linear-gradient(135deg, var(--clay-600), var(--clay-800))', color: '#fff' }
-                }, React.createElement('img', { src: 'assets/routing-controls-icon.png', className: 'w-6 h-6 invert brightness-0 invert' })),
-                React.createElement('div', {}, [
-                    React.createElement('h1', { className: 'text-xl font-bold', style: { color: 'var(--text-primary)' } }, 'Code Flow Designer'),
-                    React.createElement('p', { className: 'text-sm', style: { color: 'var(--text-muted)' } }, 'Configure your autonomous coding pipeline')
-                ])
+                    className: 'w-8 h-8 rounded-lg flex items-center justify-center',
+                    style: { background: 'var(--accent-primary)', color: 'white' }
+                }, '⚡'),
+                React.createElement('h1', { className: 'font-bold text-lg' }, 'Code Flow Designer')
             ]),
             React.createElement('div', { className: 'flex items-center gap-3' }, [
+                React.createElement('div', { className: 'text-sm text-muted mr-4' }, 'Scroll to zoom • Drag to pan'),
                 React.createElement('button', {
                     onClick: onDismiss,
-                    className: 'px-6 py-2.5 rounded-xl font-medium transition-all hover:bg-black/5',
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors',
                     style: { color: 'var(--text-secondary)' }
-                }, 'Cancel'),
+                }, 'Exit'),
                 React.createElement('button', {
                     onClick: handleSave,
-                    className: 'px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-clay-500/20 transition-all hover:transform hover:scale-105 active:scale-95',
-                    style: { background: 'var(--clay-600)', color: '#fff' }
-                }, 'Save Pipeline')
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5',
+                    style: { background: 'var(--gradient-terra)' }
+                }, 'Save Flow')
             ])
         ]),
 
-        // Main Content
-        React.createElement('div', { className: 'flex-1 flex overflow-hidden' }, [
-            // Canvas (Graph)
-            React.createElement('div', {
-                ref: canvasRef,
-                className: 'flex-1 relative overflow-hidden cursor-crosshair',
-                onDragOver: handleCanvasDragOver,
-                onDrop: handleCanvasDrop,
-                style: {
-                    // Background removed to allow mesh to be visible
+        // Main Canvas Area
+        React.createElement('div', {
+            className: 'flex-1 relative overflow-hidden bg-dot-pattern',
+            ref: canvasRef,
+            onWheel: handleWheel,
+            onMouseDown: handleCanvasMouseDown,
+            style: { cursor: isPanning ? 'grabbing' : 'grab' }
+        }, [
+            React.createElement(MeshLensBackground, {}),
+
+            // Floating UI (Fixed position)
+            React.createElement('button', {
+                className: 'absolute top-6 left-6 z-10 px-4 py-3 rounded-xl bg-white shadow-lg border border-clay-100 flex items-center gap-2 hover:scale-105 transition-transform font-medium text-clay-700',
+                onMouseDown: (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Create new node immediately
+                    const id = `node-${Date.now()}`;
+                    const rect = canvasRef.current.getBoundingClientRect();
+
+                    // Calculate position relative to canvas (start somewhat near top-left or mouse)
+                    // Apply inverse transform
+                    const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+                    const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+
+                    const newNode = {
+                        id,
+                        label: 'New Node',
+                        desc: 'Configure this step',
+                        prompt: '',
+                        x: mouseX - 120, // Center horizontally (width 240)
+                        y: mouseY - 60,  // Center vertically
+                        model: null
+                    };
+
+                    setNodes(prev => [...prev, newNode]);
+
+                    // Start dragging immediately
+                    dragRef.current = {
+                        isDragging: true,
+                        isConnecting: false,
+                        nodeId: id,
+                        offsetX: 120, // Center offset
+                        offsetY: 60
+                    };
+
+                    document.body.style.cursor = 'grabbing';
+                    setDraggedNode(id);
+                    window.addEventListener('mousemove', handleWindowMouseMove);
+                    window.addEventListener('mouseup', handleWindowMouseUp);
                 }
             }, [
-                // Mesh Background
-                React.createElement(MeshLensBackground, { key: 'mesh' }),
+                React.createElement('span', { className: 'font-bold text-sm', style: { color: 'var(--text-primary)' } }, 'Drag to add node')
+            ]),
 
-                // Floating "Drag to add node" Button
-                React.createElement('div', {
-                    className: 'absolute top-6 left-6 z-20 p-4 rounded-xl border cursor-grab active:cursor-grabbing transition-all hover:border-clay-400 hover:shadow-md group flex items-center justify-center gap-3',
-                    style: {
-                        backgroundColor: 'var(--bg-elevated)',
-                        borderColor: 'var(--border-subtle)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    },
-                    onMouseDown: (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        // Create new node immediately
-                        const id = `node-${Date.now()}`;
-                        const rect = canvasRef.current.getBoundingClientRect();
-
-                        // Calculate position relative to canvas (start somewhat near top-left or mouse)
-                        // But since we are in sidebar, we need to map mouse to canvas.
-                        // Let's start it at the mouse position relative to canvas.
-                        const mouseX = e.clientX - rect.left;
-                        const mouseY = e.clientY - rect.top;
-
-                        const newNode = {
-                            id,
-                            label: 'New Node',
-                            desc: 'Configure this step',
-                            prompt: '',
-                            x: mouseX - 120, // Center horizontally (width 240)
-                            y: mouseY - 60,  // Center vertically
-                            model: null
-                        };
-
-                        setNodes(prev => [...prev, newNode]);
-
-                        // Start dragging immediately
-                        dragRef.current = {
-                            isDragging: true,
-                            isConnecting: false,
-                            nodeId: id,
-                            offsetX: 120, // Center offset
-                            offsetY: 60
-                        };
-
-                        document.body.style.cursor = 'grabbing';
-                        setDraggedNode(id);
-                        window.addEventListener('mousemove', handleWindowMouseMove);
-                        window.addEventListener('mouseup', handleWindowMouseUp);
-                    }
-                }, [
-                    React.createElement('span', { className: 'font-bold text-sm', style: { color: 'var(--text-primary)' } }, 'Drag to add node')
-                ]),
-
+            // Transform Container Content (Edges and Nodes)
+            React.createElement('div', {
+                style: {
+                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`,
+                    transformOrigin: '0 0',
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    pointerEvents: 'none' // Let clicks pass through to canvas for panning, but enable for children
+                }
+            }, [
                 // SVG Layer for Edges
                 React.createElement('svg', {
                     className: 'absolute inset-0 pointer-events-none z-0',
-                    style: { width: '100%', height: '100%' }
+                    style: { width: '100%', height: '100%', overflow: 'visible' }
                 }, [
-                    // Existing Edges
-                    // Existing Edges
+                    // Edges
                     ...edges.map((edge, i) => {
                         const fromNode = nodes.find(n => n.id === edge.from);
                         const toNode = nodes.find(n => n.id === edge.to);
@@ -515,6 +575,7 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
 
                         return React.createElement('g', { key: i }, [
                             React.createElement('path', {
+                                id: `edge-path-${i}`,
                                 d: pathD,
                                 stroke: isBroken ? '#ef4444' : (edge.condition ? 'var(--accent-primary)' : 'var(--clay-400)'),
                                 strokeWidth: '2',
@@ -522,6 +583,17 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                                 strokeDasharray: edge.condition ? '5 5' : '8 8',
                                 strokeOpacity: isBroken ? '0.8' : '0.6'
                             }),
+                            // Directional Arrows
+                            !isBroken && React.createElement('text', {
+                                dy: 6, // Center vertically (adjusted for larger font)
+                                fill: edge.condition ? 'var(--accent-primary)' : 'var(--clay-400)',
+                                fontSize: '20',
+                                style: { pointerEvents: 'none', opacity: 0.8 }
+                            }, React.createElement('textPath', {
+                                href: `#edge-path-${i}`,
+                                startOffset: '20px', // Start a bit in
+                                style: { letterSpacing: '20px' }
+                            }, '➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤')),
                             // Condition Label
                             edge.condition && !isBroken && React.createElement('foreignObject', {
                                 x: midX - 40,
@@ -587,6 +659,72 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                 // Nodes
                 nodes.map(node => {
                     const isActive = !!node.model;
+
+                    // Conditional Node Rendering
+                    if (node.isCondition) {
+                        return React.createElement('div', {
+                            key: node.id,
+                            className: 'absolute flex items-center justify-center z-10 group',
+                            style: {
+                                left: node.x,
+                                top: node.y,
+                                width: '200px', // Square container for rotation
+                                height: '200px',
+                                cursor: draggedNode === node.id ? 'grabbing' : 'grab',
+                                userSelect: 'none',
+                                pointerEvents: 'auto'
+                            },
+                            onMouseDown: (e) => handleMouseDown(e, node.id),
+                            onMouseUp: (e) => completeConnection(e, node.id)
+                        }, [
+                            // Diamond Shape
+                            React.createElement('div', {
+                                className: 'w-32 h-32 rotate-45 border-2 shadow-lg transition-all duration-300 flex items-center justify-center relative group-hover:border-clay-500 group-hover:shadow-xl',
+                                style: {
+                                    borderColor: 'var(--accent-primary)',
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                                }
+                            }, [
+                                // Un-rotate content container
+                                React.createElement('div', {
+                                    className: '-rotate-45 flex flex-col items-center justify-center p-2 text-center w-full h-full'
+                                }, [
+                                    React.createElement('span', { className: 'text-3xl font-bold mb-1', style: { color: 'var(--accent-primary)' } }, '?'),
+                                    React.createElement('span', { className: 'text-xs font-medium leading-tight line-clamp-3 px-2', style: { color: 'var(--text-primary)' } }, node.condition || 'Condition')
+                                ])
+                            ]),
+
+                            // Actions (Floating) - Visible on hover
+                            React.createElement('div', {
+                                className: 'absolute top-0 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md px-3 py-1.5 border z-20',
+                                style: { borderColor: 'var(--border-subtle)' }
+                            }, [
+                                // Connect
+                                React.createElement('button', {
+                                    className: 'p-1 hover:bg-gray-100 rounded-full text-clay-600 cursor-crosshair transition-colors',
+                                    title: 'Drag to connect',
+                                    onMouseDown: (e) => startConnection(e, node.id)
+                                }, React.createElement('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2' },
+                                    React.createElement('path', { d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' }),
+                                    React.createElement('path', { d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' })
+                                )),
+                                // Delete
+                                React.createElement('button', {
+                                    className: 'p-1 hover:bg-red-50 rounded-full text-red-500 transition-colors',
+                                    onClick: (e) => deleteNode(e, node.id)
+                                }, '×')
+                            ]),
+
+                            // Label (Name) floating below
+                            React.createElement('div', {
+                                className: 'absolute bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold px-2 py-1 rounded bg-white/90 backdrop-blur-sm border shadow-sm whitespace-nowrap pointer-events-none',
+                                style: { color: 'var(--text-secondary)', borderColor: 'var(--border-subtle)' }
+                            }, node.label)
+                        ]);
+                    }
+
+                    // Standard Node Rendering
                     return React.createElement('div', {
                         key: node.id,
                         className: 'absolute flex flex-col items-center gap-4 z-10',
@@ -595,7 +733,8 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                             top: node.y,
                             width: '240px', // Reduced width
                             cursor: draggedNode === node.id ? 'grabbing' : 'grab',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            pointerEvents: 'auto' // Re-enable pointer events for nodes
                         },
                         onMouseDown: (e) => handleMouseDown(e, node.id),
                         onMouseUp: (e) => completeConnection(e, node.id)
@@ -655,14 +794,6 @@ function CodeFlowBuilder({ onDismiss, initialOptions }) {
                                     className: 'w-10 h-10 rounded-full flex items-center justify-center',
                                     style: { background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }
                                 }, '➜')
-                            ]) : node.isCondition ? React.createElement('div', {
-                                className: 'flex flex-col items-center justify-center h-16 mt-2'
-                            }, [
-                                React.createElement('div', {
-                                    className: 'w-12 h-12 rotate-45 border-2 flex items-center justify-center mb-1',
-                                    style: { borderColor: 'var(--accent-primary)', background: 'var(--bg-elevated)' }
-                                }, React.createElement('span', { className: '-rotate-45 text-lg font-bold', style: { color: 'var(--accent-primary)' } }, '?')),
-                                React.createElement('span', { className: 'text-[10px] text-muted text-center max-w-[180px] truncate' }, node.condition)
                             ]) : (node.model ? React.createElement('div', {
                                 className: 'flex items-center gap-3 mt-2',
                             }, [
@@ -864,7 +995,7 @@ const WeightSlider = ({ label, value, onChange, showWeight = true }) => {
 };
 
 // Number input component
-const NumberInput = ({ label, value, onChange, step = 1 }) => {
+const NumberInput = ({ label, value, onChange, step = 1, placeholder = 'None' }) => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     return React.createElement('div', {
         className: 'flex items-center justify-between gap-3'
@@ -877,9 +1008,18 @@ const NumberInput = ({ label, value, onChange, step = 1 }) => {
         React.createElement('input', {
             key: 'input',
             type: 'number',
-            value: value,
+            value: value === null || value === undefined ? '' : value,
             step: step,
-            onChange: e => onChange(parseFloat(e.target.value) || 0),
+            placeholder: placeholder,
+            onChange: e => {
+                const raw = e.target.value;
+                if (raw === '') {
+                    onChange(null);
+                    return;
+                }
+                const parsed = parseFloat(raw);
+                onChange(Number.isNaN(parsed) ? null : parsed);
+            },
             className: 'w-20 px-2 py-1 text-sm text-right rounded-lg border',
             style: {
                 borderColor: isDark ? 'rgba(201, 163, 138, 0.35)' : 'rgba(92, 49, 30, 0.15)',
@@ -1931,10 +2071,10 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                         key: 'limits',
                         className: 'space-y-3 mb-6'
                     }, [
-                        React.createElement(NumberInput, { key: 'maxCost', label: 'max cost per call', value: hardLimits.maxCostPerCall, onChange: v => updateHardLimit('maxCostPerCall', v) }),
-                        React.createElement(NumberInput, { key: 'maxTokens', label: 'max output tokens', value: hardLimits.maxOutputTokens, onChange: v => updateHardLimit('maxOutputTokens', v) }),
-                        React.createElement(NumberInput, { key: 'maxLatency', label: 'max latency (ms)', value: hardLimits.maxLatency, onChange: v => updateHardLimit('maxLatency', v), step: 0.01 }),
-                        React.createElement(NumberInput, { key: 'rateLimit', label: 'max rate limits', value: hardLimits.maxRateLimits, onChange: v => updateHardLimit('maxRateLimits', v) }),
+                        React.createElement(NumberInput, { key: 'maxCost', label: 'Max cost per call ($)', value: hardLimits.maxCostPerCall, onChange: v => updateHardLimit('maxCostPerCall', v), step: 0.01 }),
+                        React.createElement(NumberInput, { key: 'maxTokens', label: 'Max output tokens per call', value: hardLimits.maxOutputTokens, onChange: v => updateHardLimit('maxOutputTokens', v) }),
+                        React.createElement(NumberInput, { key: 'dailySpend', label: 'Daily spend limit ($)', value: hardLimits.dailySpendLimit, onChange: v => updateHardLimit('dailySpendLimit', v), step: 0.01 }),
+                        React.createElement(NumberInput, { key: 'dailyTokens', label: 'Daily output tokens', value: hardLimits.dailyOutputTokens, onChange: v => updateHardLimit('dailyOutputTokens', v) }),
                     ]),
 
                     React.createElement('h3', {
