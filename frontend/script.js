@@ -200,6 +200,7 @@ async function refreshSession() {
 
     // User is authenticated, show app
     showAppSection();
+    loadProfilesFromBackend();
 
     // Refresh token every 50 minutes (tokens expire after 1 hour)
     setInterval(refreshSession, 50 * 60 * 1000);
@@ -428,6 +429,7 @@ function setupSigninForm() {
                 const applySignedInState = () => {
                     showAppSection();
                     loadConversationsFromBackend();  // Load user's conversations after login
+                    loadProfilesFromBackend();
                     // Update user displays
                     const userEmailDisplay = document.getElementById('userEmailDisplay');
                     const userEmailIndicator = document.getElementById('userEmail');
@@ -814,14 +816,18 @@ function setActiveProfile(profileName) {
 
 function openProfileInBuilder(profileName) {
     const profileData = profiles[profileName] || {};
+    if (baseProfileOrder.includes(profileName)) return;
     setActiveProfile(profileName);
     if (window.profileBuilderOverlay?.open) {
         window.profileBuilderOverlay.open({
             profile: {
+                slug: profileName,
                 name: profileData.name || getProfileDisplayName(profileName),
                 description: profileData.description,
                 graph_state: profileData.graph_state,
-                user_id: profileData.user_id
+                user_id: profileData.user_id,
+                id: profileData.supabase_id,
+                published: profileStats[profileName]?.published
             }
         });
     }
@@ -836,12 +842,12 @@ function buildProfileCard(slug, displayName, profileData) {
 
     const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
     const isPublished = profileStats[slug]?.published;
-    const publishButtonHtml = `
+    const publishButtonHtml = isDefault ? '' : `
         <button class="profile-publish-btn ${isPublished ? 'published' : ''}" data-profile="${slug}" title="${isPublished ? 'Published' : 'Publish'}" aria-label="Publish profile">
             ${isPublished ? 'Published' : 'Publish'}
         </button>
     `;
-    const routeButtonHtml = `
+    const routeButtonHtml = isDefault ? '' : `
         <button class="profile-route-btn" title="Edit in routing lab" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--accent-primary); border-radius: 8px; background: var(--accent-primary); color: var(--text-on-dark); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -867,15 +873,22 @@ function buildProfileCard(slug, displayName, profileData) {
         </button>
     ` : '';
 
-    card.innerHTML = `
-        <div class="profile-card-header">
+    const headerActionsHtml = (publishButtonHtml || deleteButtonHtml) ? `
+        <div class="profile-card-actions-row">
             ${publishButtonHtml}
-            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
             ${deleteButtonHtml}
         </div>
+    ` : '';
+
+    const footerButtons = [routeButtonHtml, statsButtonHtml].filter(Boolean).join('');
+
+    card.innerHTML = `
+        <div class="profile-card-header">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${displayName}</h4>
+            ${headerActionsHtml}
+        </div>
         <div style="display: flex; gap: 8px;">
-            ${routeButtonHtml}
-            ${statsButtonHtml}
+            ${footerButtons}
         </div>
     `;
     return card;
@@ -1136,7 +1149,8 @@ function slugifyProfileName(name) {
 
 function derivePriorityLevels(graphState) {
     const levels = { latency: 'medium', cost: 'medium', quality: 'medium' };
-    if (!graphState?.priorities) return levels;
+    const priorities = graphState?.priorities || graphState?.weights;
+    if (!priorities) return levels;
 
     const toLevel = (weight) => {
         if (weight >= 0.67) return 'high';
@@ -1144,12 +1158,42 @@ function derivePriorityLevels(graphState) {
         return 'medium';
     };
 
-    graphState.priorities.forEach(priority => {
+    priorities.forEach(priority => {
         if (priority.id === 'latency') levels.latency = toLevel(priority.weight);
         if (priority.id === 'cost') levels.cost = toLevel(priority.weight);
         if (priority.id === 'quality') levels.quality = toLevel(priority.weight);
     });
     return levels;
+}
+
+function ensureProfileStats(slug) {
+    if (!profileStats[slug]) {
+        profileStats[slug] = { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
+    }
+    return profileStats[slug];
+}
+
+function upsertProfileFromBackend(profile) {
+    if (!profile) return null;
+    const slug = profile.slug || profile.id;
+    if (!slug) return null;
+
+    const priorityLevels = derivePriorityLevels(profile.graph_state);
+    const displayName = profile.name || getProfileDisplayName(slug);
+
+    profiles[slug] = {
+        ...priorityLevels,
+        description: profile.description || 'Custom profile',
+        graph_state: profile.graph_state,
+        supabase_id: profile.id,
+        user_id: profile.user_id,
+        name: displayName
+    };
+
+    const stats = ensureProfileStats(slug);
+    stats.published = !!profile.published;
+
+    return slug;
 }
 
 function generateMockCommunityProfiles() {
@@ -1341,6 +1385,16 @@ async function openProfileStatsModal(profileName) {
 async function publishProfile(profileName, buttonEl) {
     const profile = profiles[profileName] || {};
     const fallbackStats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
+    const isDefaultProfile = baseProfileOrder.includes(profileName);
+
+    if (isDefaultProfile) {
+        if (buttonEl) {
+            buttonEl.disabled = false;
+            buttonEl.textContent = buttonEl.dataset.originalText || buttonEl.textContent;
+        }
+        alert('Default profiles cannot be published.');
+        return;
+    }
 
     // Optimistic UI state
     if (buttonEl) {
@@ -1367,7 +1421,7 @@ async function publishProfile(profileName, buttonEl) {
         const data = await response.json();
         profileStats[profileName] = {
             ...fallbackStats,
-            published: true
+            published: !!data.profile?.published
         };
         profiles[profileName] = {
             ...profile,
@@ -1376,14 +1430,8 @@ async function publishProfile(profileName, buttonEl) {
         };
         succeeded = true;
     } catch (err) {
-        // Fallback: if no backend record exists (default/local profiles), keep local state
-        if (profileName === 'default' || profileName === 'cost-optimized' || profileName === 'performance-first') {
-            profileStats[profileName] = { ...fallbackStats, published: true };
-            succeeded = true;
-        } else {
-            console.error('Publish failed', err);
-            alert('Could not publish profile. Please try again.');
-        }
+        console.error('Publish failed', err);
+        alert('Could not publish profile. Please try again.');
     }
 
     if (buttonEl) {
@@ -1411,30 +1459,60 @@ if (profileStatsModal) {
     });
 }
 
-window.addEventListener('routing-profile:created', (event) => {
-    const profile = event.detail?.profile;
-    if (!profile || !profilesGrid) return;
+async function loadProfilesFromBackend() {
+    if (!isAuthenticated()) return;
 
-    const slug = profile.slug || slugifyProfileName(profile.name || 'custom-profile');
-    const displayName = profile.name || 'Custom Profile';
-    const priorityLevels = derivePriorityLevels(profile.graph_state);
+    try {
+        const response = await fetch(`${API_URL}/profiles`, {
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to load profiles (${response.status})`);
+        }
+        const data = await response.json();
+        const list = Array.isArray(data.profiles) ? data.profiles : [];
+        let firstLoaded = null;
 
-    profiles[slug] = {
-        ...priorityLevels,
-        description: profile.description || 'Custom profile',
-        graph_state: profile.graph_state,
-        supabase_id: profile.id,
-        user_id: profile.user_id,
-        name: displayName
-    };
+        list.forEach(profile => {
+            const slug = upsertProfileFromBackend(profile);
+            if (!firstLoaded && slug) {
+                firstLoaded = slug;
+            }
+        });
 
-    const existing = document.querySelector(`[data-profile="${slug}"]`);
-    if (existing) {
-        existing.remove();
+        if (profilesGrid) {
+            renderYourProfiles();
+        }
+
+        if (currentProfileName && profiles[currentProfileName]) {
+            setActiveProfile(currentProfileName);
+        } else if (firstLoaded) {
+            setActiveProfile(firstLoaded);
+        }
+    } catch (err) {
+        console.error('Failed to load profiles from backend', err);
+    }
+}
+
+function applyProfileUpsert(profile, selectAfter = false) {
+    const slug = upsertProfileFromBackend(profile);
+    if (!slug) return;
+
+    if (profilesGrid) {
+        renderYourProfiles();
     }
 
-    renderYourProfiles();
-    setActiveProfile(slug);
+    if (selectAfter) {
+        setActiveProfile(slug);
+    }
+}
+
+window.addEventListener('routing-profile:created', (event) => {
+    applyProfileUpsert(event.detail?.profile, true);
+});
+
+window.addEventListener('routing-profile:updated', (event) => {
+    applyProfileUpsert(event.detail?.profile, false);
 });
 
 if (saveProfileBtn) {
@@ -1499,28 +1577,43 @@ if (confirmDeleteBtn) {
         if (!profileToDelete) return;
 
         const profileName = profileToDelete.name;
-        delete profiles[profileName];
-        delete profileStats[profileName];
 
-        const card = document.querySelector(`[data-profile="${profileName}"]`);
-        if (card) {
-            card.remove();
-        }
-
-        if (currentProfileName === profileName) {
-            setActiveProfile('default');
-        }
-
-        // Reset community card button if it came from community list
-        if (communityProfilesGrid) {
-            const communityButton = communityProfilesGrid.querySelector(`.community-add-btn[data-slug="${profileName}"]`);
-            if (communityButton) {
-                communityButton.classList.remove('added');
-                communityButton.innerHTML = '<span class="add-icon">＋</span>';
+        // Call backend DELETE API
+        fetch(`${API_URL}/profiles/${profileName}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to delete profile (${response.status})`);
             }
-        }
+            return response.json();
+        })
+        .then(() => {
+            // Only delete from memory after backend confirms
+            delete profiles[profileName];
+            delete profileStats[profileName];
 
-        closeDeleteModal();
+            const card = document.querySelector(`[data-profile="${profileName}"]`);
+            if (card) {
+                card.remove();
+            }
+
+            if (currentProfileName === profileName) {
+                setActiveProfile('default');
+            }
+
+            // Reset community card button if it came from community list
+            if (communityProfilesGrid) {
+                const communityButton = communityProfilesGrid.querySelector(`.community-add-btn[data-slug="${profileName}"]`);
+                if (communityButton) {
+                    communityButton.classList.remove('added');
+                    communityButton.innerHTML = '<span class="add-icon">＋</span>';
+                }
+            }
+
+            closeDeleteModal();
+        });
     });
 }
 

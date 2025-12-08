@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 
 import backend_code.router as router
 import backend_code.inference as inference
+import backend_code.profiles as profiles
 
 import atexit
 import httpx
@@ -37,6 +38,8 @@ supabase: Client = create_client(
     SUPABASE_KEY,
     ClientOptions(httpx_client=_httpx_client),
 )
+
+DEFAULT_PROFILE_SLUGS = {"default", "cost-optimized", "performance-first"}
 
 
 def create_conversation(user_id: str, title: str = "New Conversation") -> dict:
@@ -216,6 +219,18 @@ def update_routing_profile(slug: str, user_id: str, updates: dict) -> Optional[d
     if not result.data:
         return None
     return result.data[0]
+
+
+def delete_routing_profile(slug: str, user_id: str) -> bool:
+    """Delete a routing profile owned by the user and return True if deleted."""
+    result = (
+        supabase.table("routing_profiles")
+        .delete()
+        .eq("slug", slug)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    return bool(result.data)
 
 
 def _aggregate_message_totals(messages: list) -> dict:
@@ -504,7 +519,7 @@ async def chat(body: dict, authorization: str = Header(None)):
 
     # PHASE 1: ROUTING
     routing_start = time.time()
-    model_choice = await resolve_model_choice(router_mode, model_override, conversation)
+    model_choice = await resolve_model_choice(router_mode, model_override, conversation, profile_slug=profile, supabase_client=supabase)
     routing_time = time.time() - routing_start
 
     # PHASE 2: INFERENCE
@@ -617,7 +632,7 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
             try:
                 # PHASE 1: ROUTING
                 routing_start = time.time()
-                model_choice = await resolve_model_choice("manual", model_override, conversation)
+                model_choice = await resolve_model_choice("manual", model_override, conversation, profile_slug=profile, supabase_client=supabase)
                 routing_time = time.time() - routing_start
 
                 # PHASE 2: INFERENCE
@@ -820,7 +835,10 @@ async def update_profile(profile_slug: str, body: dict, authorization: str = Hea
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    allowed_fields = {"published"}
+    if profile_slug in DEFAULT_PROFILE_SLUGS:
+        raise HTTPException(status_code=403, detail="Default profiles cannot be modified")
+
+    allowed_fields = {"published", "graph_state", "description", "name"}
     updates = {k: v for k, v in body.items() if k in allowed_fields}
     if not updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")
@@ -832,7 +850,24 @@ async def update_profile(profile_slug: str, body: dict, authorization: str = Hea
     return {"profile": updated}
 
 
-async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation):
+@app.delete("/profiles/{profile_slug}")
+async def delete_profile(profile_slug: str, authorization: str = Header(None)):
+    """Delete a routing profile owned by the user."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if profile_slug in DEFAULT_PROFILE_SLUGS:
+        raise HTTPException(status_code=403, detail="Default profiles cannot be deleted")
+
+    deleted = delete_routing_profile(profile_slug, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Profile not found or not owned by user")
+
+    return {"success": True, "slug": profile_slug}
+
+
+async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation, profile_slug: Optional[str] = None, supabase_client: Optional[Client] = None):
     """
     Decide how to obtain a model: router-driven or manual override.
     """
@@ -845,6 +880,15 @@ async def resolve_model_choice(router_mode: str, model_override: Optional[str], 
 
         provider, model_name = model_override.split(":", 1)
         return router.route_specific(provider, model_name)
+    # If a profile slug is provided, try the profile-aware router first.
+    if profile_slug:
+        try:
+            model = await profiles.route_with_profile(supabase_client or supabase, conversation, profile_slug)
+            if model:
+                return model
+        except Exception as e:
+            print(f"[profile-router] fallback to legacy routing due to: {e}")
+
     model, model_scores = await router.route_with_llm(conversation)
     return model
 
