@@ -1791,6 +1791,58 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     const rightRefs = useRef({});
     const [nodePositions, setNodePositions] = useState({});
 
+    const normalizeHardLimits = (limits = {}) => {
+        return {
+            maxCostPerCall: limits.maxCostPerCall ?? limits.max_cost_per_call ?? null,
+            maxOutputTokens: limits.maxOutputTokens ?? limits.max_output_tokens ?? null,
+            dailySpendLimit: limits.dailySpendLimit ?? limits.daily_spend_limit ?? null,
+            dailyOutputTokens: limits.dailyOutputTokens ?? limits.daily_output_tokens ?? null
+        };
+    };
+
+    const hydrateWeights = (graphState) => {
+        if (Array.isArray(graphState?.weights)) return graphState.weights;
+        if (Array.isArray(graphState?.priorities)) {
+            return graphState.priorities.map(priority => ({
+                id: priority.id,
+                label: defaultWeights.find(w => w.id === priority.id)?.label || priority.id,
+                weight: priority.weight
+            }));
+        }
+        return defaultWeights;
+    };
+
+    useEffect(() => {
+        const incoming = initialOptions?.profile;
+        if (!incoming) return;
+
+        setProfileName(incoming.name || '');
+        setDescription(incoming.description || '');
+
+        const graphState = incoming.graph_state || {};
+        setWeights(hydrateWeights(graphState));
+        setHardLimits({
+            ...defaultHardLimits,
+            ...normalizeHardLimits(graphState.hardLimits || graphState.hard_limits || graphState.hardLimits)
+        });
+
+        if (Array.isArray(graphState.providers)) {
+            const mergedProviders = providerPresets.map(preset => {
+                const override = graphState.providers.find(p => p.id === preset.id);
+                return override ? { ...preset, ...override } : { ...preset, enabled: preset.id === 'local' ? false : true };
+            });
+            setProviders(mergedProviders);
+        }
+
+        if (Array.isArray(graphState.rules)) {
+            setRules(graphState.rules);
+        }
+
+        if (graphState.systemPrompt) {
+            setSystemPrompt(graphState.systemPrompt);
+        }
+    }, [initialOptions]);
+
     // Inject cursor and toast styles
     useEffect(() => {
         const styleId = 'routing-lab-cursor-styles';
@@ -1867,13 +1919,19 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         }
         setIsSaving(true);
 
-        const graphState = { weights, hardLimits, providers, rules };
+        const graphState = { weights, hardLimits, providers, rules, systemPrompt };
         const payload = { name: profileName, description, graph_state: graphState };
+        const isEditing = Boolean(initialOptions?.profile?.slug);
+        const targetSlug = initialOptions?.profile?.slug;
+        const endpoint = isEditing && targetSlug
+            ? `${window.API_URL}/profiles/${encodeURIComponent(targetSlug)}`
+            : `${window.API_URL}/profiles`;
+        const method = isEditing && targetSlug ? 'PATCH' : 'POST';
 
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`${window.API_URL}/profiles`, {
-                method: 'POST',
+            const response = await fetch(endpoint, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     ...(token && { 'Authorization': `Bearer ${token}` })
@@ -1886,7 +1944,15 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             }
             const saved = await response.json();
             showToast('Profile saved successfully!', 'success');
-            window.dispatchEvent(new CustomEvent('routing-profile:created', { detail: { profile: saved.profile } }));
+            const savedProfile = saved.profile || {
+                ...initialOptions?.profile,
+                slug: targetSlug,
+                name: profileName,
+                description,
+                graph_state: graphState
+            };
+            const eventName = isEditing ? 'routing-profile:updated' : 'routing-profile:created';
+            window.dispatchEvent(new CustomEvent(eventName, { detail: { profile: savedProfile } }));
             setTimeout(() => onDismiss(), 500);
         } catch (err) {
             showToast(err.message || 'Failed to save profile', 'error');
