@@ -1387,7 +1387,7 @@ const LocalModelsInfoModal = ({ isOpen, onClose, onEnable }) => {
 };
 
 // Mini node card for graph
-const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal }) => {
+const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal, large }) => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const borderColor = isDark ? 'rgba(201, 163, 138, 0.35)' : 'rgba(92, 49, 30, 0.12)';
     const activeBorderColor = isDark ? 'rgba(201, 163, 138, 0.5)' : '#8e3c2c';
@@ -1396,10 +1396,10 @@ const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasTo
 
     return React.createElement('div', {
         ref: nodeRef,
-        className: `relative rounded-xl border-2 px-3 py-2 transition-all cursor-pointer ${active ? 'shadow-lg' : ''}`,
+        className: `relative rounded-xl border-2 transition-all cursor-pointer ${active ? 'shadow-lg' : ''} ${large ? 'px-5 py-3' : 'px-3 py-2'}`,
         style: {
             backgroundColor: isLocal ? '#8e3c2c' : 'var(--bg-elevated)',
-            minWidth: '120px',
+            minWidth: large ? '180px' : '120px',
             borderColor: active ? activeBorderColor : (isLocal ? activeBorderColor : borderColor)
         },
         onClick
@@ -1416,7 +1416,7 @@ const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasTo
             React.createElement('div', { key: 'text' }, [
                 React.createElement('p', {
                     key: 'title',
-                    className: 'text-sm font-semibold',
+                    className: large ? 'text-base font-semibold' : 'text-sm font-semibold',
                     style: { color: titleColor }
                 }, title),
                 subtitle && React.createElement('p', {
@@ -1715,8 +1715,13 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     const [weights, setWeights] = useState(defaultWeights);
     const [hardLimits, setHardLimits] = useState(defaultHardLimits);
     const [providers, setProviders] = useState(
-        providerPresets.map(p => ({ ...p, enabled: p.id === 'local' ? false : true }))
+        providerPresets.map(p => ({
+            ...p,
+            enabled: p.id === 'local' ? false : true,
+            enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: true }), {})
+        }))
     );
+    const [expandedProviders, setExpandedProviders] = useState({});
     const [rules, setRules] = useState([]);
     const [systemPrompt, setSystemPrompt] = useState('');
     const [systemPromptModalOpen, setSystemPromptModalOpen] = useState(false);
@@ -1730,11 +1735,17 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     const [testResult, setTestResult] = useState(null);
     const [isTestingRoute, setIsTestingRoute] = useState(false);
     const [animatingEdges, setAnimatingEdges] = useState(false);
+    const [modelsModalOpen, setModelsModalOpen] = useState(false);
+    const [modelSearchQuery, setModelSearchQuery] = useState('');
+    const [activePopup, setActivePopup] = useState(null); // { type: 'userPrompt' | 'specialRules' | 'weight' | 'router', data: {...}, position: {x, y}, fullscreen: false }
+    const [testPromptDraft, setTestPromptDraft] = useState('');
 
     const containerRef = useRef(null);
+    const userPromptRef = useRef(null);
+    const specialRulesRef = useRef(null);
     const leftRefs = useRef({});
     const centerRef = useRef(null);
-    const rightRefs = useRef({});
+    const modelsNodeRef = useRef(null);
     const [nodePositions, setNodePositions] = useState({});
 
     const normalizeHardLimits = (limits = {}) => {
@@ -1775,7 +1786,17 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         if (Array.isArray(graphState.providers)) {
             const mergedProviders = providerPresets.map(preset => {
                 const override = graphState.providers.find(p => p.id === preset.id);
-                return override ? { ...preset, ...override } : { ...preset, enabled: preset.id === 'local' ? false : true };
+                if (override) {
+                    // If no enabledModels in saved data, create from enabled status
+                    const enabledModels = override.enabledModels ||
+                        preset.models.reduce((acc, model) => ({ ...acc, [model]: override.enabled ?? true }), {});
+                    return { ...preset, ...override, enabledModels };
+                }
+                return {
+                    ...preset,
+                    enabled: preset.id === 'local' ? false : true,
+                    enabledModels: preset.models.reduce((acc, model) => ({ ...acc, [model]: preset.id !== 'local' }), {})
+                };
             });
             setProviders(mergedProviders);
         }
@@ -1856,6 +1877,31 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
 
     const showToast = (message, type) => {
         setToast({ message, type });
+    };
+
+    const openNodePopup = (type, nodeRef, data = {}) => {
+        if (!nodeRef?.current || !containerRef.current) return;
+
+        const nodeRect = nodeRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+
+        // Position popup to the right of the node
+        const position = {
+            x: nodeRect.right - containerRect.left + 20,
+            y: nodeRect.top - containerRect.top
+        };
+
+        setActivePopup({ type, data, position, fullscreen: false });
+    };
+
+    const closePopup = () => {
+        setActivePopup(null);
+    };
+
+    const toggleFullscreen = () => {
+        if (activePopup) {
+            setActivePopup({ ...activePopup, fullscreen: !activePopup.fullscreen });
+        }
     };
 
     const handleTestRoute = async () => {
@@ -1988,17 +2034,39 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             const containerRect = containerRef.current.getBoundingClientRect();
             const positions = {};
 
+            // User Prompt node
+            if (userPromptRef.current) {
+                const rect = userPromptRef.current.getBoundingClientRect();
+                positions.userPrompt = {
+                    x: rect.right - containerRect.left,
+                    y: rect.top + rect.height / 2 - containerRect.top
+                };
+            }
+
+            // Special Rules node
+            if (specialRulesRef.current) {
+                const rect = specialRulesRef.current.getBoundingClientRect();
+                positions.specialRules = {
+                    x: rect.right - containerRect.left,
+                    y: rect.top + rect.height / 2 - containerRect.top,
+                    left: rect.left - containerRect.left
+                };
+            }
+
+            // Weight nodes
             weights.forEach(node => {
                 const el = leftRefs.current[node.id];
                 if (el) {
                     const rect = el.getBoundingClientRect();
                     positions[node.id] = {
                         x: rect.right - containerRect.left,
-                        y: rect.top + rect.height / 2 - containerRect.top
+                        y: rect.top + rect.height / 2 - containerRect.top,
+                        left: rect.left - containerRect.left
                     };
                 }
             });
 
+            // Router node
             if (centerRef.current) {
                 const rect = centerRef.current.getBoundingClientRect();
                 positions.router = {
@@ -2008,16 +2076,14 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                 };
             }
 
-            providers.forEach(provider => {
-                const el = rightRefs.current[provider.id];
-                if (el) {
-                    const rect = el.getBoundingClientRect();
-                    positions[provider.id] = {
-                        x: rect.left - containerRect.left,
-                        y: rect.top + rect.height / 2 - containerRect.top
-                    };
-                }
-            });
+            // Models node
+            if (modelsNodeRef.current) {
+                const rect = modelsNodeRef.current.getBoundingClientRect();
+                positions.models = {
+                    x: rect.left - containerRect.left,
+                    y: rect.top + rect.height / 2 - containerRect.top
+                };
+            }
 
             setNodePositions(positions);
         };
@@ -2303,47 +2369,73 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     React.createElement(MeshLensBackground, { key: 'mesh' }),
                     React.createElement('div', {
                         key: 'nodes',
-                        className: 'absolute inset-0 flex items-center justify-center p-8'
+                        className: 'absolute inset-0 flex items-center justify-center p-4',
+                        style: { transform: 'scale(0.85)' }
                     }, [
-                        // Left nodes (weights)
+                        // User Prompt (leftmost)
                         React.createElement('div', {
-                            key: 'left',
-                            className: 'flex flex-col gap-4 mr-12'
+                            key: 'user-prompt',
+                            className: 'mr-6'
+                        }, React.createElement(MiniNodeCard, {
+                            title: 'User Prompt',
+                            subtitle: 'Input',
+                            accent: '#5b2a1a',
+                            nodeRef: userPromptRef,
+                            onClick: () => openNodePopup('userPrompt', userPromptRef)
+                        })),
+                        // Special Rules
+                        React.createElement('div', {
+                            key: 'special-rules',
+                            className: 'mr-6'
+                        }, React.createElement(MiniNodeCard, {
+                            title: 'Special Rules',
+                            subtitle: rules.length ? `${rules.length} rule${rules.length > 1 ? 's' : ''}` : 'No rules',
+                            accent: '#8e3c2c',
+                            nodeRef: specialRulesRef,
+                            onClick: () => openNodePopup('specialRules', specialRulesRef)
+                        })),
+                        // Weight nodes
+                        React.createElement('div', {
+                            key: 'weights',
+                            className: 'flex flex-col gap-3 mr-8'
                         }, weights.map(w => React.createElement(MiniNodeCard, {
                             key: w.id,
                             title: w.label,
-                            subtitle: null,
+                            subtitle: `${Math.round(w.weight * 100)}%`,
                             accent: siteColors.quality,
-                            nodeRef: el => leftRefs.current[w.id] = el
+                            nodeRef: el => leftRefs.current[w.id] = el,
+                            onClick: () => openNodePopup('weight', { current: leftRefs.current[w.id] }, { weight: w })
                         }))),
-                        // Center router
+                        // Router node
                         React.createElement('div', {
-                            key: 'center',
+                            key: 'router',
                             className: 'mx-8'
                         }, React.createElement(MiniNodeCard, {
                             title: 'Restruct Router',
                             subtitle: 'Weighted orchestration',
                             accent: siteColors.router,
                             active: true,
-                            nodeRef: centerRef
+                            nodeRef: centerRef,
+                            onClick: () => openNodePopup('router', centerRef)
                         })),
-                        // Right nodes (providers)
+                        // Models node (single, clickable)
                         React.createElement('div', {
-                            key: 'right',
-                            className: 'flex flex-col gap-3 ml-12'
-                        }, providers.map(p => React.createElement(MiniNodeCard, {
-                            key: p.id,
-                            title: p.label,
-                            subtitle: p.isLocal
-                                ? (p.enabled ? 'Local • Active' : 'Local • Disabled')
-                                : (p.enabled ? 'Active' : 'Disabled'),
-                            accent: p.color || siteColors.cost,
-                            hasToggle: true,
-                            enabled: p.enabled,
-                            onToggle: () => toggleProvider(p.id),
-                            nodeRef: el => rightRefs.current[p.id] = el,
-                            isLocal: p.isLocal
-                        })))
+                            key: 'models',
+                            className: 'ml-8'
+                        }, React.createElement(MiniNodeCard, {
+                            title: 'Model pool',
+                            subtitle: (() => {
+                                const totalModels = activeProviders.reduce((sum, p) => {
+                                    const enabledCount = Object.values(p.enabledModels || {}).filter(Boolean).length;
+                                    return sum + enabledCount;
+                                }, 0);
+                                return `${totalModels} model${totalModels !== 1 ? 's' : ''}`;
+                            })(),
+                            accent: siteColors.cost,
+                            nodeRef: modelsNodeRef,
+                            onClick: () => setModelsModalOpen(true),
+                            large: true
+                        }))
                     ]),
                     // SVG edges
                     React.createElement('svg', {
@@ -2352,17 +2444,15 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                         width: '100%',
                         height: '100%'
                     }, (() => {
-                        const router = nodePositions.router;
-                        if (!router) return null;
                         const edges = [];
 
-                        // Left to router edges
-                        weights.forEach(w => {
-                            const leftNode = nodePositions[w.id];
-                            if (!leftNode) return;
-                            const d = `M ${leftNode.x} ${leftNode.y} C ${leftNode.x + 60} ${leftNode.y}, ${router.left - 60} ${router.y}, ${router.left} ${router.y}`;
+                        // 1. User Prompt -> Special Rules
+                        const userPrompt = nodePositions.userPrompt;
+                        const specialRules = nodePositions.specialRules;
+                        if (userPrompt && specialRules) {
+                            const d = `M ${userPrompt.x} ${userPrompt.y} L ${specialRules.left} ${specialRules.y}`;
                             edges.push(React.createElement('path', {
-                                key: `left-${w.id}`,
+                                key: 'userPrompt-specialRules',
                                 d,
                                 fill: 'none',
                                 stroke: animatingEdges ? '#c4836a' : siteColors.edgeIdle,
@@ -2370,31 +2460,75 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                                 strokeDasharray: '6 6',
                                 style: animatingEdges ? {
                                     animation: 'routeFlow 1.5s linear infinite',
+                                    animationDelay: '0s',
                                     opacity: 0.8
                                 } : {}
                             }));
-                        });
+                        }
 
-                        // Router to right edges
-                        const selectedProvider = testResult?.selected_model?.vendor;
-                        providers.forEach(p => {
-                            const rightNode = nodePositions[p.id];
-                            if (!rightNode) return;
-                            const isSelected = animatingEdges && selectedProvider === p.id;
-                            const d = `M ${router.right} ${router.y} C ${router.right + 80} ${router.y}, ${rightNode.x - 80} ${rightNode.y}, ${rightNode.x} ${rightNode.y}`;
-                            edges.push(React.createElement('path', {
-                                key: `right-${p.id}`,
-                                d,
-                                fill: 'none',
-                                stroke: isSelected ? '#8b4f3f' : (p.enabled ? siteColors.edgeIdle : 'rgba(92, 49, 30, 0.1)'),
-                                strokeWidth: isSelected ? 3 : 1.5,
-                                strokeDasharray: '6 6',
-                                style: isSelected ? {
-                                    animation: 'routeFlow 1.5s linear infinite',
-                                    opacity: 1
-                                } : {}
-                            }));
-                        });
+                        // 2. Special Rules -> Weight nodes
+                        if (specialRules) {
+                            weights.forEach((w, idx) => {
+                                const weightNode = nodePositions[w.id];
+                                if (!weightNode) return;
+                                const d = `M ${specialRules.x} ${specialRules.y} C ${specialRules.x + 40} ${specialRules.y}, ${weightNode.left - 40} ${weightNode.y}, ${weightNode.left} ${weightNode.y}`;
+                                edges.push(React.createElement('path', {
+                                    key: `specialRules-${w.id}`,
+                                    d,
+                                    fill: 'none',
+                                    stroke: animatingEdges ? '#c4836a' : siteColors.edgeIdle,
+                                    strokeWidth: animatingEdges ? 2.5 : 1.5,
+                                    strokeDasharray: '6 6',
+                                    style: animatingEdges ? {
+                                        animation: 'routeFlow 1.5s linear infinite',
+                                        animationDelay: `${0.3}s`,
+                                        opacity: 0.8
+                                    } : {}
+                                }));
+                            });
+                        }
+
+                        // 3. Weight nodes -> Router
+                        const router = nodePositions.router;
+                        if (router) {
+                            weights.forEach(w => {
+                                const weightNode = nodePositions[w.id];
+                                if (!weightNode) return;
+                                const d = `M ${weightNode.x} ${weightNode.y} C ${weightNode.x + 50} ${weightNode.y}, ${router.left - 50} ${router.y}, ${router.left} ${router.y}`;
+                                edges.push(React.createElement('path', {
+                                    key: `weight-router-${w.id}`,
+                                    d,
+                                    fill: 'none',
+                                    stroke: animatingEdges ? '#c4836a' : siteColors.edgeIdle,
+                                    strokeWidth: animatingEdges ? 2.5 : 1.5,
+                                    strokeDasharray: '6 6',
+                                    style: animatingEdges ? {
+                                        animation: 'routeFlow 1.5s linear infinite',
+                                        animationDelay: '0.6s',
+                                        opacity: 0.8
+                                    } : {}
+                                }));
+                            });
+
+                            // 4. Router -> Models node
+                            const modelsNode = nodePositions.models;
+                            if (modelsNode) {
+                                const d = `M ${router.right} ${router.y} L ${modelsNode.x} ${modelsNode.y}`;
+                                edges.push(React.createElement('path', {
+                                    key: 'router-models',
+                                    d,
+                                    fill: 'none',
+                                    stroke: animatingEdges ? '#8b4f3f' : siteColors.edgeIdle,
+                                    strokeWidth: animatingEdges ? 3 : 1.5,
+                                    strokeDasharray: '6 6',
+                                    style: animatingEdges ? {
+                                        animation: 'routeFlow 1.5s linear infinite',
+                                        animationDelay: '0.9s',
+                                        opacity: 1
+                                    } : {}
+                                }));
+                            }
+                        }
 
                         return edges;
                     })())
@@ -2559,6 +2693,232 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
             onEnable: handleEnableLocalModels
         }),
 
+        // Models Selection Modal
+        modelsModalOpen && React.createElement('div', {
+            key: 'models-modal',
+            className: 'fixed inset-0 flex items-center justify-center z-50',
+            style: { backgroundColor: 'rgba(0,0,0,0.5)' },
+            onClick: () => setModelsModalOpen(false)
+        }, React.createElement('div', {
+            className: 'bg-white rounded-2xl p-6 w-full max-w-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col',
+            style: { color: '#2b1d14' },
+            onClick: e => e.stopPropagation()
+        }, [
+            // Header
+            React.createElement('div', {
+                key: 'header',
+                className: 'flex items-center justify-between mb-4'
+            }, [
+                React.createElement('h3', {
+                    key: 'title',
+                    className: 'text-xl font-semibold',
+                    style: { color: '#5b2a1a' }
+                }, 'Select Models'),
+                React.createElement('button', {
+                    key: 'close',
+                    type: 'button',
+                    onClick: () => setModelsModalOpen(false),
+                    className: 'text-2xl leading-none',
+                    style: { color: 'rgba(43,29,20,0.5)' }
+                }, '×')
+            ]),
+
+            // Search and controls
+            React.createElement('div', {
+                key: 'controls',
+                className: 'flex gap-3 mb-4'
+            }, [
+                React.createElement('input', {
+                    key: 'search',
+                    type: 'text',
+                    value: modelSearchQuery,
+                    onChange: e => setModelSearchQuery(e.target.value),
+                    placeholder: 'Search models or providers...',
+                    className: 'flex-1 px-4 py-2 rounded-lg border text-sm',
+                    style: { borderColor: 'rgba(92,49,30,0.15)', backgroundColor: 'var(--bg-elevated)', color: '#2b1d14' }
+                }),
+                React.createElement('button', {
+                    key: 'disable-all',
+                    type: 'button',
+                    onClick: () => setProviders(prev => prev.map(p => ({
+                        ...p,
+                        enabled: false,
+                        enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: false }), {})
+                    }))),
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap',
+                    style: { background: 'rgba(92,49,30,0.08)', color: '#5b2a1a' }
+                }, 'Disable All'),
+                React.createElement('button', {
+                    key: 'enable-all',
+                    type: 'button',
+                    onClick: () => setProviders(prev => prev.map(p => ({
+                        ...p,
+                        enabled: true,
+                        enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: true }), {})
+                    }))),
+                    className: 'px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap',
+                    style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                }, 'Enable All')
+            ]),
+
+            // Provider list
+            React.createElement('div', {
+                key: 'provider-list',
+                className: 'overflow-y-auto flex-1',
+                style: { paddingRight: '8px' }
+            }, (() => {
+                const searchLower = modelSearchQuery.toLowerCase();
+                const filtered = providers.filter(p => {
+                    if (!searchLower) return true;
+                    const labelMatch = p.label.toLowerCase().includes(searchLower);
+                    const modelMatch = p.models.some(m => m.toLowerCase().includes(searchLower));
+                    return labelMatch || modelMatch;
+                });
+
+                if (filtered.length === 0) {
+                    return React.createElement('div', {
+                        className: 'text-center py-8 text-sm',
+                        style: { color: 'rgba(43,29,20,0.4)' }
+                    }, 'No models found');
+                }
+
+                return filtered.map(provider => {
+                    const isExpanded = expandedProviders[provider.id];
+                    const enabledModelCount = Object.values(provider.enabledModels || {}).filter(Boolean).length;
+
+                    return React.createElement('div', {
+                        key: provider.id,
+                        className: 'mb-4 rounded-xl border transition-all',
+                        style: {
+                            borderColor: provider.enabled ? 'rgba(139,79,63,0.2)' : 'rgba(92,49,30,0.1)',
+                            backgroundColor: provider.enabled ? 'rgba(196,131,106,0.04)' : 'transparent'
+                        }
+                    }, [
+                        // Provider header (clickable to expand)
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'flex items-center justify-between p-4 cursor-pointer',
+                            onClick: () => setExpandedProviders(prev => ({ ...prev, [provider.id]: !prev[provider.id] }))
+                        }, [
+                            React.createElement('div', {
+                                key: 'info',
+                                className: 'flex items-center gap-3'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'icon',
+                                    className: 'w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg',
+                                    style: { backgroundColor: provider.color || '#8b4f3f' }
+                                }, provider.icon),
+                                React.createElement('div', {
+                                    key: 'text'
+                                }, [
+                                    React.createElement('p', {
+                                        key: 'label',
+                                        className: 'font-semibold text-base',
+                                        style: { color: '#2b1d14' }
+                                    }, provider.label),
+                                    React.createElement('p', {
+                                        key: 'count',
+                                        className: 'text-xs',
+                                        style: { color: 'rgba(43,29,20,0.5)' }
+                                    }, `${enabledModelCount}/${provider.models.length} models enabled`)
+                                ])
+                            ]),
+                            React.createElement('div', {
+                                key: 'controls',
+                                className: 'flex items-center gap-2'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'chevron',
+                                    className: 'text-lg transition-transform',
+                                    style: {
+                                        color: 'rgba(43,29,20,0.4)',
+                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                                    }
+                                }, '▼'),
+                                React.createElement('button', {
+                                    key: 'toggle',
+                                    type: 'button',
+                                    onClick: (e) => {
+                                        e.stopPropagation();
+                                        setProviders(prev => prev.map(p =>
+                                            p.id === provider.id ? {
+                                                ...p,
+                                                enabled: !p.enabled,
+                                                enabledModels: p.models.reduce((acc, model) => ({
+                                                    ...acc,
+                                                    [model]: !p.enabled
+                                                }), {})
+                                            } : p
+                                        ));
+                                    },
+                                    className: 'relative w-12 h-6 rounded-full transition-colors',
+                                    style: {
+                                        backgroundColor: provider.enabled ? '#8b4f3f' : 'rgba(92,49,30,0.2)'
+                                    }
+                                }, React.createElement('div', {
+                                    className: 'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow',
+                                    style: {
+                                        transform: provider.enabled ? 'translateX(24px)' : 'translateX(2px)'
+                                    }
+                                }))
+                            ])
+                        ]),
+
+                        // Expanded models list
+                        isExpanded && React.createElement('div', {
+                            key: 'models',
+                            className: 'px-4 pb-4 space-y-2'
+                        }, provider.models.map(model => {
+                            const modelEnabled = provider.enabledModels?.[model] ?? true;
+                            return React.createElement('div', {
+                                key: model,
+                                className: 'flex items-center justify-between p-3 rounded-lg border',
+                                style: {
+                                    borderColor: modelEnabled ? 'rgba(139,79,63,0.15)' : 'rgba(92,49,30,0.08)',
+                                    backgroundColor: modelEnabled ? 'rgba(196,131,106,0.05)' : 'transparent'
+                                }
+                            }, [
+                                React.createElement('span', {
+                                    key: 'name',
+                                    className: 'text-sm font-medium',
+                                    style: { color: modelEnabled ? '#2b1d14' : 'rgba(43,29,20,0.4)' }
+                                }, model),
+                                React.createElement('button', {
+                                    key: 'toggle',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setProviders(prev => prev.map(p =>
+                                            p.id === provider.id ? {
+                                                ...p,
+                                                enabledModels: {
+                                                    ...p.enabledModels,
+                                                    [model]: !modelEnabled
+                                                },
+                                                enabled: Object.values({
+                                                    ...p.enabledModels,
+                                                    [model]: !modelEnabled
+                                                }).some(Boolean)
+                                            } : p
+                                        ));
+                                    },
+                                    className: 'relative w-10 h-5 rounded-full transition-colors',
+                                    style: {
+                                        backgroundColor: modelEnabled ? '#8b4f3f' : 'rgba(92,49,30,0.2)'
+                                    }
+                                }, React.createElement('div', {
+                                    className: 'absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow',
+                                    style: {
+                                        transform: modelEnabled ? 'translateX(20px)' : 'translateX(2px)'
+                                    }
+                                }))
+                            ]);
+                        }))
+                    ]);
+                })
+            })())
+        ])),
+
         systemPromptModalOpen && React.createElement('div', {
             key: 'system-prompt-modal',
             className: 'fixed inset-0 flex items-center justify-center',
@@ -2608,6 +2968,277 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                 }, 'Save')
             ])
         ])),
+
+        // Node Popup Editor
+        activePopup && React.createElement('div', {
+            key: 'popup-overlay',
+            className: 'fixed inset-0 z-40',
+            style: { backgroundColor: activePopup.fullscreen ? 'rgba(0,0,0,0.5)' : 'transparent', pointerEvents: activePopup.fullscreen ? 'auto' : 'none' },
+            onClick: (e) => {
+                if (e.target === e.currentTarget) closePopup();
+            }
+        }, React.createElement('div', {
+            className: activePopup.fullscreen ? 'fixed inset-0 flex items-center justify-center p-8' : 'absolute',
+            style: activePopup.fullscreen ? {} : {
+                left: `${activePopup.position.x}px`,
+                top: `${activePopup.position.y}px`,
+                pointerEvents: 'auto'
+            },
+            onClick: (e) => e.stopPropagation()
+        }, React.createElement('div', {
+            className: 'bg-white rounded-2xl shadow-2xl border-2 flex flex-col',
+            style: {
+                borderColor: 'rgba(139,79,63,0.2)',
+                width: activePopup.fullscreen ? '100%' : '380px',
+                maxWidth: activePopup.fullscreen ? '900px' : '380px',
+                maxHeight: activePopup.fullscreen ? '100%' : '500px',
+                color: '#2b1d14'
+            }
+        }, [
+            // Header with controls
+            React.createElement('div', {
+                key: 'header',
+                className: 'flex items-center justify-between px-5 py-4 border-b',
+                style: { borderColor: 'rgba(92,49,30,0.1)' }
+            }, [
+                React.createElement('h3', {
+                    key: 'title',
+                    className: 'text-lg font-semibold',
+                    style: { color: '#5b2a1a' }
+                }, (() => {
+                    if (activePopup.type === 'userPrompt') return 'Edit Test Prompt';
+                    if (activePopup.type === 'specialRules') return 'Special Rules';
+                    if (activePopup.type === 'weight') return `Edit ${activePopup.data.weight?.label}`;
+                    if (activePopup.type === 'router') return 'Router Settings';
+                    return 'Edit';
+                })()),
+                React.createElement('div', {
+                    key: 'controls',
+                    className: 'flex gap-2'
+                }, [
+                    React.createElement('button', {
+                        key: 'fullscreen',
+                        type: 'button',
+                        onClick: toggleFullscreen,
+                        className: 'w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-gray-100',
+                        style: { color: 'rgba(43,29,20,0.5)' }
+                    }, activePopup.fullscreen ? '⊡' : '⛶'),
+                    React.createElement('button', {
+                        key: 'close',
+                        type: 'button',
+                        onClick: closePopup,
+                        className: 'w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-gray-100 text-xl',
+                        style: { color: 'rgba(43,29,20,0.5)' }
+                    }, '×')
+                ])
+            ]),
+
+            // Content
+            React.createElement('div', {
+                key: 'content',
+                className: 'flex-1 overflow-y-auto p-5'
+            }, (() => {
+                // User Prompt popup
+                if (activePopup.type === 'userPrompt') {
+                    return [
+                        React.createElement('p', {
+                            key: 'label',
+                            className: 'text-sm mb-3',
+                            style: { color: 'rgba(43,29,20,0.65)' }
+                        }, 'Enter a test prompt to see which model the router selects based on your configured weights and rules.'),
+                        React.createElement('textarea', {
+                            key: 'input',
+                            value: testPromptDraft || testPrompt,
+                            onChange: e => setTestPromptDraft(e.target.value),
+                            rows: 6,
+                            placeholder: 'Write a complex Python script for data analysis.',
+                            className: 'w-full p-3 rounded-lg border text-sm',
+                            style: { borderColor: 'rgba(92,49,30,0.15)', color: '#2b1d14', resize: 'vertical' }
+                        }),
+                        React.createElement('div', {
+                            key: 'actions',
+                            className: 'flex gap-2 mt-4'
+                        }, [
+                            React.createElement('button', {
+                                key: 'apply',
+                                type: 'button',
+                                onClick: () => {
+                                    setTestPrompt(testPromptDraft || testPrompt);
+                                    closePopup();
+                                },
+                                className: 'flex-1 py-2 rounded-lg text-sm font-semibold',
+                                style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                            }, 'Apply'),
+                            React.createElement('button', {
+                                key: 'test',
+                                type: 'button',
+                                onClick: () => {
+                                    setTestPrompt(testPromptDraft || testPrompt);
+                                    closePopup();
+                                    setTimeout(() => handleTestRoute(), 100);
+                                },
+                                className: 'flex-1 py-2 rounded-lg text-sm font-semibold',
+                                style: { background: 'rgba(92,49,30,0.08)', color: '#5b2a1a' }
+                            }, 'Test Now')
+                        ])
+                    ];
+                }
+
+                // Special Rules popup
+                if (activePopup.type === 'specialRules') {
+                    return [
+                        React.createElement('p', {
+                            key: 'label',
+                            className: 'text-sm mb-3',
+                            style: { color: 'rgba(43,29,20,0.65)' }
+                        }, 'Add conditional rules to override model selection based on specific criteria.'),
+                        React.createElement('div', {
+                            key: 'rules-list',
+                            className: 'space-y-2 mb-4'
+                        }, rules.length > 0 ? rules.map((rule, idx) => React.createElement('div', {
+                            key: idx,
+                            className: 'p-3 rounded-lg border flex items-center justify-between',
+                            style: { borderColor: 'rgba(92,49,30,0.15)' }
+                        }, [
+                            React.createElement('div', { key: 'info' }, [
+                                React.createElement('p', {
+                                    key: 'name',
+                                    className: 'text-sm font-semibold',
+                                    style: { color: '#2b1d14' }
+                                }, rule.name),
+                                React.createElement('p', {
+                                    key: 'condition',
+                                    className: 'text-xs',
+                                    style: { color: 'rgba(43,29,20,0.5)' }
+                                }, rule.condition)
+                            ]),
+                            React.createElement('button', {
+                                key: 'delete',
+                                type: 'button',
+                                onClick: () => setRules(rules.filter((_, i) => i !== idx)),
+                                className: 'text-sm px-2 py-1 rounded',
+                                style: { color: '#8b4f3f' }
+                            }, '×')
+                        ])) : React.createElement('p', {
+                            className: 'text-sm text-center py-4',
+                            style: { color: 'rgba(43,29,20,0.4)' }
+                        }, 'No rules yet')),
+                        React.createElement('button', {
+                            key: 'add',
+                            type: 'button',
+                            onClick: () => {
+                                setRuleModalOpen(true);
+                                closePopup();
+                            },
+                            className: 'w-full py-2 rounded-lg text-sm font-semibold',
+                            style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8' }
+                        }, '+ Add Rule')
+                    ];
+                }
+
+                // Weight popup
+                if (activePopup.type === 'weight' && activePopup.data.weight) {
+                    const weight = activePopup.data.weight;
+                    const currentValue = Math.round(weight.weight * 100);
+                    return [
+                        React.createElement('p', {
+                            key: 'label',
+                            className: 'text-sm mb-3',
+                            style: { color: 'rgba(43,29,20,0.65)' }
+                        }, `Adjust the ${weight.label.toLowerCase()} weight. Higher values prioritize this factor in model selection.`),
+                        React.createElement('div', {
+                            key: 'value',
+                            className: 'text-center mb-4'
+                        }, [
+                            React.createElement('div', {
+                                key: 'num',
+                                className: 'text-5xl font-bold mb-2',
+                                style: { color: '#8b4f3f' }
+                            }, `${currentValue}%`),
+                            React.createElement('input', {
+                                key: 'slider',
+                                type: 'range',
+                                min: 0,
+                                max: 100,
+                                value: currentValue,
+                                onChange: (e) => {
+                                    const newValue = parseInt(e.target.value) / 100;
+                                    setWeights(weights.map(w =>
+                                        w.id === weight.id ? { ...w, weight: newValue } : w
+                                    ));
+                                },
+                                className: 'w-full',
+                                style: { accentColor: '#8b4f3f' }
+                            })
+                        ]),
+                        React.createElement('div', {
+                            key: 'info',
+                            className: 'p-3 rounded-lg text-xs',
+                            style: { backgroundColor: 'rgba(196,131,106,0.08)', color: 'rgba(43,29,20,0.6)' }
+                        }, 'Note: Weight values are relative. The router normalizes all weights to determine model selection.')
+                    ];
+                }
+
+                // Router popup
+                if (activePopup.type === 'router') {
+                    return [
+                        React.createElement('p', {
+                            key: 'label',
+                            className: 'text-sm mb-3',
+                            style: { color: 'rgba(43,29,20,0.65)' }
+                        }, 'The router uses weighted orchestration to select the best model for each request.'),
+                        React.createElement('div', {
+                            key: 'summary',
+                            className: 'space-y-3'
+                        }, [
+                            React.createElement('div', {
+                                key: 'weights',
+                                className: 'p-4 rounded-lg',
+                                style: { backgroundColor: 'rgba(196,131,106,0.08)' }
+                            }, [
+                                React.createElement('p', {
+                                    key: 'title',
+                                    className: 'text-sm font-semibold mb-2',
+                                    style: { color: '#5b2a1a' }
+                                }, 'Current Weights'),
+                                ...weights.map(w => React.createElement('div', {
+                                    key: w.id,
+                                    className: 'flex justify-between text-sm mb-1'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'label',
+                                        style: { color: 'rgba(43,29,20,0.7)' }
+                                    }, w.label),
+                                    React.createElement('span', {
+                                        key: 'value',
+                                        className: 'font-semibold',
+                                        style: { color: '#8b4f3f' }
+                                    }, `${Math.round(w.weight * 100)}%`)
+                                ]))
+                            ]),
+                            React.createElement('div', {
+                                key: 'models',
+                                className: 'p-4 rounded-lg',
+                                style: { backgroundColor: 'rgba(196,131,106,0.08)' }
+                            }, [
+                                React.createElement('p', {
+                                    key: 'title',
+                                    className: 'text-sm font-semibold mb-2',
+                                    style: { color: '#5b2a1a' }
+                                }, 'Active Providers'),
+                                React.createElement('p', {
+                                    key: 'count',
+                                    className: 'text-sm',
+                                    style: { color: 'rgba(43,29,20,0.7)' }
+                                }, `${activeProviders.length} provider${activeProviders.length !== 1 ? 's' : ''} enabled`)
+                            ])
+                        ])
+                    ];
+                }
+
+                return null;
+            })())
+        ]))),
 
         // Toast notification
         toast && React.createElement(Toast, {

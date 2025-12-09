@@ -8,7 +8,7 @@
   var require_routingLabProfileBuilder = __commonJS({
     "frontend/routingLabProfileBuilder.js"() {
       var React = window.React;
-      var { useState, useEffect, useMemo, useRef } = React;
+      var { useState, useEffect, useMemo, useRef, useCallback } = React;
       var { createRoot } = window.ReactDOM;
       var controllerListeners = [];
       function subscribeToController(callback) {
@@ -72,10 +72,10 @@
         { id: "latency", label: "Latency", weight: 0.2 }
       ];
       var defaultHardLimits = {
-        maxCostPerCall: 300,
-        maxOutputTokens: 1e4,
-        maxLatency: 0.2,
-        maxRateLimits: 0
+        maxCostPerCall: null,
+        maxOutputTokens: null,
+        dailySpendLimit: null,
+        dailyOutputTokens: null
       };
       var ruleConditions = [
         { id: "tokenCount", label: "token count" },
@@ -87,6 +87,765 @@
         { id: "boostClaude", label: "boost Claude Code" },
         { id: "useGpt4oOpus", label: "use GPT-4o or Claude Opus" }
       ];
+      var codeFlowModels = [
+        { name: "Claude Opus 4.5", logo: "assets/claude-logo.png" },
+        { name: "Sonnet 4.5", logo: "assets/claude-logo.png" },
+        { name: "Gemini 3 Pro", logo: "assets/gemini-logo.png" },
+        { name: "GPT 5.1 Codex Max", logo: "assets/chatgpt-logo.png" },
+        { name: "GPT 5.1 Codex", logo: "assets/chatgpt-logo.png" },
+        { name: "Claude Sonnet 4.5 (Thinking)", logo: "assets/claude-logo.png" },
+        { name: "GPT 5.1", logo: "assets/chatgpt-logo.png" },
+        { name: "Mistral Large 2", logo: "assets/mistral-logo.png" },
+        { name: "Qwen Max", logo: "assets/qwen-logo.png" }
+      ];
+      function CodeFlowBuilder({ onDismiss, initialOptions }) {
+        var _a, _b, _c, _d, _e, _f;
+        const initialNodes = [
+          { id: "user-prompt", label: "Your Prompt", desc: "Starting input", x: 100, y: 200, model: null, isStart: true },
+          { id: "planning", label: "Planning", desc: "Analyzes requirements & creates architecture", x: 500, y: 200, model: ((_b = (_a = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _a.flow) == null ? void 0 : _b.planning) || null },
+          { id: "execution", label: "Execution", desc: "Writes the actual code implementation", x: 900, y: 200, model: ((_d = (_c = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _c.flow) == null ? void 0 : _d.execution) || null },
+          { id: "verification", label: "Verification", desc: "Reviews code & fixes security issues", x: 700, y: 500, model: ((_f = (_e = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _e.flow) == null ? void 0 : _f.verification) || null }
+        ];
+        const [nodes, setNodes] = useState(initialNodes);
+        const [edges, setEdges] = useState([
+          { from: "user-prompt", to: "planning" },
+          { from: "planning", to: "execution" },
+          { from: "execution", to: "verification" },
+          { from: "verification", to: "planning", condition: "fails" }
+        ]);
+        const [draggedNode, setDraggedNode] = useState(null);
+        const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+        const [connectingNode, setConnectingNode] = useState(null);
+        const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+        const [selectedNodeId, setSelectedNodeId] = useState(null);
+        const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
+        const [isPanning, setIsPanning] = useState(false);
+        const canvasRef = useRef(null);
+        useEffect(() => {
+          const style = document.createElement("style");
+          style.innerHTML = cursorStyles;
+          document.head.appendChild(style);
+          return () => {
+            document.head.removeChild(style);
+          };
+        }, []);
+        const dragRef = useRef({
+          isDragging: false,
+          isConnecting: false,
+          nodeId: null,
+          offsetX: 0,
+          offsetY: 0
+        });
+        const handleWindowMouseMove = useCallback((e) => {
+          if (!canvasRef.current) return;
+          if (!dragRef.current) return;
+          const { isDragging, isConnecting, isPanning: isPanning2, nodeId, offsetX, offsetY, startX, startY, initialTransform, hasMoved } = dragRef.current;
+          if (isPanning2) {
+            e.preventDefault();
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            setTransform({ ...initialTransform, x: initialTransform.x + dx, y: initialTransform.y + dy });
+            return;
+          }
+          if (isDragging && nodeId) {
+            e.preventDefault();
+            if (!hasMoved) {
+              const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+              if (dist > 5) {
+                dragRef.current.hasMoved = true;
+              }
+            }
+            const rect = canvasRef.current.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+            const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+            setNodes((prev) => {
+              return prev.map((n) => {
+                if (n.id === nodeId) {
+                  return { ...n, x: mouseX - offsetX, y: mouseY - offsetY };
+                }
+                return n;
+              });
+            });
+          }
+          if (isConnecting) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+            const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+            setMousePos({ x: mouseX, y: mouseY });
+          }
+        }, [transform]);
+        const handleWindowMouseUp = useCallback((e) => {
+          const { isDragging, isConnecting, isPanning: isPanning2, hasMoved, nodeId } = dragRef.current;
+          if (isDragging || isConnecting || isPanning2) {
+            window.removeEventListener("mousemove", handleWindowMouseMove);
+            window.removeEventListener("mouseup", handleWindowMouseUp);
+            document.body.style.cursor = "";
+            if (isPanning2) setIsPanning(false);
+            if (isDragging && !hasMoved && nodeId) {
+              setSelectedNodeId(nodeId);
+            }
+            dragRef.current = { isDragging: false, isConnecting: false, isPanning: false, nodeId: null, offsetX: 0, offsetY: 0 };
+            setDraggedNode(null);
+            setConnectingNode(null);
+          }
+        }, [handleWindowMouseMove]);
+        useEffect(() => {
+          return () => {
+            window.removeEventListener("mousemove", handleWindowMouseMove);
+            window.removeEventListener("mouseup", handleWindowMouseUp);
+            document.body.style.cursor = "";
+          };
+        }, [handleWindowMouseMove, handleWindowMouseUp]);
+        const handleMouseDown = (e, nodeId) => {
+          e.stopPropagation();
+          const node = nodes.find((n) => n.id === nodeId);
+          if (!node || !canvasRef.current) return;
+          const rect = canvasRef.current.getBoundingClientRect();
+          const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+          const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+          dragRef.current = {
+            isDragging: true,
+            isConnecting: false,
+            nodeId,
+            offsetX: mouseX - node.x,
+            offsetY: mouseY - node.y,
+            startX: e.clientX,
+            startY: e.clientY,
+            hasMoved: false
+          };
+          document.body.style.cursor = "grabbing";
+          setDraggedNode(nodeId);
+          window.addEventListener("mousemove", handleWindowMouseMove);
+          window.addEventListener("mouseup", handleWindowMouseUp);
+        };
+        const handleMouseMove = () => {
+        };
+        const handleMouseUp = () => {
+        };
+        const startConnection = (e, nodeId) => {
+          e.stopPropagation();
+          e.preventDefault();
+          dragRef.current = {
+            isDragging: false,
+            isConnecting: true,
+            nodeId,
+            offsetX: 0,
+            offsetY: 0
+          };
+          setConnectingNode(nodeId);
+          window.addEventListener("mousemove", handleWindowMouseMove);
+          window.addEventListener("mouseup", handleWindowMouseUp);
+        };
+        const handleCanvasDragOver = (e) => {
+          e.preventDefault();
+        };
+        const handleCanvasDrop = (e) => {
+        };
+        const completeConnection = (e, targetNodeId) => {
+          if (connectingNode && connectingNode !== targetNodeId) {
+            if (!edges.find((edge) => edge.from === connectingNode && edge.to === targetNodeId)) {
+              setEdges((prev) => [...prev, { from: connectingNode, to: targetNodeId }]);
+            }
+          }
+          setConnectingNode(null);
+        };
+        const addCustomNode = () => {
+          if (!newNodeLabel.trim()) return;
+          const id = `custom-${Date.now()}`;
+          const newNode = {
+            id,
+            label: newNodeLabel,
+            desc: newNodeDesc || "Custom processing step",
+            prompt: newNodePrompt,
+            x: 400,
+            // Default center
+            y: 300,
+            model: null,
+            isCustom: true
+          };
+          setNodes((prev) => [...prev, newNode]);
+          setNewNodeLabel("");
+          setNewNodeDesc("");
+          setNewNodePrompt("");
+        };
+        const deleteNode = (e, nodeId) => {
+          e.stopPropagation();
+          const nodeToDelete = nodes.find((n) => n.id === nodeId);
+          setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+          setEdges((prev) => prev.map((edge) => {
+            if (edge.from === nodeId) {
+              return { ...edge, fromNodeMissing: true, ghostFrom: { x: nodeToDelete.x, y: nodeToDelete.y } };
+            }
+            if (edge.to === nodeId) {
+              return { ...edge, toNodeMissing: true, ghostTo: { x: nodeToDelete.x, y: nodeToDelete.y } };
+            }
+            return edge;
+          }));
+        };
+        const splitEdge = (edge, midX, midY) => {
+          const newId = `condition-${Date.now()}`;
+          const newNode = {
+            id: newId,
+            label: "Condition",
+            desc: "Check",
+            condition: "If criteria met",
+            x: midX - 120,
+            // Center the node (width 240/2 = 120)
+            y: midY - 60,
+            // Center the node (height ~120/2 = 60)
+            isCondition: true,
+            model: null
+          };
+          setNodes((prev) => [...prev, newNode]);
+          setEdges((prev) => {
+            const newEdges = prev.filter((e) => e !== edge);
+            newEdges.push({ from: edge.from, to: newId });
+            newEdges.push({ from: newId, to: edge.to });
+            return newEdges;
+          });
+          setSelectedNodeId(newId);
+        };
+        const handleSave = () => {
+          var _a2, _b2, _c2, _d2;
+          const flowData = {
+            nodes: nodes.map(({ id, label, desc, prompt, model, x, y }) => ({ id, label, desc, prompt, model, x, y })),
+            edges
+          };
+          if (initialOptions == null ? void 0 : initialOptions.onSave) {
+            initialOptions.onSave({
+              name: ((_a2 = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _a2.name) || "Code Flow",
+              flow: flowData,
+              // Pass full graph data
+              // Also pass legacy format for simple flows if needed by current backend
+              planning: (_b2 = nodes.find((n) => n.id === "planning")) == null ? void 0 : _b2.model,
+              execution: (_c2 = nodes.find((n) => n.id === "execution")) == null ? void 0 : _c2.model,
+              verification: (_d2 = nodes.find((n) => n.id === "verification")) == null ? void 0 : _d2.model
+            });
+          }
+          onDismiss();
+        };
+        const getModelLogo = (modelName) => {
+          const model = codeFlowModels.find((m) => m.name === modelName);
+          return model ? model.logo : "assets/models-icon.png";
+        };
+        const handleWheel = (e) => {
+          if (e.ctrlKey || e.metaKey || true) {
+            e.preventDefault();
+            const zoomSensitivity = 1e-3;
+            const newZoom = Math.min(Math.max(0.1, transform.k - e.deltaY * zoomSensitivity), 5);
+            setTransform((prev) => ({ ...prev, k: newZoom }));
+          }
+        };
+        const handleCanvasMouseDown = (e) => {
+          if (e.button === 0) {
+            dragRef.current = {
+              isDragging: false,
+              isConnecting: false,
+              isPanning: true,
+              startX: e.clientX,
+              startY: e.clientY,
+              initialTransform: { ...transform }
+            };
+            setIsPanning(true);
+            document.body.style.cursor = "grabbing";
+            window.addEventListener("mousemove", handleWindowMouseMove);
+            window.addEventListener("mouseup", handleWindowMouseUp);
+          }
+        };
+        return React.createElement("div", {
+          className: "fixed inset-0 z-50 flex flex-col bg-white animate-fade-in",
+          style: { fontFamily: "'Space Grotesk', sans-serif" }
+        }, [
+          // Header
+          React.createElement("header", {
+            className: "h-16 border-b flex items-center justify-between px-6 bg-white z-20 relative shadow-sm",
+            style: { borderColor: "var(--border-subtle)" }
+          }, [
+            React.createElement("div", { className: "flex items-center gap-3" }, [
+              React.createElement("div", {
+                className: "w-8 h-8 rounded-lg flex items-center justify-center",
+                style: { background: "var(--accent-primary)", color: "white" }
+              }, "\u26A1"),
+              React.createElement("h1", { className: "font-bold text-lg" }, "Code Flow Designer")
+            ]),
+            React.createElement("div", { className: "flex items-center gap-3" }, [
+              React.createElement("div", { className: "text-sm text-muted mr-4" }, "Scroll to zoom \u2022 Drag to pan"),
+              React.createElement("button", {
+                onClick: onDismiss,
+                className: "px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors",
+                style: { color: "var(--text-secondary)" }
+              }, "Exit"),
+              React.createElement("button", {
+                onClick: handleSave,
+                className: "px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5",
+                style: { background: "var(--gradient-terra)" }
+              }, "Save Flow")
+            ])
+          ]),
+          // Main Canvas Area
+          React.createElement("div", {
+            className: "flex-1 relative overflow-hidden bg-dot-pattern",
+            ref: canvasRef,
+            onWheel: handleWheel,
+            onMouseDown: handleCanvasMouseDown,
+            style: { cursor: isPanning ? "grabbing" : "grab" }
+          }, [
+            React.createElement(MeshLensBackground, {}),
+            // Floating UI (Fixed position)
+            React.createElement("button", {
+              className: "absolute top-6 left-6 z-10 px-4 py-3 rounded-xl bg-white shadow-lg border border-clay-100 flex items-center gap-2 hover:scale-105 transition-transform font-medium text-clay-700",
+              onMouseDown: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = `node-${Date.now()}`;
+                const rect = canvasRef.current.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
+                const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+                const newNode = {
+                  id,
+                  label: "New Node",
+                  desc: "Configure this step",
+                  prompt: "",
+                  x: mouseX - 120,
+                  // Center horizontally (width 240)
+                  y: mouseY - 60,
+                  // Center vertically
+                  model: null
+                };
+                setNodes((prev) => [...prev, newNode]);
+                dragRef.current = {
+                  isDragging: true,
+                  isConnecting: false,
+                  nodeId: id,
+                  offsetX: 120,
+                  // Center offset
+                  offsetY: 60
+                };
+                document.body.style.cursor = "grabbing";
+                setDraggedNode(id);
+                window.addEventListener("mousemove", handleWindowMouseMove);
+                window.addEventListener("mouseup", handleWindowMouseUp);
+              }
+            }, [
+              React.createElement("span", { className: "font-bold text-sm", style: { color: "var(--text-primary)" } }, "Drag to add node")
+            ]),
+            // Transform Container Content (Edges and Nodes)
+            React.createElement("div", {
+              style: {
+                transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`,
+                transformOrigin: "0 0",
+                width: "100%",
+                height: "100%",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                pointerEvents: "none"
+                // Let clicks pass through to canvas for panning, but enable for children
+              }
+            }, [
+              // SVG Layer for Edges
+              React.createElement("svg", {
+                className: "absolute inset-0 pointer-events-none z-0",
+                style: { width: "100%", height: "100%", overflow: "visible" }
+              }, [
+                // Edges
+                ...edges.map((edge, i) => {
+                  const fromNode = nodes.find((n) => n.id === edge.from);
+                  const toNode = nodes.find((n) => n.id === edge.to);
+                  let x1, y1, x2, y2;
+                  let isBroken = false;
+                  if (fromNode) {
+                    x1 = fromNode.x + 120;
+                    y1 = fromNode.y + 60;
+                  } else if (edge.ghostFrom) {
+                    x1 = edge.ghostFrom.x + 120;
+                    y1 = edge.ghostFrom.y + 60;
+                    isBroken = true;
+                  } else {
+                    return null;
+                  }
+                  if (toNode) {
+                    x2 = toNode.x + 120;
+                    y2 = toNode.y + 60;
+                  } else if (edge.ghostTo) {
+                    x2 = edge.ghostTo.x + 120;
+                    y2 = edge.ghostTo.y + 60;
+                    isBroken = true;
+                  } else {
+                    return null;
+                  }
+                  const pathD = getCurvedPath(x1, y1, x2, y2);
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+                  return React.createElement("g", { key: i }, [
+                    React.createElement("path", {
+                      id: `edge-path-${i}`,
+                      d: pathD,
+                      stroke: isBroken ? "#ef4444" : edge.condition ? "var(--accent-primary)" : "var(--clay-400)",
+                      strokeWidth: "2",
+                      fill: "none",
+                      strokeDasharray: edge.condition ? "5 5" : "8 8",
+                      strokeOpacity: isBroken ? "0.8" : "0.6"
+                    }),
+                    // Directional Arrows
+                    !isBroken && React.createElement("text", {
+                      dy: 6,
+                      // Center vertically (adjusted for larger font)
+                      fill: edge.condition ? "var(--accent-primary)" : "var(--clay-400)",
+                      fontSize: "20",
+                      style: { pointerEvents: "none", opacity: 0.8 }
+                    }, React.createElement("textPath", {
+                      href: `#edge-path-${i}`,
+                      startOffset: "20px",
+                      // Start a bit in
+                      style: { letterSpacing: "20px" }
+                    }, "\u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4 \u27A4")),
+                    // Condition Label
+                    edge.condition && !isBroken && React.createElement("foreignObject", {
+                      x: midX - 40,
+                      y: midY - 12,
+                      width: 80,
+                      height: 24,
+                      style: { overflow: "visible" }
+                    }, React.createElement("div", {
+                      className: "px-2 py-0.5 rounded-md text-[10px] font-bold text-center border shadow-sm",
+                      style: {
+                        background: "var(--bg-elevated)",
+                        color: "var(--accent-primary)",
+                        borderColor: "var(--accent-primary)"
+                      }
+                    }, edge.condition)),
+                    // Broken Edge Label
+                    isBroken && React.createElement("foreignObject", {
+                      x: midX - 50,
+                      y: midY - 12,
+                      width: 100,
+                      height: 24,
+                      style: { overflow: "visible" }
+                    }, React.createElement("div", {
+                      className: "px-2 py-0.5 rounded-md text-[10px] font-bold text-center border shadow-sm bg-red-50 text-red-600 border-red-200"
+                    }, "No connection")),
+                    // Split Handle (Add Condition)
+                    !isBroken && !edge.condition && React.createElement("foreignObject", {
+                      x: midX - 10,
+                      y: midY - 10,
+                      width: 20,
+                      height: 20,
+                      style: { overflow: "visible" }
+                    }, React.createElement("button", {
+                      className: "w-5 h-5 rounded-full bg-white border border-clay-400 flex items-center justify-center text-clay-600 hover:bg-clay-50 hover:scale-110 transition-all shadow-sm cursor-pointer",
+                      title: "Add Condition Node",
+                      onClick: (e) => {
+                        e.stopPropagation();
+                        splitEdge(edge, midX, midY);
+                      }
+                    }, "+"))
+                  ]);
+                }),
+                // Active Connection Line
+                connectingNode && (() => {
+                  const fromNode = nodes.find((n) => n.id === connectingNode);
+                  if (!fromNode) return null;
+                  const x1 = fromNode.x + 120;
+                  const y1 = fromNode.y + 60;
+                  const x2 = mousePos.x;
+                  const y2 = mousePos.y;
+                  return React.createElement("path", {
+                    d: getCurvedPath(x1, y1, x2, y2),
+                    stroke: "var(--clay-600)",
+                    strokeWidth: "2",
+                    fill: "none",
+                    strokeDasharray: "5 5"
+                  });
+                })()
+              ]),
+              // Nodes
+              nodes.map((node) => {
+                const isActive = !!node.model;
+                if (node.isCondition) {
+                  return React.createElement("div", {
+                    key: node.id,
+                    className: "absolute flex items-center justify-center z-10 group",
+                    style: {
+                      left: node.x,
+                      top: node.y,
+                      width: "200px",
+                      // Square container for rotation
+                      height: "200px",
+                      cursor: draggedNode === node.id ? "grabbing" : "grab",
+                      userSelect: "none",
+                      pointerEvents: "auto"
+                    },
+                    onMouseDown: (e) => handleMouseDown(e, node.id),
+                    onMouseUp: (e) => completeConnection(e, node.id)
+                  }, [
+                    // Diamond Shape
+                    React.createElement("div", {
+                      className: "w-32 h-32 rotate-45 border-2 shadow-lg transition-all duration-300 flex items-center justify-center relative group-hover:border-clay-500 group-hover:shadow-xl",
+                      style: {
+                        borderColor: "var(--accent-primary)",
+                        backgroundColor: "var(--bg-elevated)",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                      }
+                    }, [
+                      // Un-rotate content container
+                      React.createElement("div", {
+                        className: "-rotate-45 flex flex-col items-center justify-center p-2 text-center w-full h-full"
+                      }, [
+                        React.createElement("span", { className: "text-3xl font-bold mb-1", style: { color: "var(--accent-primary)" } }, "?"),
+                        React.createElement("span", { className: "text-xs font-medium leading-tight line-clamp-3 px-2", style: { color: "var(--text-primary)" } }, node.condition || "Condition")
+                      ])
+                    ]),
+                    // Actions (Floating) - Visible on hover
+                    React.createElement("div", {
+                      className: "absolute top-0 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md px-3 py-1.5 border z-20",
+                      style: { borderColor: "var(--border-subtle)" }
+                    }, [
+                      // Connect
+                      React.createElement("button", {
+                        className: "p-1 hover:bg-gray-100 rounded-full text-clay-600 cursor-crosshair transition-colors",
+                        title: "Drag to connect",
+                        onMouseDown: (e) => startConnection(e, node.id)
+                      }, React.createElement(
+                        "svg",
+                        { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                        React.createElement("path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" }),
+                        React.createElement("path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" })
+                      )),
+                      // Delete
+                      React.createElement("button", {
+                        className: "p-1 hover:bg-red-50 rounded-full text-red-500 transition-colors",
+                        onClick: (e) => deleteNode(e, node.id)
+                      }, "\xD7")
+                    ]),
+                    // Label (Name) floating below
+                    React.createElement("div", {
+                      className: "absolute bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold px-2 py-1 rounded bg-white/90 backdrop-blur-sm border shadow-sm whitespace-nowrap pointer-events-none",
+                      style: { color: "var(--text-secondary)", borderColor: "var(--border-subtle)" }
+                    }, node.label)
+                  ]);
+                }
+                return React.createElement("div", {
+                  key: node.id,
+                  className: "absolute flex flex-col items-center gap-4 z-10",
+                  style: {
+                    left: node.x,
+                    top: node.y,
+                    width: "240px",
+                    // Reduced width
+                    cursor: draggedNode === node.id ? "grabbing" : "grab",
+                    userSelect: "none",
+                    pointerEvents: "auto"
+                    // Re-enable pointer events for nodes
+                  },
+                  onMouseDown: (e) => handleMouseDown(e, node.id),
+                  onMouseUp: (e) => completeConnection(e, node.id)
+                }, [
+                  // Drop Zone Card
+                  React.createElement("div", {
+                    className: `relative w-full p-4 rounded-2xl border transition-all duration-300 group`,
+                    style: {
+                      backgroundColor: node.isStart ? "var(--bg-secondary)" : "var(--bg-elevated)",
+                      borderColor: isActive ? "var(--clay-600)" : node.isStart ? "transparent" : "var(--border-subtle)",
+                      boxShadow: isActive ? "0 10px 20px -5px rgba(0,0,0,0.1)" : "0 2px 4px -1px rgba(0,0,0,0.05)",
+                      minHeight: "120px"
+                    }
+                  }, [
+                    // Header
+                    React.createElement("div", { className: "flex items-start justify-between mb-4" }, [
+                      React.createElement("div", {}, [
+                        React.createElement("h3", { className: "font-bold text-sm", style: { color: "var(--text-primary)" } }, node.label),
+                        React.createElement("p", { className: "text-xs", style: { color: "var(--text-muted)" } }, node.desc)
+                      ]),
+                      // Actions
+                      !node.isStart && React.createElement("div", { className: "flex items-center gap-1" }, [
+                        // Edit Button
+                        React.createElement("button", {
+                          className: "text-muted hover:text-clay-600 transition-colors p-1 rounded hover:bg-clay-50/10",
+                          title: "Edit Node",
+                          onClick: (e) => {
+                            e.stopPropagation();
+                            setSelectedNodeId(node.id);
+                          }
+                        }, React.createElement(
+                          "svg",
+                          { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                          React.createElement("path", { d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" }),
+                          React.createElement("path", { d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" })
+                        )),
+                        // Connect Button
+                        React.createElement("button", {
+                          className: "text-muted hover:text-clay-600 transition-colors p-1 rounded hover:bg-clay-50/10 cursor-crosshair",
+                          title: "Drag to connect",
+                          onMouseDown: (e) => startConnection(e, node.id)
+                        }, React.createElement(
+                          "svg",
+                          { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                          React.createElement("path", { d: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" }),
+                          React.createElement("path", { d: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" })
+                        )),
+                        // Delete Button
+                        React.createElement("button", {
+                          className: "text-muted hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50/10",
+                          onClick: (e) => deleteNode(e, node.id)
+                        }, "\xD7")
+                      ])
+                    ]),
+                    // Content
+                    node.isStart ? React.createElement("div", {
+                      className: "flex items-center justify-center h-12 mt-2"
+                    }, [
+                      React.createElement("div", {
+                        className: "w-10 h-10 rounded-full flex items-center justify-center",
+                        style: { background: "var(--bg-tertiary)", color: "var(--text-secondary)" }
+                      }, "\u279C")
+                    ]) : node.model ? React.createElement("div", {
+                      className: "flex items-center gap-3 mt-2"
+                    }, [
+                      React.createElement("div", { className: "relative flex-shrink-0" }, [
+                        React.createElement("div", {
+                          className: "absolute inset-0 blur-md opacity-20 rounded-full",
+                          style: { background: "var(--clay-600)" }
+                        }),
+                        React.createElement("img", {
+                          src: getModelLogo(node.model),
+                          className: "relative w-12 h-12 object-contain"
+                        })
+                      ]),
+                      React.createElement("div", { className: "flex-1 min-w-0" }, [
+                        React.createElement("span", {
+                          className: "block text-sm font-bold truncate",
+                          style: { color: "var(--text-primary)" }
+                        }, node.model),
+                        React.createElement("span", {
+                          className: "block text-[10px] text-muted uppercase tracking-wider"
+                        }, "Active")
+                      ])
+                    ]) : React.createElement("div", {
+                      className: "flex items-center justify-center h-12 border-2 border-dashed rounded-lg mt-2 gap-2",
+                      style: { borderColor: "var(--border-subtle)", color: "var(--text-muted)" }
+                    }, [
+                      React.createElement("span", { className: "text-xs font-medium" }, "No Model Selected")
+                    ])
+                  ])
+                ]);
+              })
+            ]),
+            // Configuration Modal
+            selectedNodeId && (() => {
+              const node = nodes.find((n) => n.id === selectedNodeId);
+              if (!node) return null;
+              return React.createElement("div", {
+                className: "fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm",
+                onClick: () => setSelectedNodeId(null)
+              }, [
+                React.createElement("div", {
+                  className: "w-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col",
+                  style: { backgroundColor: "var(--bg-elevated)", borderColor: "var(--border-subtle)" },
+                  onClick: (e) => e.stopPropagation()
+                }, [
+                  // Header
+                  React.createElement("div", {
+                    className: "px-6 py-4 border-b flex items-center justify-between",
+                    style: { borderColor: "var(--border-subtle)" }
+                  }, [
+                    React.createElement("h3", { className: "font-bold text-lg", style: { color: "var(--text-primary)" } }, node.isCondition ? "Configure Condition" : "Configure Node"),
+                    React.createElement("button", {
+                      onClick: () => setSelectedNodeId(null),
+                      className: "text-muted hover:text-primary"
+                    }, "\xD7")
+                  ]),
+                  // Body
+                  React.createElement("div", { className: "p-6 flex flex-col gap-4" }, [
+                    // Label Input
+                    React.createElement("div", {}, [
+                      React.createElement("label", { className: "block text-xs font-bold uppercase mb-1 text-muted" }, node.isCondition ? "Condition Name" : "Node Name"),
+                      React.createElement("input", {
+                        className: "w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none",
+                        style: { borderColor: "var(--border-subtle)", color: "var(--text-primary)" },
+                        value: node.label,
+                        onChange: (e) => setNodes((prev) => prev.map((n) => n.id === node.id ? { ...n, label: e.target.value } : n))
+                      })
+                    ]),
+                    // Condition Specific Inputs
+                    node.isCondition ? React.createElement("div", {}, [
+                      React.createElement("label", { className: "block text-xs font-bold uppercase mb-1 text-muted" }, "Condition (English)"),
+                      React.createElement("textarea", {
+                        className: "w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none h-24 resize-none",
+                        style: { borderColor: "var(--border-subtle)", color: "var(--text-primary)" },
+                        value: node.condition || "",
+                        onChange: (e) => setNodes((prev) => prev.map((n) => n.id === node.id ? { ...n, condition: e.target.value } : n)),
+                        placeholder: "e.g. If the code fails validation..."
+                      })
+                    ]) : [
+                      // Standard Node Inputs
+                      // Description Input
+                      React.createElement("div", { key: "desc" }, [
+                        React.createElement("label", { className: "block text-xs font-bold uppercase mb-1 text-muted" }, "Description"),
+                        React.createElement("input", {
+                          className: "w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none",
+                          style: { borderColor: "var(--border-subtle)", color: "var(--text-primary)" },
+                          value: node.desc,
+                          onChange: (e) => setNodes((prev) => prev.map((n) => n.id === node.id ? { ...n, desc: e.target.value } : n))
+                        })
+                      ]),
+                      // Model Selection
+                      React.createElement("div", { key: "model" }, [
+                        React.createElement("label", { className: "block text-xs font-bold uppercase mb-1 text-muted" }, "Model"),
+                        React.createElement(
+                          "div",
+                          { className: "grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1" },
+                          codeFlowModels.map(
+                            (model) => React.createElement("button", {
+                              key: model.name,
+                              onClick: () => setNodes((prev) => prev.map((n) => n.id === node.id ? { ...n, model: model.name } : n)),
+                              className: `p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${node.model === model.name ? "ring-2 ring-clay-500 border-transparent bg-clay-50/10" : "hover:border-clay-400"}`,
+                              style: { borderColor: node.model === model.name ? "transparent" : "var(--border-subtle)" }
+                            }, [
+                              React.createElement("img", { src: model.logo, className: "w-8 h-8 object-contain" }),
+                              React.createElement("div", {}, [
+                                React.createElement("div", { className: "font-bold text-sm", style: { color: "var(--text-primary)" } }, model.name),
+                                React.createElement("div", { className: "text-[10px] text-muted" }, "AI Model")
+                              ])
+                            ])
+                          )
+                        )
+                      ]),
+                      // Prompt Input
+                      React.createElement("div", { key: "prompt" }, [
+                        React.createElement("label", { className: "block text-xs font-bold uppercase mb-1 text-muted" }, "System Prompt"),
+                        React.createElement("textarea", {
+                          className: "w-full px-3 py-2 rounded-lg border bg-transparent focus:ring-2 focus:ring-clay-500 outline-none h-32 resize-none",
+                          style: { borderColor: "var(--border-subtle)", color: "var(--text-primary)" },
+                          value: node.prompt,
+                          onChange: (e) => setNodes((prev) => prev.map((n) => n.id === node.id ? { ...n, prompt: e.target.value } : n)),
+                          placeholder: "Enter instructions for this step..."
+                        })
+                      ])
+                    ]
+                  ]),
+                  // Footer
+                  React.createElement("div", {
+                    className: "px-6 py-4 border-t flex justify-end",
+                    style: { borderColor: "var(--border-subtle)" }
+                  }, [
+                    React.createElement("button", {
+                      onClick: () => setSelectedNodeId(null),
+                      className: "px-6 py-2 rounded-xl font-bold text-white shadow-lg shadow-clay-500/20",
+                      style: { background: "var(--clay-600)" }
+                    }, "Done")
+                  ])
+                ])
+              ]);
+            })()
+          ])
+        ]);
+      }
+      var getCurvedPath = (x1, y1, x2, y2) => {
+        const dx = Math.abs(x2 - x1);
+        const controlX = dx * 0.5;
+        return `M ${x1} ${y1} C ${x1 + controlX} ${y1}, ${x2 - controlX} ${y2}, ${x2} ${y2}`;
+      };
       function ProfileBuilderShell() {
         const [state, setState] = useState({ visible: false, options: {} });
         useEffect(() => {
@@ -132,7 +891,7 @@
           }, `Weight ${value.toFixed(2)}`)
         ]);
       };
-      var NumberInput = ({ label, value, onChange, step = 1 }) => {
+      var NumberInput = ({ label, value, onChange, step = 1, placeholder = "None" }) => {
         const isDark = document.documentElement.getAttribute("data-theme") === "dark";
         return React.createElement("div", {
           className: "flex items-center justify-between gap-3"
@@ -145,9 +904,18 @@
           React.createElement("input", {
             key: "input",
             type: "number",
-            value,
+            value: value === null || value === void 0 ? "" : value,
             step,
-            onChange: (e) => onChange(parseFloat(e.target.value) || 0),
+            placeholder,
+            onChange: (e) => {
+              const raw = e.target.value;
+              if (raw === "") {
+                onChange(null);
+                return;
+              }
+              const parsed = parseFloat(raw);
+              onChange(Number.isNaN(parsed) ? null : parsed);
+            },
             className: "w-20 px-2 py-1 text-sm text-right rounded-lg border",
             style: {
               borderColor: isDark ? "rgba(201, 163, 138, 0.35)" : "rgba(92, 49, 30, 0.15)",
@@ -488,7 +1256,7 @@
           ])
         ]));
       };
-      var MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal }) => {
+      var MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasToggle, enabled, onToggle, isLocal, large }) => {
         const isDark = document.documentElement.getAttribute("data-theme") === "dark";
         const borderColor = isDark ? "rgba(201, 163, 138, 0.35)" : "rgba(92, 49, 30, 0.12)";
         const activeBorderColor = isDark ? "rgba(201, 163, 138, 0.5)" : "#8e3c2c";
@@ -496,10 +1264,10 @@
         const subtitleColor = isLocal ? "rgba(255, 252, 248, 0.8)" : isDark ? "rgba(201, 163, 138, 0.8)" : "rgba(43, 29, 20, 0.6)";
         return React.createElement("div", {
           ref: nodeRef,
-          className: `relative rounded-xl border-2 px-3 py-2 transition-all cursor-pointer ${active ? "shadow-lg" : ""}`,
+          className: `relative rounded-xl border-2 transition-all cursor-pointer ${active ? "shadow-lg" : ""} ${large ? "px-5 py-3" : "px-3 py-2"}`,
           style: {
             backgroundColor: isLocal ? "#8e3c2c" : "var(--bg-elevated)",
-            minWidth: "120px",
+            minWidth: large ? "180px" : "120px",
             borderColor: active ? activeBorderColor : isLocal ? activeBorderColor : borderColor
           },
           onClick
@@ -516,7 +1284,7 @@
             React.createElement("div", { key: "text" }, [
               React.createElement("p", {
                 key: "title",
-                className: "text-sm font-semibold",
+                className: large ? "text-base font-semibold" : "text-sm font-semibold",
                 style: { color: titleColor }
               }, title),
               subtitle && React.createElement("p", {
@@ -542,88 +1310,36 @@
         ]);
       };
       var Toast = ({ message, type, onClose }) => {
-        const [particles, setParticles] = useState([]);
         const toastRef = useRef(null);
         useEffect(() => {
-          if (type === "success") {
-            const newParticles = [];
-            for (let i = 0; i < 20; i++) {
-              newParticles.push({
-                id: i,
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                size: Math.random() * 4 + 2,
-                speedX: (Math.random() - 0.5) * 3,
-                speedY: (Math.random() - 0.5) * 3 - 1,
-                opacity: 1,
-                color: ["#dbc4a0", "#c98454", "#b56747"][Math.floor(Math.random() * 3)]
-              });
-            }
-            setParticles(newParticles);
-          }
           const timer = setTimeout(onClose, 3e3);
           return () => clearTimeout(timer);
-        }, [type, onClose]);
-        useEffect(() => {
-          if (particles.length === 0) return;
-          const interval = setInterval(() => {
-            setParticles((prev) => prev.map((p) => ({
-              ...p,
-              x: p.x + p.speedX,
-              y: p.y + p.speedY,
-              opacity: p.opacity - 0.02
-            })).filter((p) => p.opacity > 0));
-          }, 30);
-          return () => clearInterval(interval);
-        }, [particles.length]);
+        }, [onClose]);
         const bgColor = type === "success" ? "linear-gradient(135deg, rgba(92, 49, 30, 0.97), rgba(94, 52, 42, 0.97))" : type === "error" ? "linear-gradient(135deg, rgba(139, 79, 63, 0.97), rgba(94, 52, 42, 0.97))" : "linear-gradient(135deg, rgba(92, 49, 30, 0.95), rgba(139, 79, 63, 0.95))";
         return React.createElement("div", {
           ref: toastRef,
           className: "fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto",
           style: { animation: "toastSlideUp 0.3s ease-out" }
+        }, React.createElement("div", {
+          className: "px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3",
+          style: {
+            background: bgColor,
+            color: "#fffdf9",
+            minWidth: "200px",
+            backdropFilter: "blur(8px)"
+          }
         }, [
-          // Particles container
-          type === "success" && React.createElement("div", {
-            key: "particles",
-            className: "absolute inset-0 overflow-visible pointer-events-none",
-            style: { width: "300px", height: "60px", left: "-50px", top: "-20px" }
-          }, particles.map((p) => React.createElement("div", {
-            key: p.id,
-            className: "absolute rounded-full",
-            style: {
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              backgroundColor: p.color,
-              opacity: p.opacity,
-              transform: "translate(-50%, -50%)",
-              boxShadow: `0 0 ${p.size * 2}px ${p.color}`
-            }
-          }))),
-          // Toast body
-          React.createElement("div", {
-            key: "body",
-            className: "px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3",
-            style: {
-              background: bgColor,
-              color: "#fffdf9",
-              minWidth: "200px",
-              backdropFilter: "blur(8px)"
-            }
-          }, [
-            // Icon
-            React.createElement("span", {
-              key: "icon",
-              className: "text-lg"
-            }, type === "success" ? "\u2713" : type === "error" ? "\u2715" : "\u2139"),
-            // Message
-            React.createElement("span", {
-              key: "message",
-              className: "text-sm font-medium"
-            }, message)
-          ])
-        ]);
+          // Icon
+          React.createElement("span", {
+            key: "icon",
+            className: "text-lg"
+          }, type === "success" ? "\u2713" : type === "error" ? "\u2715" : "\u2139"),
+          // Message
+          React.createElement("span", {
+            key: "message",
+            className: "text-sm font-medium"
+          }, message)
+        ]));
       };
       var toastStyles = `
 @keyframes toastSlideUp {
@@ -762,9 +1478,14 @@
             }
           };
           const animate = () => {
-            updatePoints();
-            drawMesh();
-            rafRef.current = requestAnimationFrame(animate);
+            try {
+              updatePoints();
+              drawMesh();
+              rafRef.current = requestAnimationFrame(animate);
+            } catch (e) {
+              console.error("Mesh animation error:", e);
+              if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            }
           };
           const handleMouseMove = (e) => {
             const rect = container.getBoundingClientRect();
@@ -779,9 +1500,13 @@
             rafRef.current = requestAnimationFrame(animate);
           }, 50);
           window.addEventListener("resize", resizeCanvas);
-          if (parentElement) {
-            parentElement.addEventListener("mousemove", handleMouseMove);
-            parentElement.addEventListener("mouseleave", handleMouseLeave);
+          if (parentElement && parentElement.addEventListener) {
+            try {
+              parentElement.addEventListener("mousemove", handleMouseMove);
+              parentElement.addEventListener("mouseleave", handleMouseLeave);
+            } catch (e) {
+              console.warn("Could not attach mesh listeners to parent");
+            }
           }
           return () => {
             clearTimeout(initTimeout);
@@ -800,15 +1525,28 @@
         }, React.createElement("canvas", { ref: canvasRef, className: "absolute inset-0 w-full h-full" }));
       };
       function ProfileBuilder({ onDismiss, initialOptions }) {
-        var _a;
+        var _a, _b, _c;
+        if ((initialOptions == null ? void 0 : initialOptions.mode) === "codeflow") {
+          try {
+            return React.createElement(CodeFlowBuilder, { onDismiss, initialOptions });
+          } catch (e) {
+            console.error("CodeFlowBuilder render error:", e);
+            return React.createElement("div", { className: "p-8 text-white" }, "Error loading Code Flow Designer");
+          }
+        }
         const [leftPanelMode, setLeftPanelMode] = useState("settings");
         const [profileName, setProfileName] = useState("");
         const [description, setDescription] = useState("");
         const [weights, setWeights] = useState(defaultWeights);
         const [hardLimits, setHardLimits] = useState(defaultHardLimits);
         const [providers, setProviders] = useState(
-          providerPresets.map((p) => ({ ...p, enabled: p.id === "local" ? false : true }))
+          providerPresets.map((p) => ({
+            ...p,
+            enabled: p.id === "local" ? false : true,
+            enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: true }), {})
+          }))
         );
+        const [expandedProviders, setExpandedProviders] = useState({});
         const [rules, setRules] = useState([]);
         const [systemPrompt, setSystemPrompt] = useState("");
         const [systemPromptModalOpen, setSystemPromptModalOpen] = useState(false);
@@ -819,11 +1557,79 @@
         const [testPrompt, setTestPrompt] = useState("");
         const [isSaving, setIsSaving] = useState(false);
         const [toast, setToast] = useState(null);
+        const [testResult, setTestResult] = useState(null);
+        const [isTestingRoute, setIsTestingRoute] = useState(false);
+        const [animatingEdges, setAnimatingEdges] = useState(false);
+        const [modelsModalOpen, setModelsModalOpen] = useState(false);
+        const [modelSearchQuery, setModelSearchQuery] = useState("");
+        const [activePopup, setActivePopup] = useState(null);
+        const [testPromptDraft, setTestPromptDraft] = useState("");
         const containerRef = useRef(null);
+        const userPromptRef = useRef(null);
+        const specialRulesRef = useRef(null);
         const leftRefs = useRef({});
         const centerRef = useRef(null);
-        const rightRefs = useRef({});
+        const modelsNodeRef = useRef(null);
         const [nodePositions, setNodePositions] = useState({});
+        const normalizeHardLimits = (limits = {}) => {
+          var _a2, _b2, _c2, _d, _e, _f, _g, _h;
+          return {
+            maxCostPerCall: (_b2 = (_a2 = limits.maxCostPerCall) != null ? _a2 : limits.max_cost_per_call) != null ? _b2 : null,
+            maxOutputTokens: (_d = (_c2 = limits.maxOutputTokens) != null ? _c2 : limits.max_output_tokens) != null ? _d : null,
+            dailySpendLimit: (_f = (_e = limits.dailySpendLimit) != null ? _e : limits.daily_spend_limit) != null ? _f : null,
+            dailyOutputTokens: (_h = (_g = limits.dailyOutputTokens) != null ? _g : limits.daily_output_tokens) != null ? _h : null
+          };
+        };
+        const hydrateWeights = (graphState) => {
+          if (Array.isArray(graphState == null ? void 0 : graphState.weights)) return graphState.weights;
+          if (Array.isArray(graphState == null ? void 0 : graphState.priorities)) {
+            return graphState.priorities.map((priority) => {
+              var _a2;
+              return {
+                id: priority.id,
+                label: ((_a2 = defaultWeights.find((w) => w.id === priority.id)) == null ? void 0 : _a2.label) || priority.id,
+                weight: priority.weight
+              };
+            });
+          }
+          return defaultWeights;
+        };
+        useEffect(() => {
+          const incoming = initialOptions == null ? void 0 : initialOptions.profile;
+          if (!incoming) return;
+          setProfileName(incoming.name || "");
+          setDescription(incoming.description || "");
+          const graphState = incoming.graph_state || {};
+          setWeights(hydrateWeights(graphState));
+          setHardLimits({
+            ...defaultHardLimits,
+            ...normalizeHardLimits(graphState.hardLimits || graphState.hard_limits || graphState.hardLimits)
+          });
+          if (Array.isArray(graphState.providers)) {
+            const mergedProviders = providerPresets.map((preset) => {
+              const override = graphState.providers.find((p) => p.id === preset.id);
+              if (override) {
+                const enabledModels = override.enabledModels || preset.models.reduce((acc, model) => {
+                  var _a2;
+                  return { ...acc, [model]: (_a2 = override.enabled) != null ? _a2 : true };
+                }, {});
+                return { ...preset, ...override, enabledModels };
+              }
+              return {
+                ...preset,
+                enabled: preset.id === "local" ? false : true,
+                enabledModels: preset.models.reduce((acc, model) => ({ ...acc, [model]: preset.id !== "local" }), {})
+              };
+            });
+            setProviders(mergedProviders);
+          }
+          if (Array.isArray(graphState.rules)) {
+            setRules(graphState.rules);
+          }
+          if (graphState.systemPrompt) {
+            setSystemPrompt(graphState.systemPrompt);
+          }
+        }, [initialOptions]);
         useEffect(() => {
           const styleId = "routing-lab-cursor-styles";
           if (!document.getElementById(styleId)) {
@@ -881,18 +1687,80 @@
         const showToast = (message, type) => {
           setToast({ message, type });
         };
+        const openNodePopup = (type, nodeRef, data = {}) => {
+          if (!(nodeRef == null ? void 0 : nodeRef.current) || !containerRef.current) return;
+          const nodeRect = nodeRef.current.getBoundingClientRect();
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const position = {
+            x: nodeRect.right - containerRect.left + 20,
+            y: nodeRect.top - containerRect.top
+          };
+          setActivePopup({ type, data, position, fullscreen: false });
+        };
+        const closePopup = () => {
+          setActivePopup(null);
+        };
+        const toggleFullscreen = () => {
+          if (activePopup) {
+            setActivePopup({ ...activePopup, fullscreen: !activePopup.fullscreen });
+          }
+        };
+        const handleTestRoute = async () => {
+          if (!testPrompt.trim()) {
+            showToast("Please enter a test prompt", "warning");
+            return;
+          }
+          setIsTestingRoute(true);
+          setAnimatingEdges(true);
+          const graphState = { weights, hardLimits, providers, rules, systemPrompt };
+          try {
+            const token = localStorage.getItem("access_token");
+            const response = await fetch(`${window.API_URL}/profiles/test-route`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...token && { "Authorization": `Bearer ${token}` }
+              },
+              body: JSON.stringify({
+                prompt: testPrompt,
+                graph_state: graphState
+              })
+            });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.detail || "Failed to test route");
+            }
+            const result = await response.json();
+            setTestResult(result);
+            setTimeout(() => {
+              setAnimatingEdges(false);
+              showToast(`Selected: ${result.selected_model.display_name}`, "success");
+            }, 2e3);
+          } catch (error) {
+            console.error("Test route error:", error);
+            showToast(error.message || "Failed to test route", "error");
+            setAnimatingEdges(false);
+          } finally {
+            setIsTestingRoute(false);
+          }
+        };
         const handleSave = async () => {
+          var _a2, _b2;
           if (!profileName.trim()) {
             showToast("Please enter a profile name", "warning");
             return;
           }
           setIsSaving(true);
-          const graphState = { weights, hardLimits, providers, rules };
+          const graphState = { weights, hardLimits, providers, rules, systemPrompt };
           const payload = { name: profileName, description, graph_state: graphState };
+          const isEditing = Boolean((_a2 = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _a2.slug);
+          const targetSlug = (_b2 = initialOptions == null ? void 0 : initialOptions.profile) == null ? void 0 : _b2.slug;
+          const endpoint = isEditing && targetSlug ? `${window.API_URL}/profiles/${encodeURIComponent(targetSlug)}` : `${window.API_URL}/profiles`;
+          const method = isEditing && targetSlug ? "PATCH" : "POST";
           try {
             const token = localStorage.getItem("access_token");
-            const response = await fetch(`${window.API_URL}/profiles`, {
-              method: "POST",
+            const response = await fetch(endpoint, {
+              method,
               headers: {
                 "Content-Type": "application/json",
                 ...token && { "Authorization": `Bearer ${token}` }
@@ -905,7 +1773,15 @@
             }
             const saved = await response.json();
             showToast("Profile saved successfully!", "success");
-            window.dispatchEvent(new CustomEvent("routing-profile:created", { detail: { profile: saved.profile } }));
+            const savedProfile = saved.profile || {
+              ...initialOptions == null ? void 0 : initialOptions.profile,
+              slug: targetSlug,
+              name: profileName,
+              description,
+              graph_state: graphState
+            };
+            const eventName = isEditing ? "routing-profile:updated" : "routing-profile:created";
+            window.dispatchEvent(new CustomEvent(eventName, { detail: { profile: savedProfile } }));
             setTimeout(() => onDismiss(), 500);
           } catch (err) {
             showToast(err.message || "Failed to save profile", "error");
@@ -920,17 +1796,50 @@
           return () => window.removeEventListener("keydown", handleKey);
         }, [onDismiss]);
         useEffect(() => {
+          const styleId = "routing-animation-styles";
+          if (document.getElementById(styleId)) return;
+          const style = document.createElement("style");
+          style.id = styleId;
+          style.innerHTML = `
+            @keyframes routeFlow {
+                0% { stroke-dashoffset: 0; }
+                100% { stroke-dashoffset: -24; }
+            }
+        `;
+          document.head.appendChild(style);
+          return () => {
+            const el = document.getElementById(styleId);
+            if (el) document.head.removeChild(el);
+          };
+        }, []);
+        useEffect(() => {
           const calculatePositions = () => {
             if (!containerRef.current) return;
             const containerRect = containerRef.current.getBoundingClientRect();
             const positions = {};
+            if (userPromptRef.current) {
+              const rect = userPromptRef.current.getBoundingClientRect();
+              positions.userPrompt = {
+                x: rect.right - containerRect.left,
+                y: rect.top + rect.height / 2 - containerRect.top
+              };
+            }
+            if (specialRulesRef.current) {
+              const rect = specialRulesRef.current.getBoundingClientRect();
+              positions.specialRules = {
+                x: rect.right - containerRect.left,
+                y: rect.top + rect.height / 2 - containerRect.top,
+                left: rect.left - containerRect.left
+              };
+            }
             weights.forEach((node) => {
               const el = leftRefs.current[node.id];
               if (el) {
                 const rect = el.getBoundingClientRect();
                 positions[node.id] = {
                   x: rect.right - containerRect.left,
-                  y: rect.top + rect.height / 2 - containerRect.top
+                  y: rect.top + rect.height / 2 - containerRect.top,
+                  left: rect.left - containerRect.left
                 };
               }
             });
@@ -942,16 +1851,13 @@
                 y: rect.top + rect.height / 2 - containerRect.top
               };
             }
-            providers.forEach((provider) => {
-              const el = rightRefs.current[provider.id];
-              if (el) {
-                const rect = el.getBoundingClientRect();
-                positions[provider.id] = {
-                  x: rect.left - containerRect.left,
-                  y: rect.top + rect.height / 2 - containerRect.top
-                };
-              }
-            });
+            if (modelsNodeRef.current) {
+              const rect = modelsNodeRef.current.getBoundingClientRect();
+              positions.models = {
+                x: rect.left - containerRect.left,
+                y: rect.top + rect.height / 2 - containerRect.top
+              };
+            }
             setNodePositions(positions);
           };
           const runCalculation = () => {
@@ -970,7 +1876,6 @@
           };
         }, [weights, providers]);
         const activeProviders = providers.filter((p) => p.enabled);
-        const confidenceScore = (weights.reduce((sum, w) => sum + w.weight, 0) / weights.length * 100).toFixed(1);
         return React.createElement("div", {
           className: "relative h-full w-full flex flex-col",
           style: { backgroundColor: "var(--bg-elevated)", cursor: defaultCursor },
@@ -986,7 +1891,7 @@
             React.createElement("h1", {
               key: "title",
               className: "text-xl font-semibold flex items-center gap-2",
-              style: { color: "#5b2a1a" }
+              style: { color: "var(--text-primary)" }
             }, [
               React.createElement("img", {
                 key: "icon",
@@ -1040,14 +1945,14 @@
                   type: "button",
                   onClick: () => setLeftPanelMode("settings"),
                   className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === "settings" ? "bg-white shadow-sm" : ""}`,
-                  style: { color: leftPanelMode === "settings" ? "#5b2a1a" : "rgba(43, 29, 20, 0.6)" }
+                  style: { color: leftPanelMode === "settings" ? "var(--text-primary)" : "rgba(43, 29, 20, 0.6)" }
                 }, "Settings"),
                 React.createElement("button", {
                   key: "rules",
                   type: "button",
                   onClick: () => setLeftPanelMode("rules"),
                   className: `flex-1 px-3 py-2 text-sm font-medium rounded-lg transition ${leftPanelMode === "rules" ? "bg-white shadow-sm" : ""}`,
-                  style: { color: leftPanelMode === "rules" ? "#5b2a1a" : "rgba(43, 29, 20, 0.6)" }
+                  style: { color: leftPanelMode === "rules" ? "var(--text-primary)" : "rgba(43, 29, 20, 0.6)" }
                 }, "Rules")
               ]),
               // Settings content
@@ -1075,10 +1980,10 @@
                   key: "limits",
                   className: "space-y-3 mb-6"
                 }, [
-                  React.createElement(NumberInput, { key: "maxCost", label: "max cost per call", value: hardLimits.maxCostPerCall, onChange: (v) => updateHardLimit("maxCostPerCall", v) }),
-                  React.createElement(NumberInput, { key: "maxTokens", label: "max output tokens", value: hardLimits.maxOutputTokens, onChange: (v) => updateHardLimit("maxOutputTokens", v) }),
-                  React.createElement(NumberInput, { key: "maxLatency", label: "max latency (ms)", value: hardLimits.maxLatency, onChange: (v) => updateHardLimit("maxLatency", v), step: 0.01 }),
-                  React.createElement(NumberInput, { key: "rateLimit", label: "max rate limits", value: hardLimits.maxRateLimits, onChange: (v) => updateHardLimit("maxRateLimits", v) })
+                  React.createElement(NumberInput, { key: "maxCost", label: "Max cost per call ($)", value: hardLimits.maxCostPerCall, onChange: (v) => updateHardLimit("maxCostPerCall", v), step: 0.01 }),
+                  React.createElement(NumberInput, { key: "maxTokens", label: "Max output tokens per call", value: hardLimits.maxOutputTokens, onChange: (v) => updateHardLimit("maxOutputTokens", v) }),
+                  React.createElement(NumberInput, { key: "dailySpend", label: "Daily spend limit ($)", value: hardLimits.dailySpendLimit, onChange: (v) => updateHardLimit("dailySpendLimit", v), step: 0.01 }),
+                  React.createElement(NumberInput, { key: "dailyTokens", label: "Daily output tokens", value: hardLimits.dailyOutputTokens, onChange: (v) => updateHardLimit("dailyOutputTokens", v) })
                 ]),
                 React.createElement("h3", {
                   key: "toggles-title",
@@ -1206,12 +2111,14 @@
                     onChange: (e) => setTestPrompt(e.target.value),
                     placeholder: "Write a complex Python script for data analysis.",
                     className: "flex-1 px-4 py-3 rounded-xl border text-sm",
-                    style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "var(--bg-elevated)", color: "#2b1d14" }
+                    style: { borderColor: "rgba(92, 49, 30, 0.15)", backgroundColor: "var(--bg-elevated)", color: "var(--text-primary)" }
                   }),
                   React.createElement("button", {
                     key: "send",
                     type: "button",
-                    className: "w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90",
+                    onClick: handleTestRoute,
+                    disabled: isTestingRoute,
+                    className: "w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90 disabled:opacity-50",
                     style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8", fontSize: "1.2rem", fontWeight: "700" }
                   }, "\u2191")
                 ])
@@ -1224,45 +2131,73 @@
                 React.createElement(MeshLensBackground, { key: "mesh" }),
                 React.createElement("div", {
                   key: "nodes",
-                  className: "absolute inset-0 flex items-center justify-center p-8"
+                  className: "absolute inset-0 flex items-center justify-center p-4",
+                  style: { transform: "scale(0.85)" }
                 }, [
-                  // Left nodes (weights)
+                  // User Prompt (leftmost)
                   React.createElement("div", {
-                    key: "left",
-                    className: "flex flex-col gap-4 mr-12"
+                    key: "user-prompt",
+                    className: "mr-6"
+                  }, React.createElement(MiniNodeCard, {
+                    title: "User Prompt",
+                    subtitle: "Input",
+                    accent: "#5b2a1a",
+                    nodeRef: userPromptRef,
+                    onClick: () => openNodePopup("userPrompt", userPromptRef)
+                  })),
+                  // Special Rules
+                  React.createElement("div", {
+                    key: "special-rules",
+                    className: "mr-6"
+                  }, React.createElement(MiniNodeCard, {
+                    title: "Special Rules",
+                    subtitle: rules.length ? `${rules.length} rule${rules.length > 1 ? "s" : ""}` : "No rules",
+                    accent: "#8e3c2c",
+                    nodeRef: specialRulesRef,
+                    onClick: () => openNodePopup("specialRules", specialRulesRef)
+                  })),
+                  // Weight nodes
+                  React.createElement("div", {
+                    key: "weights",
+                    className: "flex flex-col gap-3 mr-8"
                   }, weights.map((w) => React.createElement(MiniNodeCard, {
                     key: w.id,
                     title: w.label,
-                    subtitle: null,
+                    subtitle: `${Math.round(w.weight * 100)}%`,
                     accent: siteColors.quality,
-                    nodeRef: (el) => leftRefs.current[w.id] = el
+                    nodeRef: (el) => leftRefs.current[w.id] = el,
+                    onClick: () => openNodePopup("weight", { current: leftRefs.current[w.id] }, { weight: w })
                   }))),
-                  // Center router
+                  // Router node
                   React.createElement("div", {
-                    key: "center",
+                    key: "router",
                     className: "mx-8"
                   }, React.createElement(MiniNodeCard, {
                     title: "Restruct Router",
                     subtitle: "Weighted orchestration",
                     accent: siteColors.router,
                     active: true,
-                    nodeRef: centerRef
+                    nodeRef: centerRef,
+                    onClick: () => openNodePopup("router", centerRef)
                   })),
-                  // Right nodes (providers)
+                  // Models node (single, clickable)
                   React.createElement("div", {
-                    key: "right",
-                    className: "flex flex-col gap-3 ml-12"
-                  }, providers.map((p) => React.createElement(MiniNodeCard, {
-                    key: p.id,
-                    title: p.label,
-                    subtitle: p.isLocal ? p.enabled ? "Local \u2022 Active" : "Local \u2022 Disabled" : p.enabled ? "Active" : "Disabled",
-                    accent: p.color || siteColors.cost,
-                    hasToggle: true,
-                    enabled: p.enabled,
-                    onToggle: () => toggleProvider(p.id),
-                    nodeRef: (el) => rightRefs.current[p.id] = el,
-                    isLocal: p.isLocal
-                  })))
+                    key: "models",
+                    className: "ml-8"
+                  }, React.createElement(MiniNodeCard, {
+                    title: "Model pool",
+                    subtitle: (() => {
+                      const totalModels = activeProviders.reduce((sum, p) => {
+                        const enabledCount = Object.values(p.enabledModels || {}).filter(Boolean).length;
+                        return sum + enabledCount;
+                      }, 0);
+                      return `${totalModels} model${totalModels !== 1 ? "s" : ""}`;
+                    })(),
+                    accent: siteColors.cost,
+                    nodeRef: modelsNodeRef,
+                    onClick: () => setModelsModalOpen(true),
+                    large: true
+                  }))
                 ]),
                 // SVG edges
                 React.createElement("svg", {
@@ -1271,35 +2206,83 @@
                   width: "100%",
                   height: "100%"
                 }, (() => {
-                  const router = nodePositions.router;
-                  if (!router) return null;
                   const edges = [];
-                  weights.forEach((w) => {
-                    const leftNode = nodePositions[w.id];
-                    if (!leftNode) return;
-                    const d = `M ${leftNode.x} ${leftNode.y} C ${leftNode.x + 60} ${leftNode.y}, ${router.left - 60} ${router.y}, ${router.left} ${router.y}`;
+                  const userPrompt = nodePositions.userPrompt;
+                  const specialRules = nodePositions.specialRules;
+                  if (userPrompt && specialRules) {
+                    const d = `M ${userPrompt.x} ${userPrompt.y} L ${specialRules.left} ${specialRules.y}`;
                     edges.push(React.createElement("path", {
-                      key: `left-${w.id}`,
+                      key: "userPrompt-specialRules",
                       d,
                       fill: "none",
-                      stroke: siteColors.edgeIdle,
-                      strokeWidth: 1.5,
-                      strokeDasharray: "6 6"
+                      stroke: animatingEdges ? "#c4836a" : siteColors.edgeIdle,
+                      strokeWidth: animatingEdges ? 2.5 : 1.5,
+                      strokeDasharray: "6 6",
+                      style: animatingEdges ? {
+                        animation: "routeFlow 1.5s linear infinite",
+                        animationDelay: "0s",
+                        opacity: 0.8
+                      } : {}
                     }));
-                  });
-                  providers.forEach((p) => {
-                    const rightNode = nodePositions[p.id];
-                    if (!rightNode) return;
-                    const d = `M ${router.right} ${router.y} C ${router.right + 80} ${router.y}, ${rightNode.x - 80} ${rightNode.y}, ${rightNode.x} ${rightNode.y}`;
-                    edges.push(React.createElement("path", {
-                      key: `right-${p.id}`,
-                      d,
-                      fill: "none",
-                      stroke: p.enabled ? siteColors.edgeIdle : "rgba(92, 49, 30, 0.1)",
-                      strokeWidth: 1.5,
-                      strokeDasharray: "6 6"
-                    }));
-                  });
+                  }
+                  if (specialRules) {
+                    weights.forEach((w, idx) => {
+                      const weightNode = nodePositions[w.id];
+                      if (!weightNode) return;
+                      const d = `M ${specialRules.x} ${specialRules.y} C ${specialRules.x + 40} ${specialRules.y}, ${weightNode.left - 40} ${weightNode.y}, ${weightNode.left} ${weightNode.y}`;
+                      edges.push(React.createElement("path", {
+                        key: `specialRules-${w.id}`,
+                        d,
+                        fill: "none",
+                        stroke: animatingEdges ? "#c4836a" : siteColors.edgeIdle,
+                        strokeWidth: animatingEdges ? 2.5 : 1.5,
+                        strokeDasharray: "6 6",
+                        style: animatingEdges ? {
+                          animation: "routeFlow 1.5s linear infinite",
+                          animationDelay: `${0.3}s`,
+                          opacity: 0.8
+                        } : {}
+                      }));
+                    });
+                  }
+                  const router = nodePositions.router;
+                  if (router) {
+                    weights.forEach((w) => {
+                      const weightNode = nodePositions[w.id];
+                      if (!weightNode) return;
+                      const d = `M ${weightNode.x} ${weightNode.y} C ${weightNode.x + 50} ${weightNode.y}, ${router.left - 50} ${router.y}, ${router.left} ${router.y}`;
+                      edges.push(React.createElement("path", {
+                        key: `weight-router-${w.id}`,
+                        d,
+                        fill: "none",
+                        stroke: animatingEdges ? "#c4836a" : siteColors.edgeIdle,
+                        strokeWidth: animatingEdges ? 2.5 : 1.5,
+                        strokeDasharray: "6 6",
+                        style: animatingEdges ? {
+                          animation: "routeFlow 1.5s linear infinite",
+                          animationDelay: "0.6s",
+                          opacity: 0.8
+                        } : {}
+                      }));
+                    });
+                    const modelsNode = nodePositions.models;
+                    if (modelsNode) {
+                      const d = `M ${router.right} ${router.y} L ${modelsNode.x} ${modelsNode.y}`;
+                      edges.push(React.createElement("path", {
+                        key: "router-models",
+                        d,
+                        fill: "none",
+                        stroke: animatingEdges ? "#8b4f3f" : siteColors.edgeIdle,
+                        strokeWidth: animatingEdges ? 3 : 1.5,
+                        strokeDasharray: "6 6",
+                        style: animatingEdges ? {
+                          animation: "routeFlow 1.5s linear infinite",
+                          animationDelay: "0.9s",
+                          opacity: 1
+                        } : {}
+                      }));
+                    }
+                  }
                   return edges;
                 })())
               ])
@@ -1345,24 +2328,6 @@
                 React.createElement(WeightBarChart, { key: "chart", weights })
               ]),
               React.createElement("div", {
-                key: "providers-section",
-                className: "mb-4"
-              }, [
-                React.createElement("p", {
-                  key: "label",
-                  className: "text-xs mb-2",
-                  style: { color: "rgba(43, 29, 20, 0.5)" }
-                }, "Active Providers"),
-                React.createElement("div", {
-                  key: "list",
-                  className: "text-sm",
-                  style: { color: "#2b1d14" }
-                }, activeProviders.map((p) => React.createElement("div", {
-                  key: p.id,
-                  className: "mb-1"
-                }, p.label)))
-              ]),
-              React.createElement("div", {
                 key: "rules-section",
                 className: "mb-4"
               }, [
@@ -1377,74 +2342,85 @@
                   style: { color: "#2b1d14" }
                 }, rules.length > 0 ? rules.map((r) => React.createElement("div", { key: r.id }, r.name)) : React.createElement("span", { style: { color: "rgba(43, 29, 20, 0.4)" } }, "None"))
               ]),
-              React.createElement("div", {
-                key: "limits-section",
-                className: "mb-4"
+              testResult && React.createElement("div", {
+                key: "test-result-section",
+                className: "mb-5 p-4 rounded-xl",
+                style: {
+                  background: "linear-gradient(135deg, rgba(196, 131, 106, 0.08), rgba(139, 79, 63, 0.08))",
+                  border: "2px solid rgba(139, 79, 63, 0.2)"
+                }
               }, [
-                React.createElement("p", {
-                  key: "label",
-                  className: "text-xs mb-2",
-                  style: { color: "rgba(43, 29, 20, 0.5)" }
-                }, "Hard Limit"),
                 React.createElement("div", {
-                  key: "values",
-                  className: "text-xs space-y-1",
-                  style: { color: "#2b1d14" }
+                  key: "header",
+                  className: "flex items-center gap-2 mb-3"
                 }, [
-                  React.createElement("div", { key: "max", className: "flex justify-between" }, [
-                    React.createElement("span", { key: "l" }, "Max Limit"),
-                    React.createElement("span", { key: "v" }, hardLimits.maxCostPerCall)
-                  ]),
-                  React.createElement("div", { key: "tokens", className: "flex justify-between" }, [
-                    React.createElement("span", { key: "l" }, "Max Limit"),
-                    React.createElement("span", { key: "v" }, hardLimits.maxOutputTokens)
-                  ])
-                ])
-              ]),
-              React.createElement("div", {
-                key: "fallback-section",
-                className: "mb-4"
-              }, [
-                React.createElement("p", {
-                  key: "label",
-                  className: "text-xs mb-2",
-                  style: { color: "rgba(43, 29, 20, 0.5)" }
-                }, "Fallback Chain"),
+                  React.createElement("span", {
+                    key: "icon",
+                    style: { fontSize: "16px" }
+                  }, "\u2713"),
+                  React.createElement("p", {
+                    key: "title",
+                    className: "text-sm font-semibold",
+                    style: { color: "#5b2a1a" }
+                  }, "Test Result")
+                ]),
                 React.createElement("div", {
-                  key: "chain",
-                  className: "text-xs flex items-center gap-1 flex-wrap",
-                  style: { color: "#2b1d14" }
-                }, activeProviders.slice(0, 4).map((p, i) => [
-                  React.createElement("span", { key: p.id }, p.label.split(" ")[0]),
-                  i < Math.min(activeProviders.length - 1, 3) && React.createElement("span", { key: `arrow-${i}`, style: { color: "rgba(43, 29, 20, 0.3)" } }, "\u2192")
-                ]).flat().filter(Boolean))
-              ]),
-              React.createElement("div", {
-                key: "confidence",
-                className: "flex justify-between items-center mb-4"
-              }, [
-                React.createElement("span", {
-                  key: "label",
+                  key: "model",
+                  className: "mb-2"
+                }, [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-xs mb-1",
+                    style: { color: "rgba(43, 29, 20, 0.6)" }
+                  }, "Selected Model"),
+                  React.createElement("p", {
+                    key: "value",
+                    className: "text-sm font-semibold",
+                    style: { color: "#2b1d14" }
+                  }, ((_a = testResult.selected_model) == null ? void 0 : _a.display_name) || ((_b = testResult.selected_model) == null ? void 0 : _b.model_name))
+                ]),
+                React.createElement("div", {
+                  key: "provider",
                   className: "text-xs",
-                  style: { color: "rgba(43, 29, 20, 0.5)" }
-                }, "Confidence Score"),
-                React.createElement("span", {
-                  key: "value",
-                  className: "text-sm font-semibold",
-                  style: { color: "#b56747" }
-                }, confidenceScore)
+                  style: { color: "rgba(43, 29, 20, 0.6)" }
+                }, `Provider: ${(_c = testResult.selected_model) == null ? void 0 : _c.vendor}`)
               ]),
-              testPrompt && React.createElement("div", {
-                key: "explanation",
+              testResult && React.createElement("div", {
+                key: "top-models",
                 className: "p-3 rounded-lg text-xs",
-                style: { backgroundColor: "rgba(92, 49, 30, 0.04)", color: "rgba(43, 29, 20, 0.7)" }
+                style: { backgroundColor: "rgba(92, 49, 30, 0.04)", border: "1px solid rgba(92, 49, 30, 0.1)" }
               }, [
                 React.createElement("p", {
                   key: "title",
-                  className: "font-semibold mb-1",
+                  className: "font-semibold mb-2",
                   style: { color: "#2b1d14" }
-                }, "Routing explanation"),
-                `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${((_a = activeProviders[0]) == null ? void 0 : _a.label) || "available providers"} based on current weight configuration.`
+                }, "Top Scoring Models"),
+                React.createElement("div", {
+                  key: "list",
+                  className: "space-y-1.5"
+                }, (testResult.all_models || []).slice(0, 5).map((model, index) => React.createElement("div", {
+                  key: index,
+                  className: "flex items-center justify-between",
+                  style: {
+                    color: index === 0 ? "#8b4f3f" : "rgba(43, 29, 20, 0.7)",
+                    fontWeight: index === 0 ? "600" : "400"
+                  }
+                }, [
+                  React.createElement("span", {
+                    key: "rank",
+                    className: "mr-1",
+                    style: { color: "rgba(43, 29, 20, 0.4)", minWidth: "16px" }
+                  }, `${index + 1}.`),
+                  React.createElement("span", {
+                    key: "name",
+                    className: "flex-1"
+                  }, model.display_name || model.model_name),
+                  index === 0 && React.createElement("span", {
+                    key: "badge",
+                    className: "text-[10px] px-1.5 py-0.5 rounded",
+                    style: { backgroundColor: "rgba(139, 79, 63, 0.15)", color: "#8b4f3f" }
+                  }, "SELECTED")
+                ])))
               ])
             ])
           ]),
@@ -1462,6 +2438,226 @@
             onClose: () => setLocalModelsModalOpen(false),
             onEnable: handleEnableLocalModels
           }),
+          // Models Selection Modal
+          modelsModalOpen && React.createElement("div", {
+            key: "models-modal",
+            className: "fixed inset-0 flex items-center justify-center z-50",
+            style: { backgroundColor: "rgba(0,0,0,0.5)" },
+            onClick: () => setModelsModalOpen(false)
+          }, React.createElement("div", {
+            className: "bg-white rounded-2xl p-6 w-full max-w-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col",
+            style: { color: "#2b1d14" },
+            onClick: (e) => e.stopPropagation()
+          }, [
+            // Header
+            React.createElement("div", {
+              key: "header",
+              className: "flex items-center justify-between mb-4"
+            }, [
+              React.createElement("h3", {
+                key: "title",
+                className: "text-xl font-semibold",
+                style: { color: "#5b2a1a" }
+              }, "Select Models"),
+              React.createElement("button", {
+                key: "close",
+                type: "button",
+                onClick: () => setModelsModalOpen(false),
+                className: "text-2xl leading-none",
+                style: { color: "rgba(43,29,20,0.5)" }
+              }, "\xD7")
+            ]),
+            // Search and controls
+            React.createElement("div", {
+              key: "controls",
+              className: "flex gap-3 mb-4"
+            }, [
+              React.createElement("input", {
+                key: "search",
+                type: "text",
+                value: modelSearchQuery,
+                onChange: (e) => setModelSearchQuery(e.target.value),
+                placeholder: "Search models or providers...",
+                className: "flex-1 px-4 py-2 rounded-lg border text-sm",
+                style: { borderColor: "rgba(92,49,30,0.15)", backgroundColor: "var(--bg-elevated)", color: "#2b1d14" }
+              }),
+              React.createElement("button", {
+                key: "disable-all",
+                type: "button",
+                onClick: () => setProviders((prev) => prev.map((p) => ({
+                  ...p,
+                  enabled: false,
+                  enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: false }), {})
+                }))),
+                className: "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap",
+                style: { background: "rgba(92,49,30,0.08)", color: "#5b2a1a" }
+              }, "Disable All"),
+              React.createElement("button", {
+                key: "enable-all",
+                type: "button",
+                onClick: () => setProviders((prev) => prev.map((p) => ({
+                  ...p,
+                  enabled: true,
+                  enabledModels: p.models.reduce((acc, model) => ({ ...acc, [model]: true }), {})
+                }))),
+                className: "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap",
+                style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
+              }, "Enable All")
+            ]),
+            // Provider list
+            React.createElement("div", {
+              key: "provider-list",
+              className: "overflow-y-auto flex-1",
+              style: { paddingRight: "8px" }
+            }, (() => {
+              const searchLower = modelSearchQuery.toLowerCase();
+              const filtered = providers.filter((p) => {
+                if (!searchLower) return true;
+                const labelMatch = p.label.toLowerCase().includes(searchLower);
+                const modelMatch = p.models.some((m) => m.toLowerCase().includes(searchLower));
+                return labelMatch || modelMatch;
+              });
+              if (filtered.length === 0) {
+                return React.createElement("div", {
+                  className: "text-center py-8 text-sm",
+                  style: { color: "rgba(43,29,20,0.4)" }
+                }, "No models found");
+              }
+              return filtered.map((provider) => {
+                const isExpanded = expandedProviders[provider.id];
+                const enabledModelCount = Object.values(provider.enabledModels || {}).filter(Boolean).length;
+                return React.createElement("div", {
+                  key: provider.id,
+                  className: "mb-4 rounded-xl border transition-all",
+                  style: {
+                    borderColor: provider.enabled ? "rgba(139,79,63,0.2)" : "rgba(92,49,30,0.1)",
+                    backgroundColor: provider.enabled ? "rgba(196,131,106,0.04)" : "transparent"
+                  }
+                }, [
+                  // Provider header (clickable to expand)
+                  React.createElement("div", {
+                    key: "header",
+                    className: "flex items-center justify-between p-4 cursor-pointer",
+                    onClick: () => setExpandedProviders((prev) => ({ ...prev, [provider.id]: !prev[provider.id] }))
+                  }, [
+                    React.createElement("div", {
+                      key: "info",
+                      className: "flex items-center gap-3"
+                    }, [
+                      React.createElement("div", {
+                        key: "icon",
+                        className: "w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg",
+                        style: { backgroundColor: provider.color || "#8b4f3f" }
+                      }, provider.icon),
+                      React.createElement("div", {
+                        key: "text"
+                      }, [
+                        React.createElement("p", {
+                          key: "label",
+                          className: "font-semibold text-base",
+                          style: { color: "#2b1d14" }
+                        }, provider.label),
+                        React.createElement("p", {
+                          key: "count",
+                          className: "text-xs",
+                          style: { color: "rgba(43,29,20,0.5)" }
+                        }, `${enabledModelCount}/${provider.models.length} models enabled`)
+                      ])
+                    ]),
+                    React.createElement("div", {
+                      key: "controls",
+                      className: "flex items-center gap-2"
+                    }, [
+                      React.createElement("span", {
+                        key: "chevron",
+                        className: "text-lg transition-transform",
+                        style: {
+                          color: "rgba(43,29,20,0.4)",
+                          transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)"
+                        }
+                      }, "\u25BC"),
+                      React.createElement("button", {
+                        key: "toggle",
+                        type: "button",
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          setProviders((prev) => prev.map(
+                            (p) => p.id === provider.id ? {
+                              ...p,
+                              enabled: !p.enabled,
+                              enabledModels: p.models.reduce((acc, model) => ({
+                                ...acc,
+                                [model]: !p.enabled
+                              }), {})
+                            } : p
+                          ));
+                        },
+                        className: "relative w-12 h-6 rounded-full transition-colors",
+                        style: {
+                          backgroundColor: provider.enabled ? "#8b4f3f" : "rgba(92,49,30,0.2)"
+                        }
+                      }, React.createElement("div", {
+                        className: "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow",
+                        style: {
+                          transform: provider.enabled ? "translateX(24px)" : "translateX(2px)"
+                        }
+                      }))
+                    ])
+                  ]),
+                  // Expanded models list
+                  isExpanded && React.createElement("div", {
+                    key: "models",
+                    className: "px-4 pb-4 space-y-2"
+                  }, provider.models.map((model) => {
+                    var _a2, _b2;
+                    const modelEnabled = (_b2 = (_a2 = provider.enabledModels) == null ? void 0 : _a2[model]) != null ? _b2 : true;
+                    return React.createElement("div", {
+                      key: model,
+                      className: "flex items-center justify-between p-3 rounded-lg border",
+                      style: {
+                        borderColor: modelEnabled ? "rgba(139,79,63,0.15)" : "rgba(92,49,30,0.08)",
+                        backgroundColor: modelEnabled ? "rgba(196,131,106,0.05)" : "transparent"
+                      }
+                    }, [
+                      React.createElement("span", {
+                        key: "name",
+                        className: "text-sm font-medium",
+                        style: { color: modelEnabled ? "#2b1d14" : "rgba(43,29,20,0.4)" }
+                      }, model),
+                      React.createElement("button", {
+                        key: "toggle",
+                        type: "button",
+                        onClick: () => {
+                          setProviders((prev) => prev.map(
+                            (p) => p.id === provider.id ? {
+                              ...p,
+                              enabledModels: {
+                                ...p.enabledModels,
+                                [model]: !modelEnabled
+                              },
+                              enabled: Object.values({
+                                ...p.enabledModels,
+                                [model]: !modelEnabled
+                              }).some(Boolean)
+                            } : p
+                          ));
+                        },
+                        className: "relative w-10 h-5 rounded-full transition-colors",
+                        style: {
+                          backgroundColor: modelEnabled ? "#8b4f3f" : "rgba(92,49,30,0.2)"
+                        }
+                      }, React.createElement("div", {
+                        className: "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow",
+                        style: {
+                          transform: modelEnabled ? "translateX(20px)" : "translateX(2px)"
+                        }
+                      }))
+                    ]);
+                  }))
+                ]);
+              });
+            })())
+          ])),
           systemPromptModalOpen && React.createElement("div", {
             key: "system-prompt-modal",
             className: "fixed inset-0 flex items-center justify-center",
@@ -1511,6 +2707,268 @@
               }, "Save")
             ])
           ])),
+          // Node Popup Editor
+          activePopup && React.createElement("div", {
+            key: "popup-overlay",
+            className: "fixed inset-0 z-40",
+            style: { backgroundColor: activePopup.fullscreen ? "rgba(0,0,0,0.5)" : "transparent", pointerEvents: activePopup.fullscreen ? "auto" : "none" },
+            onClick: (e) => {
+              if (e.target === e.currentTarget) closePopup();
+            }
+          }, React.createElement("div", {
+            className: activePopup.fullscreen ? "fixed inset-0 flex items-center justify-center p-8" : "absolute",
+            style: activePopup.fullscreen ? {} : {
+              left: `${activePopup.position.x}px`,
+              top: `${activePopup.position.y}px`,
+              pointerEvents: "auto"
+            },
+            onClick: (e) => e.stopPropagation()
+          }, React.createElement("div", {
+            className: "bg-white rounded-2xl shadow-2xl border-2 flex flex-col",
+            style: {
+              borderColor: "rgba(139,79,63,0.2)",
+              width: activePopup.fullscreen ? "100%" : "380px",
+              maxWidth: activePopup.fullscreen ? "900px" : "380px",
+              maxHeight: activePopup.fullscreen ? "100%" : "500px",
+              color: "#2b1d14"
+            }
+          }, [
+            // Header with controls
+            React.createElement("div", {
+              key: "header",
+              className: "flex items-center justify-between px-5 py-4 border-b",
+              style: { borderColor: "rgba(92,49,30,0.1)" }
+            }, [
+              React.createElement("h3", {
+                key: "title",
+                className: "text-lg font-semibold",
+                style: { color: "#5b2a1a" }
+              }, (() => {
+                var _a2;
+                if (activePopup.type === "userPrompt") return "Edit Test Prompt";
+                if (activePopup.type === "specialRules") return "Special Rules";
+                if (activePopup.type === "weight") return `Edit ${(_a2 = activePopup.data.weight) == null ? void 0 : _a2.label}`;
+                if (activePopup.type === "router") return "Router Settings";
+                return "Edit";
+              })()),
+              React.createElement("div", {
+                key: "controls",
+                className: "flex gap-2"
+              }, [
+                React.createElement("button", {
+                  key: "fullscreen",
+                  type: "button",
+                  onClick: toggleFullscreen,
+                  className: "w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-gray-100",
+                  style: { color: "rgba(43,29,20,0.5)" }
+                }, activePopup.fullscreen ? "\u22A1" : "\u26F6"),
+                React.createElement("button", {
+                  key: "close",
+                  type: "button",
+                  onClick: closePopup,
+                  className: "w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-gray-100 text-xl",
+                  style: { color: "rgba(43,29,20,0.5)" }
+                }, "\xD7")
+              ])
+            ]),
+            // Content
+            React.createElement("div", {
+              key: "content",
+              className: "flex-1 overflow-y-auto p-5"
+            }, (() => {
+              if (activePopup.type === "userPrompt") {
+                return [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-sm mb-3",
+                    style: { color: "rgba(43,29,20,0.65)" }
+                  }, "Enter a test prompt to see which model the router selects based on your configured weights and rules."),
+                  React.createElement("textarea", {
+                    key: "input",
+                    value: testPromptDraft || testPrompt,
+                    onChange: (e) => setTestPromptDraft(e.target.value),
+                    rows: 6,
+                    placeholder: "Write a complex Python script for data analysis.",
+                    className: "w-full p-3 rounded-lg border text-sm",
+                    style: { borderColor: "rgba(92,49,30,0.15)", color: "#2b1d14", resize: "vertical" }
+                  }),
+                  React.createElement("div", {
+                    key: "actions",
+                    className: "flex gap-2 mt-4"
+                  }, [
+                    React.createElement("button", {
+                      key: "apply",
+                      type: "button",
+                      onClick: () => {
+                        setTestPrompt(testPromptDraft || testPrompt);
+                        closePopup();
+                      },
+                      className: "flex-1 py-2 rounded-lg text-sm font-semibold",
+                      style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
+                    }, "Apply"),
+                    React.createElement("button", {
+                      key: "test",
+                      type: "button",
+                      onClick: () => {
+                        setTestPrompt(testPromptDraft || testPrompt);
+                        closePopup();
+                        setTimeout(() => handleTestRoute(), 100);
+                      },
+                      className: "flex-1 py-2 rounded-lg text-sm font-semibold",
+                      style: { background: "rgba(92,49,30,0.08)", color: "#5b2a1a" }
+                    }, "Test Now")
+                  ])
+                ];
+              }
+              if (activePopup.type === "specialRules") {
+                return [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-sm mb-3",
+                    style: { color: "rgba(43,29,20,0.65)" }
+                  }, "Add conditional rules to override model selection based on specific criteria."),
+                  React.createElement("div", {
+                    key: "rules-list",
+                    className: "space-y-2 mb-4"
+                  }, rules.length > 0 ? rules.map((rule, idx) => React.createElement("div", {
+                    key: idx,
+                    className: "p-3 rounded-lg border flex items-center justify-between",
+                    style: { borderColor: "rgba(92,49,30,0.15)" }
+                  }, [
+                    React.createElement("div", { key: "info" }, [
+                      React.createElement("p", {
+                        key: "name",
+                        className: "text-sm font-semibold",
+                        style: { color: "#2b1d14" }
+                      }, rule.name),
+                      React.createElement("p", {
+                        key: "condition",
+                        className: "text-xs",
+                        style: { color: "rgba(43,29,20,0.5)" }
+                      }, rule.condition)
+                    ]),
+                    React.createElement("button", {
+                      key: "delete",
+                      type: "button",
+                      onClick: () => setRules(rules.filter((_, i) => i !== idx)),
+                      className: "text-sm px-2 py-1 rounded",
+                      style: { color: "#8b4f3f" }
+                    }, "\xD7")
+                  ])) : React.createElement("p", {
+                    className: "text-sm text-center py-4",
+                    style: { color: "rgba(43,29,20,0.4)" }
+                  }, "No rules yet")),
+                  React.createElement("button", {
+                    key: "add",
+                    type: "button",
+                    onClick: () => {
+                      setRuleModalOpen(true);
+                      closePopup();
+                    },
+                    className: "w-full py-2 rounded-lg text-sm font-semibold",
+                    style: { background: "linear-gradient(135deg, #c4836a, #8b4f3f)", color: "#fffcf8" }
+                  }, "+ Add Rule")
+                ];
+              }
+              if (activePopup.type === "weight" && activePopup.data.weight) {
+                const weight = activePopup.data.weight;
+                const currentValue = Math.round(weight.weight * 100);
+                return [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-sm mb-3",
+                    style: { color: "rgba(43,29,20,0.65)" }
+                  }, `Adjust the ${weight.label.toLowerCase()} weight. Higher values prioritize this factor in model selection.`),
+                  React.createElement("div", {
+                    key: "value",
+                    className: "text-center mb-4"
+                  }, [
+                    React.createElement("div", {
+                      key: "num",
+                      className: "text-5xl font-bold mb-2",
+                      style: { color: "#8b4f3f" }
+                    }, `${currentValue}%`),
+                    React.createElement("input", {
+                      key: "slider",
+                      type: "range",
+                      min: 0,
+                      max: 100,
+                      value: currentValue,
+                      onChange: (e) => {
+                        const newValue = parseInt(e.target.value) / 100;
+                        setWeights(weights.map(
+                          (w) => w.id === weight.id ? { ...w, weight: newValue } : w
+                        ));
+                      },
+                      className: "w-full",
+                      style: { accentColor: "#8b4f3f" }
+                    })
+                  ]),
+                  React.createElement("div", {
+                    key: "info",
+                    className: "p-3 rounded-lg text-xs",
+                    style: { backgroundColor: "rgba(196,131,106,0.08)", color: "rgba(43,29,20,0.6)" }
+                  }, "Note: Weight values are relative. The router normalizes all weights to determine model selection.")
+                ];
+              }
+              if (activePopup.type === "router") {
+                return [
+                  React.createElement("p", {
+                    key: "label",
+                    className: "text-sm mb-3",
+                    style: { color: "rgba(43,29,20,0.65)" }
+                  }, "The router uses weighted orchestration to select the best model for each request."),
+                  React.createElement("div", {
+                    key: "summary",
+                    className: "space-y-3"
+                  }, [
+                    React.createElement("div", {
+                      key: "weights",
+                      className: "p-4 rounded-lg",
+                      style: { backgroundColor: "rgba(196,131,106,0.08)" }
+                    }, [
+                      React.createElement("p", {
+                        key: "title",
+                        className: "text-sm font-semibold mb-2",
+                        style: { color: "#5b2a1a" }
+                      }, "Current Weights"),
+                      ...weights.map((w) => React.createElement("div", {
+                        key: w.id,
+                        className: "flex justify-between text-sm mb-1"
+                      }, [
+                        React.createElement("span", {
+                          key: "label",
+                          style: { color: "rgba(43,29,20,0.7)" }
+                        }, w.label),
+                        React.createElement("span", {
+                          key: "value",
+                          className: "font-semibold",
+                          style: { color: "#8b4f3f" }
+                        }, `${Math.round(w.weight * 100)}%`)
+                      ]))
+                    ]),
+                    React.createElement("div", {
+                      key: "models",
+                      className: "p-4 rounded-lg",
+                      style: { backgroundColor: "rgba(196,131,106,0.08)" }
+                    }, [
+                      React.createElement("p", {
+                        key: "title",
+                        className: "text-sm font-semibold mb-2",
+                        style: { color: "#5b2a1a" }
+                      }, "Active Providers"),
+                      React.createElement("p", {
+                        key: "count",
+                        className: "text-sm",
+                        style: { color: "rgba(43,29,20,0.7)" }
+                      }, `${activeProviders.length} provider${activeProviders.length !== 1 ? "s" : ""} enabled`)
+                    ])
+                  ])
+                ];
+              }
+              return null;
+            })())
+          ]))),
           // Toast notification
           toast && React.createElement(Toast, {
             key: "toast",
