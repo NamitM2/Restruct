@@ -6133,3 +6133,49 @@ body.focus-mode #exitFocusBtn {
     color: var(--text-primary);
     font-weight: 600;
 }
+
+/* Toast Notification */
+.toast {
+    background: linear-gradient(135deg, rgba(92, 49, 30, 0.97), rgba(94, 52, 42, 0.97));
+    color: #fffdf9;
+    padding: 12px 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    animation: toastSlideUp 0.3s ease-out;
+    pointer-events: auto;
+}
+
+.toast-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes toastSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toastFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
