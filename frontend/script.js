@@ -862,6 +862,18 @@ function buildProfileCard(slug, displayName, profileData) {
             Stats
         </button>
     `;
+    const shareButtonHtml = !isDefault ? `
+        <button class="profile-share-btn" data-profile="${slug}" title="Share profile" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            Share
+        </button>
+    ` : '';
     const deleteButtonHtml = !isDefault ? `
         <button class="profile-delete-btn" title="Delete profile" aria-label="Delete profile">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -880,7 +892,7 @@ function buildProfileCard(slug, displayName, profileData) {
         </div>
     ` : '';
 
-    const footerButtons = [routeButtonHtml, statsButtonHtml].filter(Boolean).join('');
+    const footerButtons = [routeButtonHtml, statsButtonHtml, shareButtonHtml].filter(Boolean).join('');
 
     card.innerHTML = `
         <div class="profile-card-header">
@@ -894,7 +906,7 @@ function buildProfileCard(slug, displayName, profileData) {
     return card;
 }
 
-function renderYourProfiles() {
+function renderYourProfiles(filteredSlugs = null) {
     if (!profilesGrid) return;
     const createCard = createNewProfileCard;
     if (createCard && createCard.parentElement === profilesGrid) {
@@ -902,7 +914,7 @@ function renderYourProfiles() {
     }
 
     profilesGrid.innerHTML = '';
-    const orderedProfiles = [
+    const orderedProfiles = filteredSlugs !== null ? filteredSlugs : [
         ...baseProfileOrder.filter(slug => profiles[slug]),
         ...Object.keys(profiles).filter(slug => !baseProfileOrder.includes(slug))
     ];
@@ -1091,6 +1103,17 @@ if (profilesGrid) {
             return;
         }
 
+        const shareBtn = e.target.closest('.profile-share-btn');
+        if (shareBtn) {
+            e.stopPropagation();
+            const profileSlug = shareBtn.dataset.profile;
+            const shareCode = generateShareCode(profileSlug);
+            if (shareCode) {
+                showShareCodeModal(shareCode);
+            }
+            return;
+        }
+
         const deleteBtn = e.target.closest('.profile-delete-btn');
         if (deleteBtn) {
             e.stopPropagation();
@@ -1194,6 +1217,140 @@ function upsertProfileFromBackend(profile) {
     stats.published = !!profile.published;
 
     return slug;
+}
+
+function generateShareCode(profileSlug) {
+    const profile = profiles[profileSlug];
+    if (!profile) return null;
+
+    const shareData = {
+        name: profile.name,
+        description: profile.description || 'Shared profile',
+        latency: profile.latency,
+        cost: profile.cost,
+        quality: profile.quality,
+        graph_state: profile.graph_state
+    };
+
+    const jsonString = JSON.stringify(shareData);
+    return btoa(jsonString);
+}
+
+function importProfileFromCode(shareCode) {
+    if (!shareCode || !shareCode.trim()) {
+        throw new Error('Please paste a profile code');
+    }
+
+    let jsonString;
+    try {
+        jsonString = atob(shareCode);
+    } catch (e) {
+        throw new Error('Invalid profile code format');
+    }
+
+    let shareData;
+    try {
+        shareData = JSON.parse(jsonString);
+    } catch (e) {
+        throw new Error('Invalid profile code data');
+    }
+
+    if (!shareData.name || !shareData.graph_state) {
+        throw new Error('Profile code is missing required data');
+    }
+
+    let baseName = shareData.name || 'Imported Profile';
+    let slug = slugifyProfileName(baseName);
+
+    if (profiles[slug]) {
+        const match = baseName.match(/^(.*?)\s*(\d+)$/);
+        let nameWithoutNumber;
+        let counter;
+
+        if (match) {
+            nameWithoutNumber = match[1].trim();
+            counter = parseInt(match[2]) + 1;
+        } else {
+            nameWithoutNumber = baseName;
+            counter = 2;
+        }
+
+        do {
+            baseName = `${nameWithoutNumber} ${counter}`;
+            slug = slugifyProfileName(baseName);
+            counter++;
+        } while (profiles[slug]);
+    }
+
+    profiles[slug] = {
+        name: baseName,
+        description: shareData.description,
+        latency: shareData.latency || 'medium',
+        cost: shareData.cost || 'medium',
+        quality: shareData.quality || 'medium',
+        graph_state: shareData.graph_state
+    };
+
+    ensureProfileStats(slug);
+
+    return slug;
+}
+
+function showToast(message, duration = 3000) {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.textContent = '✓';
+    toast.appendChild(icon);
+
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    toast.appendChild(messageSpan);
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'toastFadeOut 0.3s ease-out';
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, duration);
+}
+
+function showShareCodeModal(shareCode) {
+    const modal = document.getElementById('shareCodeModal');
+    const textarea = document.getElementById('shareCodeText');
+    const copyBtn = document.getElementById('shareCodeCopyBtn');
+    const closeBtn = document.getElementById('shareCodeCloseBtn');
+
+    if (!modal || !textarea || !copyBtn || !closeBtn) return;
+
+    textarea.value = shareCode;
+    modal.style.display = 'flex';
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(shareCode);
+        showToast('Code copied to clipboard');
+        closeModal();
+    };
+
+    copyBtn.onclick = handleCopy;
+    closeBtn.onclick = closeModal;
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    };
 }
 
 function generateMockCommunityProfiles() {
@@ -1302,6 +1459,7 @@ if (communityProfilesGrid) {
                 messageCount: 0
             };
             renderYourProfiles();
+            showToast('Profile added to your profiles');
         }
 
         addBtn.classList.add('added');
@@ -1319,6 +1477,58 @@ if (communityProfilesSearch) {
             );
         });
         renderCommunityProfiles(filtered);
+    });
+}
+
+const yourProfilesSearch = document.getElementById('yourProfilesSearch');
+if (yourProfilesSearch) {
+    yourProfilesSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            renderYourProfiles();
+            return;
+        }
+
+        const allSlugs = [
+            ...baseProfileOrder.filter(slug => profiles[slug]),
+            ...Object.keys(profiles).filter(slug => !baseProfileOrder.includes(slug))
+        ];
+
+        const filtered = allSlugs.filter(slug => {
+            const profile = profiles[slug];
+            const displayName = getProfileDisplayName(slug);
+            return (
+                displayName.toLowerCase().includes(query) ||
+                (profile.description && profile.description.toLowerCase().includes(query))
+            );
+        });
+
+        renderYourProfiles(filtered);
+    });
+}
+
+const importProfileBtn = document.getElementById('importProfileBtn');
+const importProfileInput = document.getElementById('importProfileInput');
+
+if (importProfileBtn && importProfileInput) {
+    const handleImport = () => {
+        const shareCode = importProfileInput.value.trim();
+
+        try {
+            importProfileFromCode(shareCode);
+            renderYourProfiles();
+            importProfileInput.value = '';
+            showToast('Profile imported successfully');
+        } catch (error) {
+            showToast(error.message);
+        }
+    };
+
+    importProfileBtn.addEventListener('click', handleImport);
+    importProfileInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleImport();
+        }
     });
 }
 
@@ -1577,20 +1787,10 @@ if (confirmDeleteBtn) {
         if (!profileToDelete) return;
 
         const profileName = profileToDelete.name;
+        const profile = profiles[profileName];
+        const hasBackendId = profile && profile.supabase_id;
 
-        // Call backend DELETE API
-        fetch(`${API_URL}/profiles/${profileName}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Failed to delete profile (${response.status})`);
-            }
-            return response.json();
-        })
-        .then(() => {
-            // Only delete from memory after backend confirms
+        const deleteFromFrontend = () => {
             delete profiles[profileName];
             delete profileStats[profileName];
 
@@ -1613,7 +1813,27 @@ if (confirmDeleteBtn) {
             }
 
             closeDeleteModal();
-        });
+        };
+
+        if (hasBackendId) {
+            // Profile exists in backend - call DELETE API
+            fetch(`${API_URL}/profiles/${profileName}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to delete profile (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(() => {
+                deleteFromFrontend();
+            });
+        } else {
+            // Imported profile - only exists locally, delete immediately
+            deleteFromFrontend();
+        }
     });
 }
 

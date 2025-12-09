@@ -1439,48 +1439,14 @@ const MiniNodeCard = ({ title, subtitle, accent, active, onClick, nodeRef, hasTo
     ]);
 };
 
-// Toast notification component with particles
+// Toast notification component
 const Toast = ({ message, type, onClose }) => {
-    const [particles, setParticles] = useState([]);
     const toastRef = useRef(null);
 
     useEffect(() => {
-        if (type === 'success') {
-            // Generate particles for success
-            const newParticles = [];
-            for (let i = 0; i < 20; i++) {
-                newParticles.push({
-                    id: i,
-                    x: Math.random() * 100,
-                    y: Math.random() * 100,
-                    size: Math.random() * 4 + 2,
-                    speedX: (Math.random() - 0.5) * 3,
-                    speedY: (Math.random() - 0.5) * 3 - 1,
-                    opacity: 1,
-                    color: ['#dbc4a0', '#c98454', '#b56747'][Math.floor(Math.random() * 3)]
-                });
-            }
-            setParticles(newParticles);
-        }
-
         const timer = setTimeout(onClose, 3000);
         return () => clearTimeout(timer);
-    }, [type, onClose]);
-
-    useEffect(() => {
-        if (particles.length === 0) return;
-
-        const interval = setInterval(() => {
-            setParticles(prev => prev.map(p => ({
-                ...p,
-                x: p.x + p.speedX,
-                y: p.y + p.speedY,
-                opacity: p.opacity - 0.02
-            })).filter(p => p.opacity > 0));
-        }, 30);
-
-        return () => clearInterval(interval);
-    }, [particles.length]);
+    }, [onClose]);
 
     const bgColor = type === 'success'
         ? 'linear-gradient(135deg, rgba(92, 49, 30, 0.97), rgba(94, 52, 42, 0.97))'
@@ -1492,49 +1458,26 @@ const Toast = ({ message, type, onClose }) => {
         ref: toastRef,
         className: 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto',
         style: { animation: 'toastSlideUp 0.3s ease-out' }
+    }, React.createElement('div', {
+        className: 'px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3',
+        style: {
+            background: bgColor,
+            color: '#fffdf9',
+            minWidth: '200px',
+            backdropFilter: 'blur(8px)'
+        }
     }, [
-        // Particles container
-        type === 'success' && React.createElement('div', {
-            key: 'particles',
-            className: 'absolute inset-0 overflow-visible pointer-events-none',
-            style: { width: '300px', height: '60px', left: '-50px', top: '-20px' }
-        }, particles.map(p => React.createElement('div', {
-            key: p.id,
-            className: 'absolute rounded-full',
-            style: {
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                width: `${p.size}px`,
-                height: `${p.size}px`,
-                backgroundColor: p.color,
-                opacity: p.opacity,
-                transform: 'translate(-50%, -50%)',
-                boxShadow: `0 0 ${p.size * 2}px ${p.color}`
-            }
-        }))),
-        // Toast body
-        React.createElement('div', {
-            key: 'body',
-            className: 'px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3',
-            style: {
-                background: bgColor,
-                color: '#fffdf9',
-                minWidth: '200px',
-                backdropFilter: 'blur(8px)'
-            }
-        }, [
-            // Icon
-            React.createElement('span', {
-                key: 'icon',
-                className: 'text-lg'
-            }, type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'),
-            // Message
-            React.createElement('span', {
-                key: 'message',
-                className: 'text-sm font-medium'
-            }, message)
-        ])
-    ]);
+        // Icon
+        React.createElement('span', {
+            key: 'icon',
+            className: 'text-lg'
+        }, type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'),
+        // Message
+        React.createElement('span', {
+            key: 'message',
+            className: 'text-sm font-medium'
+        }, message)
+    ]));
 };
 
 // Inject toast animation styles
@@ -1784,6 +1727,9 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     const [testPrompt, setTestPrompt] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState(null);
+    const [testResult, setTestResult] = useState(null);
+    const [isTestingRoute, setIsTestingRoute] = useState(false);
+    const [animatingEdges, setAnimatingEdges] = useState(false);
 
     const containerRef = useRef(null);
     const leftRefs = useRef({});
@@ -1912,6 +1858,53 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         setToast({ message, type });
     };
 
+    const handleTestRoute = async () => {
+        if (!testPrompt.trim()) {
+            showToast('Please enter a test prompt', 'warning');
+            return;
+        }
+
+        setIsTestingRoute(true);
+        setAnimatingEdges(true);
+
+        const graphState = { weights, hardLimits, providers, rules, systemPrompt };
+
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch(`${window.API_URL}/profiles/test-route`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                body: JSON.stringify({
+                    prompt: testPrompt,
+                    graph_state: graphState
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to test route');
+            }
+
+            const result = await response.json();
+            setTestResult(result);
+
+            setTimeout(() => {
+                setAnimatingEdges(false);
+                showToast(`Selected: ${result.selected_model.display_name}`, 'success');
+            }, 2000);
+
+        } catch (error) {
+            console.error('Test route error:', error);
+            showToast(error.message || 'Failed to test route', 'error');
+            setAnimatingEdges(false);
+        } finally {
+            setIsTestingRoute(false);
+        }
+    };
+
     const handleSave = async () => {
         if (!profileName.trim()) {
             showToast('Please enter a profile name', 'warning');
@@ -1967,6 +1960,26 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
     }, [onDismiss]);
+
+    // Inject routing animation CSS
+    useEffect(() => {
+        const styleId = 'routing-animation-styles';
+        if (document.getElementById(styleId)) return;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            @keyframes routeFlow {
+                0% { stroke-dashoffset: 0; }
+                100% { stroke-dashoffset: -24; }
+            }
+        `;
+        document.head.appendChild(style);
+        return () => {
+            const el = document.getElementById(styleId);
+            if (el) document.head.removeChild(el);
+        };
+    }, []);
 
     // Calculate node positions for graph edges
     useEffect(() => {
@@ -2028,7 +2041,6 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
     }, [weights, providers]);
 
     const activeProviders = providers.filter(p => p.enabled);
-    const confidenceScore = (weights.reduce((sum, w) => sum + w.weight, 0) / weights.length * 100).toFixed(1);
 
     return React.createElement('div', {
         className: 'relative h-full w-full flex flex-col',
@@ -2276,7 +2288,9 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                         React.createElement('button', {
                             key: 'send',
                             type: 'button',
-                            className: 'w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90',
+                            onClick: handleTestRoute,
+                            disabled: isTestingRoute,
+                            className: 'w-11 h-11 rounded-xl flex items-center justify-center transition hover:opacity-90 disabled:opacity-50',
                             style: { background: 'linear-gradient(135deg, #c4836a, #8b4f3f)', color: '#fffcf8', fontSize: '1.2rem', fontWeight: '700' }
                         }, '↑')
                     ])
@@ -2351,24 +2365,34 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                                 key: `left-${w.id}`,
                                 d,
                                 fill: 'none',
-                                stroke: siteColors.edgeIdle,
-                                strokeWidth: 1.5,
-                                strokeDasharray: '6 6'
+                                stroke: animatingEdges ? '#c4836a' : siteColors.edgeIdle,
+                                strokeWidth: animatingEdges ? 2.5 : 1.5,
+                                strokeDasharray: '6 6',
+                                style: animatingEdges ? {
+                                    animation: 'routeFlow 1.5s linear infinite',
+                                    opacity: 0.8
+                                } : {}
                             }));
                         });
 
                         // Router to right edges
+                        const selectedProvider = testResult?.selected_model?.vendor;
                         providers.forEach(p => {
                             const rightNode = nodePositions[p.id];
                             if (!rightNode) return;
+                            const isSelected = animatingEdges && selectedProvider === p.id;
                             const d = `M ${router.right} ${router.y} C ${router.right + 80} ${router.y}, ${rightNode.x - 80} ${rightNode.y}, ${rightNode.x} ${rightNode.y}`;
                             edges.push(React.createElement('path', {
                                 key: `right-${p.id}`,
                                 d,
                                 fill: 'none',
-                                stroke: p.enabled ? siteColors.edgeIdle : 'rgba(92, 49, 30, 0.1)',
-                                strokeWidth: 1.5,
-                                strokeDasharray: '6 6'
+                                stroke: isSelected ? '#8b4f3f' : (p.enabled ? siteColors.edgeIdle : 'rgba(92, 49, 30, 0.1)'),
+                                strokeWidth: isSelected ? 3 : 1.5,
+                                strokeDasharray: '6 6',
+                                style: isSelected ? {
+                                    animation: 'routeFlow 1.5s linear infinite',
+                                    opacity: 1
+                                } : {}
                             }));
                         });
 
@@ -2420,25 +2444,6 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                 ]),
 
                 React.createElement('div', {
-                    key: 'providers-section',
-                    className: 'mb-4'
-                }, [
-                    React.createElement('p', {
-                        key: 'label',
-                        className: 'text-xs mb-2',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Active Providers'),
-                    React.createElement('div', {
-                        key: 'list',
-                        className: 'text-sm',
-                        style: { color: '#2b1d14' }
-                    }, activeProviders.map(p => React.createElement('div', {
-                        key: p.id,
-                        className: 'mb-1'
-                    }, p.label)))
-                ]),
-
-                React.createElement('div', {
                     key: 'rules-section',
                     className: 'mb-4'
                 }, [
@@ -2454,77 +2459,86 @@ function ProfileBuilder({ onDismiss, initialOptions }) {
                     }, rules.length > 0 ? rules.map(r => React.createElement('div', { key: r.id }, r.name)) : React.createElement('span', { style: { color: 'rgba(43, 29, 20, 0.4)' } }, 'None'))
                 ]),
 
-                React.createElement('div', {
-                    key: 'limits-section',
-                    className: 'mb-4'
+                testResult && React.createElement('div', {
+                    key: 'test-result-section',
+                    className: 'mb-5 p-4 rounded-xl',
+                    style: {
+                        background: 'linear-gradient(135deg, rgba(196, 131, 106, 0.08), rgba(139, 79, 63, 0.08))',
+                        border: '2px solid rgba(139, 79, 63, 0.2)'
+                    }
                 }, [
-                    React.createElement('p', {
-                        key: 'label',
-                        className: 'text-xs mb-2',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Hard Limit'),
                     React.createElement('div', {
-                        key: 'values',
-                        className: 'text-xs space-y-1',
-                        style: { color: '#2b1d14' }
+                        key: 'header',
+                        className: 'flex items-center gap-2 mb-3'
                     }, [
-                        React.createElement('div', { key: 'max', className: 'flex justify-between' }, [
-                            React.createElement('span', { key: 'l' }, 'Max Limit'),
-                            React.createElement('span', { key: 'v' }, hardLimits.maxCostPerCall)
-                        ]),
-                        React.createElement('div', { key: 'tokens', className: 'flex justify-between' }, [
-                            React.createElement('span', { key: 'l' }, 'Max Limit'),
-                            React.createElement('span', { key: 'v' }, hardLimits.maxOutputTokens)
-                        ])
-                    ])
-                ]),
-
-                React.createElement('div', {
-                    key: 'fallback-section',
-                    className: 'mb-4'
-                }, [
-                    React.createElement('p', {
-                        key: 'label',
-                        className: 'text-xs mb-2',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Fallback Chain'),
+                        React.createElement('span', {
+                            key: 'icon',
+                            style: { fontSize: '16px' }
+                        }, '✓'),
+                        React.createElement('p', {
+                            key: 'title',
+                            className: 'text-sm font-semibold',
+                            style: { color: '#5b2a1a' }
+                        }, 'Test Result')
+                    ]),
                     React.createElement('div', {
-                        key: 'chain',
-                        className: 'text-xs flex items-center gap-1 flex-wrap',
-                        style: { color: '#2b1d14' }
-                    }, activeProviders.slice(0, 4).map((p, i) => [
-                        React.createElement('span', { key: p.id }, p.label.split(' ')[0]),
-                        i < Math.min(activeProviders.length - 1, 3) && React.createElement('span', { key: `arrow-${i}`, style: { color: 'rgba(43, 29, 20, 0.3)' } }, '→')
-                    ]).flat().filter(Boolean))
-                ]),
-
-                React.createElement('div', {
-                    key: 'confidence',
-                    className: 'flex justify-between items-center mb-4'
-                }, [
-                    React.createElement('span', {
-                        key: 'label',
+                        key: 'model',
+                        className: 'mb-2'
+                    }, [
+                        React.createElement('p', {
+                            key: 'label',
+                            className: 'text-xs mb-1',
+                            style: { color: 'rgba(43, 29, 20, 0.6)' }
+                        }, 'Selected Model'),
+                        React.createElement('p', {
+                            key: 'value',
+                            className: 'text-sm font-semibold',
+                            style: { color: '#2b1d14' }
+                        }, testResult.selected_model?.display_name || testResult.selected_model?.model_name)
+                    ]),
+                    React.createElement('div', {
+                        key: 'provider',
                         className: 'text-xs',
-                        style: { color: 'rgba(43, 29, 20, 0.5)' }
-                    }, 'Confidence Score'),
-                    React.createElement('span', {
-                        key: 'value',
-                        className: 'text-sm font-semibold',
-                        style: { color: '#b56747' }
-                    }, confidenceScore)
+                        style: { color: 'rgba(43, 29, 20, 0.6)' }
+                    }, `Provider: ${testResult.selected_model?.vendor}`)
                 ]),
 
-                testPrompt && React.createElement('div', {
-                    key: 'explanation',
+                testResult && React.createElement('div', {
+                    key: 'top-models',
                     className: 'p-3 rounded-lg text-xs',
-                    style: { backgroundColor: 'rgba(92, 49, 30, 0.04)', color: 'rgba(43, 29, 20, 0.7)' }
+                    style: { backgroundColor: 'rgba(92, 49, 30, 0.04)', border: '1px solid rgba(92, 49, 30, 0.1)' }
                 }, [
                     React.createElement('p', {
                         key: 'title',
-                        className: 'font-semibold mb-1',
+                        className: 'font-semibold mb-2',
                         style: { color: '#2b1d14' }
-                    }, 'Routing explanation'),
-                    `Based on your prompt "${testPrompt.slice(0, 30)}...", the router will prioritize ${activeProviders[0]?.label || 'available providers'} based on current weight configuration.`
+                    }, 'Top Scoring Models'),
+                    React.createElement('div', {
+                        key: 'list',
+                        className: 'space-y-1.5'
+                    }, (testResult.all_models || []).slice(0, 5).map((model, index) => React.createElement('div', {
+                        key: index,
+                        className: 'flex items-center justify-between',
+                        style: {
+                            color: index === 0 ? '#8b4f3f' : 'rgba(43, 29, 20, 0.7)',
+                            fontWeight: index === 0 ? '600' : '400'
+                        }
+                    }, [
+                        React.createElement('span', {
+                            key: 'rank',
+                            className: 'mr-1',
+                            style: { color: 'rgba(43, 29, 20, 0.4)', minWidth: '16px' }
+                        }, `${index + 1}.`),
+                        React.createElement('span', {
+                            key: 'name',
+                            className: 'flex-1'
+                        }, model.display_name || model.model_name),
+                        index === 0 && React.createElement('span', {
+                            key: 'badge',
+                            className: 'text-[10px] px-1.5 py-0.5 rounded',
+                            style: { backgroundColor: 'rgba(139, 79, 63, 0.15)', color: '#8b4f3f' }
+                        }, 'SELECTED')
+                    ])))
                 ])
             ])
         ]),

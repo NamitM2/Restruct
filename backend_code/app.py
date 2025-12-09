@@ -867,6 +867,99 @@ async def delete_profile(profile_slug: str, authorization: str = Header(None)):
     return {"success": True, "slug": profile_slug}
 
 
+@app.post("/profiles/test-route")
+async def test_route_profile(body: dict, authorization: str = Header(None)):
+    """
+    Test routing with a prompt and graph_state without actually calling the model.
+    Returns the model that would be selected based on the profile settings.
+    """
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    prompt = body.get("prompt")
+    graph_state = body.get("graph_state")
+
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Prompt is required")
+    if not isinstance(graph_state, dict):
+        raise HTTPException(status_code=400, detail="Graph state is required")
+
+    conversation = [{"role": "user", "content": prompt}]
+
+    normalized_graph = profiles.normalize_graph_state(graph_state)
+    allowed_providers = [p.get("id") for p in (normalized_graph.get("providers") or []) if p.get("enabled", True)]
+    rules_text = profiles._rules_to_text(normalized_graph.get("rules") or [])
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not set for routing")
+
+    router_model = {
+        "vendor": "google",
+        "model_name": "gemini-2.0-flash-lite",
+        "api_key": api_key,
+    }
+
+    prompt_text = router._conversation_to_prompt(conversation)
+    system_prompt = f"""Rate this prompt with scores 0-10 (integers). Use these exact keys: overall_complexity, mathematical_and_logical_reasoning, linguistic_and_creative_reasoning, factuality, chain_of_thought_depth. Return ONLY valid JSON.
+
+Routing rules:
+{rules_text}
+
+Prompt: {prompt_text}
+
+JSON:"""
+
+    payload = []
+    payload.extend(conversation)
+    payload.append({"role": "user", "content": system_prompt})
+
+    response = await inference.call_google(router_model, payload)
+    response_text = response["text"]
+    match = re.search(r"\{[^}]+\}", response_text, re.DOTALL)
+    if not match:
+        raise HTTPException(status_code=500, detail="Failed to get routing scores")
+
+    normalized_scores = json.loads(match.group())
+
+    best_model = None
+    best_distance = float("inf")
+    all_models = []
+
+    for vendor, vendor_data in router.MODELS.items():
+        if allowed_providers and vendor not in allowed_providers:
+            continue
+        for model_name, model_cfg in vendor_data["models"].items():
+            attrs = model_cfg.get("capability_attributes", {})
+            distance = router.calculate_model_score(normalized_scores, attrs)
+            model_info = {
+                "vendor": vendor,
+                "model_name": model_name,
+                "distance": distance,
+                "display_name": model_cfg.get("display_name", model_name)
+            }
+            all_models.append(model_info)
+
+            if distance < best_distance:
+                best_distance = distance
+                best_model = {
+                    "vendor": vendor,
+                    "model_name": model_name,
+                    "display_name": model_cfg.get("display_name", model_name),
+                    "distance": distance,
+                    "scores": normalized_scores
+                }
+
+    all_models.sort(key=lambda m: m["distance"])
+
+    return {
+        "selected_model": best_model,
+        "all_models": all_models[:5],
+        "scores": normalized_scores
+    }
+
+
 async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation, profile_slug: Optional[str] = None, supabase_client: Optional[Client] = None):
     """
     Decide how to obtain a model: router-driven or manual override.
