@@ -31,6 +31,122 @@ function logout() {
 }
 
 // ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function debounce(func, wait = 300) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// ============================================
+// MODAL ACCESSIBILITY MANAGER
+// ============================================
+
+const ModalA11yManager = (() => {
+    let previousFocus = null;
+    let trapHandler = null;
+    let escapeHandler = null;
+
+    const getFocusableElements = (modal) => {
+        const selector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+        return Array.from(modal.querySelectorAll(selector)).filter(el => {
+            return !el.disabled && el.offsetParent !== null;
+        });
+    };
+
+    const createFocusTrap = (modal) => {
+        return (e) => {
+            if (e.key !== 'Tab') return;
+
+            const focusableElements = getFocusableElements(modal);
+            if (focusableElements.length === 0) return;
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    e.preventDefault();
+                    lastElement.focus();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    e.preventDefault();
+                    firstElement.focus();
+                }
+            }
+        };
+    };
+
+    const createEscapeHandler = (modal) => {
+        return (e) => {
+            if (e.key === 'Escape') {
+                close(modal);
+            }
+        };
+    };
+
+    const open = (modal, options = {}) => {
+        if (!modal) return;
+
+        previousFocus = document.activeElement;
+
+        if (options.useStyleDisplay) {
+            modal.style.display = 'flex';
+        } else {
+            modal.classList.add('active');
+        }
+
+        trapHandler = createFocusTrap(modal);
+        escapeHandler = createEscapeHandler(modal);
+
+        document.addEventListener('keydown', trapHandler);
+        document.addEventListener('keydown', escapeHandler);
+
+        requestAnimationFrame(() => {
+            const focusableElements = getFocusableElements(modal);
+            if (focusableElements.length > 0) {
+                focusableElements[0].focus();
+            }
+        });
+    };
+
+    const close = (modal, options = {}) => {
+        if (!modal) return;
+
+        if (options.useStyleDisplay) {
+            modal.style.display = 'none';
+        } else {
+            modal.classList.remove('active');
+        }
+
+        if (trapHandler) {
+            document.removeEventListener('keydown', trapHandler);
+            trapHandler = null;
+        }
+
+        if (escapeHandler) {
+            document.removeEventListener('keydown', escapeHandler);
+            escapeHandler = null;
+        }
+
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+            requestAnimationFrame(() => {
+                previousFocus.focus();
+            });
+        }
+
+        previousFocus = null;
+    };
+
+    return { open, close };
+})();
+
+// ============================================
 // THEME MANAGEMENT
 // ============================================
 
@@ -757,11 +873,11 @@ function loadProfileToModal(profileName) {
 
 function openProfileModal(profileName) {
     loadProfileToModal(profileName);
-    profileModal.classList.add('active');
+    ModalA11yManager.open(profileModal);
 }
 
 function closeProfileModal() {
-    profileModal.classList.remove('active');
+    ModalA11yManager.close(profileModal);
 }
 
 function showDeleteConfirmation(profileName, profileLabel) {
@@ -770,13 +886,13 @@ function showDeleteConfirmation(profileName, profileLabel) {
         deleteProfileMessage.textContent = `Are you sure you want to delete "${profileLabel}"?`;
     }
     if (deleteProfileModal) {
-        deleteProfileModal.classList.add('active');
+        ModalA11yManager.open(deleteProfileModal);
     }
 }
 
 function closeDeleteModal() {
     if (deleteProfileModal) {
-        deleteProfileModal.classList.remove('active');
+        ModalA11yManager.close(deleteProfileModal);
     }
     profileToDelete = null;
 }
@@ -909,21 +1025,41 @@ function buildProfileCard(slug, displayName, profileData) {
 function renderYourProfiles(filteredSlugs = null) {
     if (!profilesGrid) return;
     const createCard = createNewProfileCard;
-    if (createCard && createCard.parentElement === profilesGrid) {
-        createCard.remove();
-    }
 
-    profilesGrid.innerHTML = '';
     const orderedProfiles = filteredSlugs !== null ? filteredSlugs : [
         ...baseProfileOrder.filter(slug => profiles[slug]),
         ...Object.keys(profiles).filter(slug => !baseProfileOrder.includes(slug))
     ];
 
-    orderedProfiles.forEach(slug => {
-        const card = buildProfileCard(slug, getProfileDisplayName(slug), profiles[slug]);
-        profilesGrid.appendChild(card);
+    const existingCards = Array.from(profilesGrid.querySelectorAll('.profile-card[data-profile]'));
+    const existingCardMap = new Map();
+    existingCards.forEach(card => {
+        const slug = card.dataset.profile;
+        if (slug) existingCardMap.set(slug, card);
     });
 
+    const orderedProfilesSet = new Set(orderedProfiles);
+    existingCards.forEach(card => {
+        const slug = card.dataset.profile;
+        if (!orderedProfilesSet.has(slug)) {
+            card.remove();
+            existingCardMap.delete(slug);
+        }
+    });
+
+    const fragment = document.createDocumentFragment();
+    orderedProfiles.forEach(slug => {
+        let card = existingCardMap.get(slug);
+        if (!card) {
+            card = buildProfileCard(slug, getProfileDisplayName(slug), profiles[slug]);
+        }
+        fragment.appendChild(card);
+    });
+
+    if (createCard && createCard.parentElement === profilesGrid) {
+        createCard.remove();
+    }
+    profilesGrid.appendChild(fragment);
     if (createCard) {
         profilesGrid.appendChild(createCard);
     }
@@ -1331,10 +1467,10 @@ function showShareCodeModal(shareCode) {
     if (!modal || !textarea || !copyBtn || !closeBtn) return;
 
     textarea.value = shareCode;
-    modal.style.display = 'flex';
+    ModalA11yManager.open(modal, { useStyleDisplay: true });
 
     const closeModal = () => {
-        modal.style.display = 'none';
+        ModalA11yManager.close(modal, { useStyleDisplay: true });
     };
 
     const handleCopy = () => {
@@ -1468,7 +1604,7 @@ if (communityProfilesGrid) {
 }
 
 if (communityProfilesSearch) {
-    communityProfilesSearch.addEventListener('input', (e) => {
+    communityProfilesSearch.addEventListener('input', debounce((e) => {
         const query = e.target.value.toLowerCase().trim();
         const filtered = communityProfiles.filter(profile => {
             return (
@@ -1477,12 +1613,12 @@ if (communityProfilesSearch) {
             );
         });
         renderCommunityProfiles(filtered);
-    });
+    }, 300));
 }
 
 const yourProfilesSearch = document.getElementById('yourProfilesSearch');
 if (yourProfilesSearch) {
-    yourProfilesSearch.addEventListener('input', (e) => {
+    yourProfilesSearch.addEventListener('input', debounce((e) => {
         const query = e.target.value.toLowerCase().trim();
         if (!query) {
             renderYourProfiles();
@@ -1504,7 +1640,7 @@ if (yourProfilesSearch) {
         });
 
         renderYourProfiles(filtered);
-    });
+    }, 300));
 }
 
 const importProfileBtn = document.getElementById('importProfileBtn');
@@ -1589,7 +1725,7 @@ async function openProfileStatsModal(profileName) {
         });
     }
 
-    if (profileStatsModal) profileStatsModal.classList.add('active');
+    if (profileStatsModal) ModalA11yManager.open(profileStatsModal);
 }
 
 async function publishProfile(profileName, buttonEl) {
@@ -1602,7 +1738,7 @@ async function publishProfile(profileName, buttonEl) {
             buttonEl.disabled = false;
             buttonEl.textContent = buttonEl.dataset.originalText || buttonEl.textContent;
         }
-        alert('Default profiles cannot be published.');
+        showToast('Default profiles cannot be published.');
         return;
     }
 
@@ -1641,7 +1777,7 @@ async function publishProfile(profileName, buttonEl) {
         succeeded = true;
     } catch (err) {
         console.error('Publish failed', err);
-        alert('Could not publish profile. Please try again.');
+        showToast('Could not publish profile. Please try again.');
     }
 
     if (buttonEl) {
@@ -1656,7 +1792,7 @@ async function publishProfile(profileName, buttonEl) {
 }
 
 function closeProfileStatsModal() {
-    if (profileStatsModal) profileStatsModal.classList.remove('active');
+    if (profileStatsModal) ModalA11yManager.close(profileStatsModal);
 }
 
 if (closeProfileStats) {
@@ -1880,14 +2016,14 @@ if (chatFileInput) {
 
         const availableSlots = Math.max(0, 3 - attachedFiles.length);
         if (availableSlots <= 0) {
-            alert('You can attach up to 3 files. Remove a file to add another.');
+            showToast('You can attach up to 3 files. Remove a file to add another.');
             chatFileInput.value = '';
             return;
         }
 
         const accepted = files.slice(0, availableSlots);
         if (files.length > accepted.length) {
-            alert('Only 3 files can be attached at once.');
+            showToast('Only 3 files can be attached at once.');
         }
 
         if (accepted.length) {
@@ -2259,7 +2395,15 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata) {
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
                     const jsonData = line.substring(6);
-                    const event = JSON.parse(jsonData);
+                    let event;
+                    try {
+                        event = JSON.parse(jsonData);
+                    } catch (parseError) {
+                        console.error('Failed to parse SSE event:', jsonData, parseError);
+                        showToast('Error receiving model response. Please try again.');
+                        reader.cancel();
+                        return;
+                    }
 
                     if (event.type === 'metadata') {
                         console.log(`Batch request metadata:`, event);
@@ -2979,13 +3123,6 @@ function renderConversations() {
                 </div>
             </div>
         `).join('');
-
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const convId = item.dataset.conversationId;
-            loadConversation(convId);
-        });
-    });
 }
 
 async function loadConversation(conversationId) {
@@ -3063,7 +3200,7 @@ async function loadConversation(conversationId) {
 
     conversations = conversations.filter(c => c.id !== conversationId && c.conversationId !== conversationId);
 
-    conversationsModal.classList.remove('active');
+    ModalA11yManager.close(conversationsModal);
 }
 
 function saveCurrentConversation() {
@@ -3128,20 +3265,30 @@ function startNewConversation() {
 if (previousConversationsBtn) {
     previousConversationsBtn.addEventListener('click', () => {
         renderConversations();
-        conversationsModal.classList.add('active');
+        ModalA11yManager.open(conversationsModal);
     });
 }
 
 if (closeConversationsModal) {
     closeConversationsModal.addEventListener('click', () => {
-        conversationsModal.classList.remove('active');
+        ModalA11yManager.close(conversationsModal);
+    });
+}
+
+if (conversationsList) {
+    conversationsList.addEventListener('click', (e) => {
+        const item = e.target.closest('.conversation-item');
+        if (item) {
+            const convId = item.dataset.conversationId;
+            loadConversation(convId);
+        }
     });
 }
 
 if (conversationsModal) {
     conversationsModal.addEventListener('click', (e) => {
         if (e.target === conversationsModal) {
-            conversationsModal.classList.remove('active');
+            ModalA11yManager.close(conversationsModal);
         }
     });
 }
@@ -3255,7 +3402,7 @@ function renderProfileSelector() {
 
         item.addEventListener('click', () => {
             setActiveProfile(profile.name);
-            profileSelectorModal.classList.remove('active');
+            ModalA11yManager.close(profileSelectorModal);
         });
 
         profileSelectorList.appendChild(item);
@@ -3265,20 +3412,20 @@ function renderProfileSelector() {
 if (currentProfileIndicator) {
     currentProfileIndicator.addEventListener('click', () => {
         renderProfileSelector();
-        profileSelectorModal.classList.add('active');
+        ModalA11yManager.open(profileSelectorModal);
     });
 }
 
 if (closeProfileSelectorModal) {
     closeProfileSelectorModal.addEventListener('click', () => {
-        profileSelectorModal.classList.remove('active');
+        ModalA11yManager.close(profileSelectorModal);
     });
 }
 
 if (profileSelectorModal) {
     profileSelectorModal.addEventListener('click', (e) => {
         if (e.target === profileSelectorModal) {
-            profileSelectorModal.classList.remove('active');
+            ModalA11yManager.close(profileSelectorModal);
         }
     });
 }
@@ -3507,14 +3654,14 @@ function showRevokeModal(index, keyName) {
         revokeKeyNameEl.textContent = `"${keyName}"`;
     }
     if (revokeKeyModal) {
-        revokeKeyModal.classList.add('active');
+        ModalA11yManager.open(revokeKeyModal);
     }
 }
 
 function hideRevokeModal() {
     pendingRevokeIndex = null;
     if (revokeKeyModal) {
-        revokeKeyModal.classList.remove('active');
+        ModalA11yManager.close(revokeKeyModal);
     }
 }
 
@@ -4223,7 +4370,7 @@ function init() {
     if (modelOverrideBtn) {
         modelOverrideBtn.addEventListener('click', () => {
             if (modelOverrideModal) {
-                modelOverrideModal.classList.add('active');
+                ModalA11yManager.open(modelOverrideModal);
                 populateModelOverrideList();
                 if (modelSearchInput) {
                     modelSearchInput.value = '';
@@ -4236,7 +4383,7 @@ function init() {
     if (closeModelOverrideModal) {
         closeModelOverrideModal.addEventListener('click', () => {
             if (modelOverrideModal) {
-                modelOverrideModal.classList.remove('active');
+                ModalA11yManager.close(modelOverrideModal);
             }
         });
     }
@@ -4244,15 +4391,15 @@ function init() {
     if (modelOverrideModal) {
         modelOverrideModal.addEventListener('click', (e) => {
             if (e.target === modelOverrideModal) {
-                modelOverrideModal.classList.remove('active');
+                ModalA11yManager.close(modelOverrideModal);
             }
         });
     }
 
     if (modelSearchInput) {
-        modelSearchInput.addEventListener('input', (e) => {
+        modelSearchInput.addEventListener('input', debounce((e) => {
             populateModelOverrideList(e.target.value);
-        });
+        }, 300));
     }
 
     const clearAllModels = document.getElementById('clearAllModels');

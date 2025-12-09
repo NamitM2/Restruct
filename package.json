@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:profile": "esbuild frontend/routingLabProfileBuilder.js --bundle --format=iife --target=es2018 --platform=browser --outfile=frontend/profileBuilder.bundle.js --loader:.js=jsx"
+    "build:profile": "esbuild frontend/routingLabProfileBuilder.js --bundle --format=iife --target=es2018 --platform=browser --outfile=frontend/profileBuilder.bundle.js --loader:.js=jsx",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "repository": {
     "type": "git",
@@ -19,7 +22,11 @@
   },
   "homepage": "https://github.com/NamitM2/Restruct#readme",
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "@vitest/ui": "^4.0.15",
+    "esbuild": "^0.24.0",
+    "happy-dom": "^20.0.11",
+    "jsdom": "^27.3.0",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "framer-motion": "10.16.4",
