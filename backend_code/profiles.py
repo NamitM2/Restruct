@@ -121,10 +121,21 @@ def update_profile(
 
 
 def get_profile_by_slug(supabase, slug: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    # Try by slug first (existing behavior)
     query = supabase.table("routing_profiles").select("*").eq("slug", slug)
     if user_id:
         query = query.eq("user_id", user_id)
     result = query.limit(1).execute()
+
+    if result and result.data:
+        return result.data[0]
+
+    # Fallback: try by name
+    query = supabase.table("routing_profiles").select("*").eq("name", slug)
+    if user_id:
+        query = query.eq("user_id", user_id)
+    result = query.limit(1).execute()
+
     return result.data[0] if result and result.data else None
 
 

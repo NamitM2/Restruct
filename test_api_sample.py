@@ -16,11 +16,11 @@ client = OpenAI(
 print("Testing Restruct API...")
 print("=" * 60)
 
-# Make request with Lebron profile
+# Make request with Lebron profile (using name instead of slug)
 response = client.chat.completions.create(
     model="auto",
     messages=[{"role": "user", "content": "Hello"}],
-    extra_body={"restruct": {"profile": "lebron-bf0faf"}}
+    extra_body={"restruct": {"profile": "Lebron"}}
 )
 
 # Print results

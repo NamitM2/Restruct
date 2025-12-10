@@ -3,9 +3,10 @@ FastAPI router for OpenAI-compatible API endpoints.
 """
 
 from fastapi import APIRouter, HTTPException, Header, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import asyncio
 import time
+import uuid
 from typing import Optional
 
 from .schemas import ChatCompletionRequest, ChatCompletionResponse
@@ -98,12 +99,6 @@ async def chat_completions(
             detail="Messages array cannot be empty"
         )
 
-    if request.stream:
-        raise HTTPException(
-            status_code=400,
-            detail="Streaming not yet supported in MVP"
-        )
-
     # Convert messages to internal format
     conversation = [
         {"role": msg.role, "content": msg.content}
@@ -156,7 +151,54 @@ async def chat_completions(
     routing_time = (time.time() - routing_start) * 1000  # ms
 
     # ========================================================================
-    # 4. INFERENCE
+    # 4. STREAMING vs NON-STREAMING
+    # ========================================================================
+
+    if request.stream:
+        # Streaming response
+        from .openai_compat import create_streaming_chunk, create_streaming_done
+
+        async def stream_generator():
+            chunk_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+
+            try:
+                async for chunk in inference.inference_stream(model_choice, conversation):
+                    if chunk.get("done"):
+                        # Final chunk with usage
+                        sse_chunk = create_streaming_chunk(
+                            chunk_id=chunk_id,
+                            model_name=model_choice["model_name"],
+                            delta_content="",
+                            done=True,
+                            finish_reason="stop",
+                            usage=chunk.get("usage")
+                        )
+                        yield sse_chunk
+                    else:
+                        # Delta chunk
+                        sse_chunk = create_streaming_chunk(
+                            chunk_id=chunk_id,
+                            model_name=model_choice["model_name"],
+                            delta_content=chunk.get("delta", ""),
+                            done=False
+                        )
+                        yield sse_chunk
+
+                # Send [DONE] message
+                yield create_streaming_done()
+
+            except Exception as e:
+                # Send error as SSE comment
+                yield f": Error - {str(e)}\n\n"
+                yield create_streaming_done()
+
+        return StreamingResponse(
+            stream_generator(),
+            media_type="text/event-stream"
+        )
+
+    # ========================================================================
+    # 5. NON-STREAMING INFERENCE
     # ========================================================================
 
     inference_start = time.time()
@@ -176,7 +218,7 @@ async def chat_completions(
     inference_time = (time.time() - inference_start) * 1000  # ms
 
     # ========================================================================
-    # 5. FORMAT RESPONSE
+    # 6. FORMAT RESPONSE
     # ========================================================================
 
     response = create_completion_response(

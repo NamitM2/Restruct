@@ -107,3 +107,65 @@ def parse_model_parameter(model: str) -> tuple:
 
     # Default to auto if unknown
     return None, None
+
+
+def create_streaming_chunk(
+    chunk_id: str,
+    model_name: str,
+    delta_content: str,
+    done: bool = False,
+    finish_reason: str = None,
+    usage: dict = None
+) -> str:
+    """
+    Create OpenAI-compatible streaming chunk in SSE format.
+
+    Args:
+        chunk_id: Unique ID for this completion
+        model_name: Name of model being used
+        delta_content: Text content for this chunk
+        done: Whether this is the final chunk
+        finish_reason: Optional finish reason ("stop", "length")
+        usage: Optional usage dict with input_tokens/output_tokens
+
+    Returns:
+        SSE-formatted string: 'data: {...}\n\n'
+    """
+    import json
+
+    chunk = {
+        "id": chunk_id,
+        "object": "chat.completion.chunk",
+        "created": int(time.time()),
+        "model": model_name,
+        "choices": []
+    }
+
+    # Add delta or finish reason
+    if not done:
+        chunk["choices"].append({
+            "index": 0,
+            "delta": {"content": delta_content},
+            "finish_reason": None
+        })
+    else:
+        chunk["choices"].append({
+            "index": 0,
+            "delta": {},
+            "finish_reason": finish_reason or "stop"
+        })
+
+        # Add usage if available
+        if usage:
+            chunk["usage"] = {
+                "prompt_tokens": usage.get("input_tokens", 0),
+                "completion_tokens": usage.get("output_tokens", 0),
+                "total_tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+            }
+
+    return f"data: {json.dumps(chunk)}\n\n"
+
+
+def create_streaming_done() -> str:
+    """Create the final [DONE] message for SSE stream."""
+    return "data: [DONE]\n\n"
