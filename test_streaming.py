@@ -16,24 +16,26 @@ client = OpenAI(
 print("Testing Restruct API Streaming...")
 print("=" * 60)
 
-# Make streaming request with Lebron profile
+# Make streaming request - Force OpenAI to avoid Anthropic credit issues
 stream = client.chat.completions.create(
-    model="auto",
-    messages=[{"role": "user", "content": "Count from 1 to 10"}],
-    extra_body={"restruct": {"profile": "Lebron"}},
+    model="openai:gpt-5",
+    messages=[{"role": "user", "content": "Write a short poem about the ocean"}],
     stream=True
 )
 
 # Print chunks as they arrive
 print("Response (streaming): ", end="", flush=True)
-full_response = ""
 
+model_used = None
 for chunk in stream:
-    if chunk.choices[0].delta.content:
-        content = chunk.choices[0].delta.content
-        print(content, end="", flush=True)
-        full_response += content
+    # Capture model name from first chunk
+    if model_used is None:
+        model_used = chunk.model
 
-print("\n")
-print("=" * 60)
-print("Streaming test completed! ✓")
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+
+print("\n" + "=" * 60)
+print(f"Model used: {model_used}")
+print("Done!")

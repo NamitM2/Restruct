@@ -163,113 +163,174 @@ async def inference(model: Dict[str, Any], conversation) -> Dict[str, Any]:
 
 async def call_openai_stream(model: Dict[str, Any], conversation):
     """Stream from OpenAI API. Yields chunks with delta content."""
+    import queue
+    import threading
+
     api_key = model["api_key"]
     model_name = model["model_name"]
     normalized_conv = _normalize_conversation(conversation)
 
-    client = OpenAI(api_key=api_key)
-    stream = client.chat.completions.create(
-        model=model_name,
-        messages=normalized_conv,
-        stream=True
-    )
+    q = queue.Queue()
 
-    # Stream chunks (synchronous iteration is fine in async generator)
-    last_chunk = None
-    for chunk in stream:
-        last_chunk = chunk
-        delta = chunk.choices[0].delta
-        if delta.content:
-            yield {"delta": delta.content, "done": False}
+    def stream_in_thread():
+        try:
+            client = OpenAI(api_key=api_key)
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=normalized_conv,
+                stream=True
+            )
 
-    # Final chunk with usage (OpenAI provides it in last chunk)
-    if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
-        yield {
-            "delta": "",
-            "done": True,
-            "usage": {
-                "input_tokens": last_chunk.usage.prompt_tokens,
-                "output_tokens": last_chunk.usage.completion_tokens
-            }
-        }
-    else:
-        yield {"delta": "", "done": True}
+            last_chunk = None
+            for chunk in stream:
+                last_chunk = chunk
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    q.put({"delta": delta.content, "done": False})
+
+            # Final chunk with usage
+            if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
+                q.put({
+                    "delta": "",
+                    "done": True,
+                    "usage": {
+                        "input_tokens": last_chunk.usage.prompt_tokens,
+                        "output_tokens": last_chunk.usage.completion_tokens
+                    }
+                })
+            else:
+                q.put({"delta": "", "done": True})
+        except Exception as e:
+            q.put({"error": str(e)})
+        finally:
+            q.put(None)  # Signal completion
+
+    thread = threading.Thread(target=stream_in_thread)
+    thread.start()
+
+    # Yield chunks from queue
+    while True:
+        chunk = await asyncio.to_thread(q.get)
+        if chunk is None:
+            break
+        if "error" in chunk:
+            raise Exception(chunk["error"])
+        yield chunk
 
 
 async def call_google_stream(model: Dict[str, Any], conversation):
     """Stream from Google Gemini API. Yields chunks with delta content."""
+    import queue
+    import threading
+
     api_key = model["api_key"]
     model_name = model["model_name"]
 
-    client = genai.Client(api_key=api_key)
-    stream = client.models.generate_content(
-        model=model_name,
-        contents=_conversation_to_google_history(conversation),
-        config={"stream": True}
-    )
+    q = queue.Queue()
 
-    input_tokens = 0
-    output_tokens = 0
+    def stream_in_thread():
+        try:
+            client = genai.Client(api_key=api_key)
+            stream = client.models.generate_content(
+                model=model_name,
+                contents=_conversation_to_google_history(conversation),
+                config={"stream": True}
+            )
 
-    # Stream chunks (synchronous iteration is fine in async generator)
-    for chunk in stream:
-        if hasattr(chunk, 'text') and chunk.text:
-            yield {"delta": chunk.text, "done": False}
+            input_tokens = 0
+            output_tokens = 0
 
-        # Google provides token counts per chunk
-        if hasattr(chunk, 'usage_metadata'):
-            input_tokens = chunk.usage_metadata.prompt_token_count
-            output_tokens = chunk.usage_metadata.candidates_token_count
+            for chunk in stream:
+                if hasattr(chunk, 'text') and chunk.text:
+                    q.put({"delta": chunk.text, "done": False})
 
-    # Final chunk with accumulated usage
-    yield {
-        "delta": "",
-        "done": True,
-        "usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens
-        }
-    }
+                if hasattr(chunk, 'usage_metadata'):
+                    input_tokens = chunk.usage_metadata.prompt_token_count
+                    output_tokens = chunk.usage_metadata.candidates_token_count
+
+            # Final chunk
+            q.put({
+                "delta": "",
+                "done": True,
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens
+                }
+            })
+        except Exception as e:
+            q.put({"error": str(e)})
+        finally:
+            q.put(None)
+
+    thread = threading.Thread(target=stream_in_thread)
+    thread.start()
+
+    while True:
+        chunk = await asyncio.to_thread(q.get)
+        if chunk is None:
+            break
+        if "error" in chunk:
+            raise Exception(chunk["error"])
+        yield chunk
 
 
 async def call_anthropic_stream(model: Dict[str, Any], conversation):
     """Stream from Anthropic Claude API. Yields chunks with delta content."""
+    import queue
+    import threading
+
     api_key = model["api_key"]
     model_name = model["model_name"]
 
-    client = Anthropic(api_key=api_key)
-    stream = client.messages.create(
-        model=model_name,
-        max_tokens=1000,
-        messages=_conversation_to_anthropic(conversation),
-        stream=True
-    )
+    q = queue.Queue()
 
-    input_tokens = 0
-    output_tokens = 0
+    def stream_in_thread():
+        try:
+            client = Anthropic(api_key=api_key)
+            stream = client.messages.create(
+                model=model_name,
+                max_tokens=1000,
+                messages=_conversation_to_anthropic(conversation),
+                stream=True
+            )
 
-    # Stream events (synchronous iteration is fine in async generator)
-    for event in stream:
-        # Content delta events
-        if event.type == "content_block_delta":
-            if hasattr(event.delta, 'text') and event.delta.text:
-                yield {"delta": event.delta.text, "done": False}
+            input_tokens = 0
+            output_tokens = 0
 
-        # Message stop event contains usage
-        elif event.type == "message_stop":
-            if hasattr(event, 'message') and hasattr(event.message, 'usage'):
-                input_tokens = event.message.usage.input_tokens
-                output_tokens = event.message.usage.output_tokens
+            for event in stream:
+                if event.type == "content_block_delta":
+                    if hasattr(event.delta, 'text') and event.delta.text:
+                        q.put({"delta": event.delta.text, "done": False})
 
-    # Final chunk with usage
-    yield {
-        "delta": "",
-        "done": True,
-        "usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens
-        }
-    }
+                elif event.type == "message_stop":
+                    if hasattr(event, 'message') and hasattr(event.message, 'usage'):
+                        input_tokens = event.message.usage.input_tokens
+                        output_tokens = event.message.usage.output_tokens
+
+            # Final chunk
+            q.put({
+                "delta": "",
+                "done": True,
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens
+                }
+            })
+        except Exception as e:
+            q.put({"error": str(e)})
+        finally:
+            q.put(None)
+
+    thread = threading.Thread(target=stream_in_thread)
+    thread.start()
+
+    while True:
+        chunk = await asyncio.to_thread(q.get)
+        if chunk is None:
+            break
+        if "error" in chunk:
+            raise Exception(chunk["error"])
+        yield chunk
 
 
 async def inference_stream(model: Dict[str, Any], conversation):
