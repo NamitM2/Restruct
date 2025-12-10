@@ -16,10 +16,11 @@ client = OpenAI(
 print("Testing Restruct API Streaming...")
 print("=" * 60)
 
-# Make streaming request - Force OpenAI to avoid Anthropic credit issues
+# Make streaming request with Lebron profile
 stream = client.chat.completions.create(
-    model="openai:gpt-5",
+    model="auto",
     messages=[{"role": "user", "content": "Write a short poem about the ocean"}],
+    extra_body={"restruct": {"profile": "Lebron"}},
     stream=True
 )
 
