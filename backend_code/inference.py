@@ -155,3 +155,135 @@ async def infer(model: Dict[str, Any], conversation) -> Dict[str, Any]:
 async def inference(model: Dict[str, Any], conversation) -> Dict[str, Any]:
     """Main inference function."""
     return await infer(model, conversation)
+
+
+# ============================================================================
+# STREAMING FUNCTIONS
+# ============================================================================
+
+async def call_openai_stream(model: Dict[str, Any], conversation):
+    """Stream from OpenAI API. Yields chunks with delta content."""
+    api_key = model["api_key"]
+    model_name = model["model_name"]
+    normalized_conv = _normalize_conversation(conversation)
+
+    client = OpenAI(api_key=api_key)
+    stream = client.chat.completions.create(
+        model=model_name,
+        messages=normalized_conv,
+        stream=True
+    )
+
+    # Stream chunks (synchronous iteration is fine in async generator)
+    last_chunk = None
+    for chunk in stream:
+        last_chunk = chunk
+        delta = chunk.choices[0].delta
+        if delta.content:
+            yield {"delta": delta.content, "done": False}
+
+    # Final chunk with usage (OpenAI provides it in last chunk)
+    if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
+        yield {
+            "delta": "",
+            "done": True,
+            "usage": {
+                "input_tokens": last_chunk.usage.prompt_tokens,
+                "output_tokens": last_chunk.usage.completion_tokens
+            }
+        }
+    else:
+        yield {"delta": "", "done": True}
+
+
+async def call_google_stream(model: Dict[str, Any], conversation):
+    """Stream from Google Gemini API. Yields chunks with delta content."""
+    api_key = model["api_key"]
+    model_name = model["model_name"]
+
+    client = genai.Client(api_key=api_key)
+    stream = client.models.generate_content(
+        model=model_name,
+        contents=_conversation_to_google_history(conversation),
+        config={"stream": True}
+    )
+
+    input_tokens = 0
+    output_tokens = 0
+
+    # Stream chunks (synchronous iteration is fine in async generator)
+    for chunk in stream:
+        if hasattr(chunk, 'text') and chunk.text:
+            yield {"delta": chunk.text, "done": False}
+
+        # Google provides token counts per chunk
+        if hasattr(chunk, 'usage_metadata'):
+            input_tokens = chunk.usage_metadata.prompt_token_count
+            output_tokens = chunk.usage_metadata.candidates_token_count
+
+    # Final chunk with accumulated usage
+    yield {
+        "delta": "",
+        "done": True,
+        "usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
+        }
+    }
+
+
+async def call_anthropic_stream(model: Dict[str, Any], conversation):
+    """Stream from Anthropic Claude API. Yields chunks with delta content."""
+    api_key = model["api_key"]
+    model_name = model["model_name"]
+
+    client = Anthropic(api_key=api_key)
+    stream = client.messages.create(
+        model=model_name,
+        max_tokens=1000,
+        messages=_conversation_to_anthropic(conversation),
+        stream=True
+    )
+
+    input_tokens = 0
+    output_tokens = 0
+
+    # Stream events (synchronous iteration is fine in async generator)
+    for event in stream:
+        # Content delta events
+        if event.type == "content_block_delta":
+            if hasattr(event.delta, 'text') and event.delta.text:
+                yield {"delta": event.delta.text, "done": False}
+
+        # Message stop event contains usage
+        elif event.type == "message_stop":
+            if hasattr(event, 'message') and hasattr(event.message, 'usage'):
+                input_tokens = event.message.usage.input_tokens
+                output_tokens = event.message.usage.output_tokens
+
+    # Final chunk with usage
+    yield {
+        "delta": "",
+        "done": True,
+        "usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
+        }
+    }
+
+
+async def inference_stream(model: Dict[str, Any], conversation):
+    """Main streaming inference function. Yields chunks from the selected provider."""
+    vendor = model["vendor"]
+
+    if vendor == "openai":
+        async for chunk in call_openai_stream(model, conversation):
+            yield chunk
+    elif vendor == "google":
+        async for chunk in call_google_stream(model, conversation):
+            yield chunk
+    elif vendor == "anthropic":
+        async for chunk in call_anthropic_stream(model, conversation):
+            yield chunk
+    else:
+        yield {"delta": f"Unsupported vendor: {vendor}", "done": True, "usage": {"input_tokens": 0, "output_tokens": 0}}
