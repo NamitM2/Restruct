@@ -172,7 +172,12 @@ async def route_with_profile(supabase, conversation: Union[str, List[Dict[str, A
     - Respects provider enable/disable.
     - If the top model is blacklisted (disabled provider), pick the next best.
     """
-    profile = get_profile_by_slug(supabase, profile_slug)
+    import asyncio
+
+    def _get_profile():
+        return get_profile_by_slug(supabase, profile_slug)
+
+    profile = await asyncio.to_thread(_get_profile)
     if not profile:
         return None
 
