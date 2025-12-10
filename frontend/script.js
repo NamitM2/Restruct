@@ -317,6 +317,7 @@ async function refreshSession() {
     // User is authenticated, show app
     showAppSection();
     loadProfilesFromBackend();
+    loadApiKeys(); // Load API keys from database
 
     // Refresh token every 50 minutes (tokens expire after 1 hour)
     setInterval(refreshSession, 50 * 60 * 1000);
@@ -546,6 +547,7 @@ function setupSigninForm() {
                     showAppSection();
                     loadConversationsFromBackend();  // Load user's conversations after login
                     loadProfilesFromBackend();
+                    loadApiKeys(); // Load API keys from database
                     // Update user displays
                     const userEmailDisplay = document.getElementById('userEmailDisplay');
                     const userEmailIndicator = document.getElementById('userEmail');
@@ -3434,6 +3436,7 @@ if (profileSelectorModal) {
 let activeApiKeys = [];
 let currentPendingKey = null;
 let currentPendingKeyDate = null;
+let currentPendingKeyId = null;
 
 const generateKeyBtn = document.getElementById('generateKeyBtn');
 const activateKeyBtn = document.getElementById('activateKeyBtn');
@@ -3446,13 +3449,73 @@ const keyActiveState = document.getElementById('keyActiveState');
 const keyCreatedDate = document.getElementById('keyCreatedDate');
 const activeKeysList = document.getElementById('activeKeysList');
 
-function generateApiKey() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let key = 'rst_';
-    for (let i = 0; i < 48; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
+// Load API keys from database
+async function loadApiKeys() {
+    try {
+        const response = await fetch(`${API_URL}/v1/keys`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            console.error('Failed to load API keys');
+            return;
+        }
+
+        const data = await response.json();
+        activeApiKeys = data.data.map(key => ({
+            id: key.id,
+            name: key.name || 'Unnamed Key',
+            key: key.key_prefix + '...', // Only prefix is stored
+            key_prefix: key.key_prefix,
+            createdDate: new Date(key.created_at),
+            lastUsed: key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : null,
+            requestCount: 0,
+            is_active: key.is_active
+        }));
+
+        renderActiveKeys();
+    } catch (error) {
+        console.error('Error loading API keys:', error);
     }
-    return key;
+}
+
+// Create API key in database
+async function createApiKeyInDB(keyName) {
+    try {
+        const response = await fetch(`${API_URL}/v1/keys?name=${encodeURIComponent(keyName)}`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create API key');
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error creating API key:', error);
+        throw error;
+    }
+}
+
+// Delete API key from database
+async function deleteApiKeyFromDB(keyId) {
+    try {
+        const response = await fetch(`${API_URL}/v1/keys/${keyId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete API key');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error deleting API key:', error);
+        throw error;
+    }
 }
 
 function showPendingKey(key) {
@@ -3672,11 +3735,23 @@ if (cancelRevokeBtn) {
 }
 
 if (confirmRevokeBtn) {
-    confirmRevokeBtn.addEventListener('click', () => {
+    confirmRevokeBtn.addEventListener('click', async () => {
         if (pendingRevokeIndex !== null) {
-            activeApiKeys.splice(pendingRevokeIndex, 1);
-            renderActiveKeys();
-            hideRevokeModal();
+            const keyToDelete = activeApiKeys[pendingRevokeIndex];
+
+            try {
+                // Delete from database
+                await deleteApiKeyFromDB(keyToDelete.id);
+
+                // Remove from local array
+                activeApiKeys.splice(pendingRevokeIndex, 1);
+                renderActiveKeys();
+                hideRevokeModal();
+            } catch (error) {
+                alert('Failed to delete API key. Please try again.');
+                console.error('Error deleting key:', error);
+                hideRevokeModal();
+            }
         }
     });
 }
@@ -3690,28 +3765,47 @@ if (revokeKeyModal) {
 }
 
 if (generateKeyBtn) {
-    generateKeyBtn.addEventListener('click', () => {
-        const newKey = generateApiKey();
-        showPendingKey(newKey);
+    generateKeyBtn.addEventListener('click', async () => {
+        try {
+            // Get the name from input field, or use 'Unnamed Key' as default
+            const keyName = apiKeyName?.value.trim() || 'Unnamed Key';
+
+            // Generate key via backend API (creates it in DB immediately)
+            const result = await createApiKeyInDB(keyName);
+
+            // Show the full key (only time user will see it)
+            currentPendingKey = result.key;
+            currentPendingKeyDate = new Date(result.created_at);
+            currentPendingKeyId = result.id;
+
+            showPendingKey(result.key);
+        } catch (error) {
+            alert('Failed to generate API key. Please try again.');
+            console.error('Error generating key:', error);
+        }
     });
 }
 
 if (activateKeyBtn) {
-    activateKeyBtn.addEventListener('click', () => {
-        if (!currentPendingKey) return;
+    activateKeyBtn.addEventListener('click', async () => {
+        if (!currentPendingKey || !currentPendingKeyId) return;
 
-        const keyName = apiKeyName?.value.trim() || 'Unnamed Key';
+        const keyName = apiKeyName?.value.trim();
 
-        activeApiKeys.push({
-            name: keyName,
-            key: currentPendingKey,
-            createdDate: currentPendingKeyDate,
-            lastUsed: null,
-            requestCount: 0
-        });
+        try {
+            // Key is already in database, just update name if changed
+            if (keyName && keyName !== 'Unnamed Key') {
+                // Note: You could add a PATCH /v1/keys/{id} endpoint to update the name
+                // For now, we'll just reload the list
+            }
 
-        renderActiveKeys();
-        resetKeyGeneration();
+            // Reload keys from database to show the new key
+            await loadApiKeys();
+            resetKeyGeneration();
+        } catch (error) {
+            alert('Failed to save API key. Please try again.');
+            console.error('Error activating key:', error);
+        }
     });
 }
 

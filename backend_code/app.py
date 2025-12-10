@@ -447,6 +447,11 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Restruct API", version="0.1.0", lifespan=lifespan)
+
+# Include OpenAI-compatible API router
+from backend_code.API.router import router as api_router
+app.include_router(api_router)
+
 DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
 # CORS for local testing
