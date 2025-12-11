@@ -5,7 +5,7 @@ Test streaming responses from the Restruct API with OpenAI SDK.
 from openai import OpenAI
 
 # Your API key (starts with rst_)
-API_KEY = "rst_oYVXpEl6jw45n8COI7d8sMDcRxSCOJHwPu2xx56GZbc"
+API_KEY = "rst_oP8zuj2d08yVJXL-kBa0Vq6zZI93cmXpknd1M6XyqjA"
 
 # Create client
 client = OpenAI(

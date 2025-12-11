@@ -20,6 +20,16 @@ import backend_code.router as router
 import backend_code.inference as inference
 import backend_code.profiles as profiles
 
+# Wallet system imports
+from backend_code.API.wallet import (
+    calculate_cost,
+    check_sufficient_balance,
+    deduct_from_wallet,
+    log_api_usage,
+    get_wallet_balance
+)
+from decimal import Decimal
+
 import atexit
 import httpx
 from dotenv import load_dotenv
@@ -527,6 +537,25 @@ async def chat(body: dict, authorization: str = Header(None)):
     model_choice = await resolve_model_choice(router_mode, model_override, conversation, profile_slug=profile, supabase_client=supabase)
     routing_time = time.time() - routing_start
 
+    # WALLET CHECK: Estimate cost and check balance
+    estimated_input_tokens = sum(len(msg["content"]) // 4 for msg in conversation)
+    estimated_output_tokens = 500
+
+    estimated_cost = calculate_cost(
+        model_choice["vendor"],
+        model_choice["model_name"],
+        estimated_input_tokens,
+        estimated_output_tokens
+    )
+
+    has_balance = await check_sufficient_balance(supabase, user_id, estimated_cost)
+    if not has_balance:
+        current_balance = await get_wallet_balance(supabase, user_id)
+        raise HTTPException(
+            status_code=402,
+            detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
+        )
+
     # PHASE 2: INFERENCE
     inference_start = time.time()
     response_data = await inference.inference(model_choice, conversation)
@@ -539,10 +568,39 @@ async def chat(body: dict, authorization: str = Header(None)):
     input_tokens = response_data.get("input_tokens") or 0
     output_tokens = response_data.get("output_tokens") or 0
 
-    # Calculate cost
+    # Calculate actual cost using wallet pricing
+    actual_cost = calculate_cost(
+        model_choice["vendor"],
+        model_choice["model_name"],
+        input_tokens,
+        output_tokens
+    )
+
+    # Legacy cost calculation for metadata (keep for backward compatibility)
     input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
     output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
     total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+    # Deduct from wallet
+    await deduct_from_wallet(supabase, user_id, actual_cost)
+
+    # Log API usage
+    await log_api_usage(
+        supabase,
+        user_id,
+        None,  # No API key for web app
+        "/chat",
+        "POST",
+        model_choice["vendor"],
+        model_choice["model_name"],
+        profile,
+        input_tokens,
+        output_tokens,
+        actual_cost,
+        200,
+        None,
+        int((inference_time + routing_time) * 1000)
+    )
 
     await enforce_usage_limits(profile, user_id, {
         "cost": total_cost,
@@ -640,6 +698,29 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
                 model_choice = await resolve_model_choice("manual", model_override, conversation, profile_slug=profile, supabase_client=supabase)
                 routing_time = time.time() - routing_start
 
+                # WALLET CHECK: Estimate cost and check balance
+                estimated_input_tokens = sum(len(msg["content"]) // 4 for msg in conversation)
+                estimated_output_tokens = 500
+
+                estimated_cost = calculate_cost(
+                    model_choice["vendor"],
+                    model_choice["model_name"],
+                    estimated_input_tokens,
+                    estimated_output_tokens
+                )
+
+                has_balance = await check_sufficient_balance(supabase, user_id, estimated_cost)
+                if not has_balance:
+                    current_balance = await get_wallet_balance(supabase, user_id)
+                    result = {
+                        "type": "error",
+                        "index": index,
+                        "model_override": model_override,
+                        "error": f"Insufficient balance. Current: ${float(current_balance):.4f}, Need: ${float(estimated_cost):.4f}"
+                    }
+                    await result_queue.put(result)
+                    return
+
                 # PHASE 2: INFERENCE
                 inference_start = time.time()
                 response_data = await inference.inference(model_choice, conversation)
@@ -659,10 +740,39 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
                 input_tokens = response_data.get("input_tokens") or 0
                 output_tokens = response_data.get("output_tokens") or 0
 
-                # Calculate cost
+                # Calculate actual cost using wallet pricing
+                actual_cost = calculate_cost(
+                    model_choice["vendor"],
+                    model_choice["model_name"],
+                    input_tokens,
+                    output_tokens
+                )
+
+                # Legacy cost calculation for metadata
                 input_cost_per_token = model_choice["config"].get("input_token_cost", 0.0)
                 output_cost_per_token = model_choice["config"].get("output_token_cost", 0.0)
                 total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
+
+                # Deduct from wallet
+                await deduct_from_wallet(supabase, user_id, actual_cost)
+
+                # Log API usage
+                await log_api_usage(
+                    supabase,
+                    user_id,
+                    None,  # No API key for web app
+                    "/chat/batch",
+                    "POST",
+                    model_choice["vendor"],
+                    model_choice["model_name"],
+                    profile,
+                    input_tokens,
+                    output_tokens,
+                    actual_cost,
+                    200,
+                    None,
+                    int((inference_time + routing_time) * 1000)
+                )
 
                 await enforce_usage_limits(profile, user_id, {
                     "cost": total_cost,
