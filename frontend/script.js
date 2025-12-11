@@ -3518,6 +3518,25 @@ async function deleteApiKeyFromDB(keyId) {
     }
 }
 
+// Update API key name in database
+async function updateApiKeyInDB(keyId, newName) {
+    try {
+        const response = await fetch(`${API_URL}/v1/keys/${keyId}?name=${encodeURIComponent(newName)}`, {
+            method: 'PATCH',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update API key');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error updating API key:', error);
+        throw error;
+    }
+}
+
 function showPendingKey(key) {
     currentPendingKey = key;
     currentPendingKeyDate = new Date();
@@ -3793,10 +3812,9 @@ if (activateKeyBtn) {
         const keyName = apiKeyName?.value.trim();
 
         try {
-            // Key is already in database, just update name if changed
-            if (keyName && keyName !== 'Unnamed Key') {
-                // Note: You could add a PATCH /v1/keys/{id} endpoint to update the name
-                // For now, we'll just reload the list
+            // Key is already in database, update name if user entered one
+            if (keyName && keyName !== 'Unnamed Key' && keyName !== '') {
+                await updateApiKeyInDB(currentPendingKeyId, keyName);
             }
 
             // Reload keys from database to show the new key

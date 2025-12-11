@@ -31,9 +31,15 @@ def hash_api_key(api_key: str) -> str:
     return hashlib.sha256(api_key.encode()).hexdigest()
 
 
-async def create_api_key(supabase, user_id: str, name: Optional[str] = None) -> dict:
+async def create_api_key(supabase, user_id: str, name: Optional[str] = None, expires_at: Optional[str] = None) -> dict:
     """
     Create a new API key for a user.
+
+    Args:
+        supabase: Supabase client
+        user_id: User ID
+        name: Optional name for the key
+        expires_at: Optional expiration timestamp (ISO format)
 
     Returns:
         dict with 'key' (full key, show once) and 'key_prefix' (for display)
@@ -42,14 +48,19 @@ async def create_api_key(supabase, user_id: str, name: Optional[str] = None) -> 
 
     full_key, key_hash, key_prefix = generate_api_key()
 
+    payload = {
+        "user_id": user_id,
+        "key_hash": key_hash,
+        "key_prefix": key_prefix,
+        "name": name,
+        "is_active": True
+    }
+
+    if expires_at:
+        payload["expires_at"] = expires_at
+
     def _insert():
-        return supabase.table("api_keys").insert({
-            "user_id": user_id,
-            "key_hash": key_hash,
-            "key_prefix": key_prefix,
-            "name": name,
-            "is_active": True
-        }).execute()
+        return supabase.table("api_keys").insert(payload).execute()
 
     result = await asyncio.to_thread(_insert)
 
@@ -61,6 +72,7 @@ async def create_api_key(supabase, user_id: str, name: Optional[str] = None) -> 
         "key": full_key,
         "key_prefix": key_prefix,
         "name": name,
+        "expires_at": expires_at,
         "created_at": result.data[0]["created_at"]
     }
 
@@ -70,7 +82,7 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
     Validate an API key and return user info if valid.
 
     Returns:
-        User dict if valid, None if invalid
+        User dict if valid, None if invalid or expired
     """
     import asyncio
 
@@ -78,7 +90,7 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
 
     def _query():
         return supabase.table("api_keys").select(
-            "user_id, is_active"
+            "user_id, is_active, expires_at"
         ).eq("key_hash", key_hash).eq("is_active", True).execute()
 
     result = await asyncio.to_thread(_query)
@@ -87,6 +99,14 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
         return None
 
     api_key_record = result.data[0]
+
+    # Check if key is expired
+    if api_key_record.get("expires_at"):
+        from datetime import datetime, timezone
+        expires_at = datetime.fromisoformat(api_key_record["expires_at"].replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > expires_at:
+            return None  # Key is expired
+
     user_id = api_key_record["user_id"]
 
     # Update last_used_at (fire and forget)
@@ -113,7 +133,7 @@ async def list_api_keys(supabase, user_id: str) -> list[dict]:
 
     def _query():
         return supabase.table("api_keys").select(
-            "id, key_prefix, name, created_at, last_used_at, is_active"
+            "id, key_prefix, name, created_at, last_used_at, is_active, expires_at"
         ).eq("user_id", user_id).order("created_at", desc=True).execute()
 
     result = await asyncio.to_thread(_query)

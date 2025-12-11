@@ -12,6 +12,15 @@ from typing import Optional
 from .schemas import ChatCompletionRequest, ChatCompletionResponse
 from .openai_compat import create_completion_response, parse_model_parameter
 from .api_keys import validate_api_key
+from .wallet import (
+    calculate_cost,
+    check_sufficient_balance,
+    deduct_from_wallet,
+    log_api_usage,
+    get_wallet_balance
+)
+from .rate_limiter import check_rate_limit
+from decimal import Decimal
 
 # Import existing backend logic
 import backend_code.router as restruct_router
@@ -151,7 +160,55 @@ async def chat_completions(
     routing_time = (time.time() - routing_start) * 1000  # ms
 
     # ========================================================================
-    # 4. STREAMING vs NON-STREAMING
+    # 4. RATE LIMITING (if using profile)
+    # ========================================================================
+
+    if profile_slug:
+        # Get profile's rate limit settings
+        profile_result = supabase.table("routing_profiles").select(
+            "rate_limit_rpm, rate_limit_rph, rate_limit_rpd"
+        ).eq("slug", profile_slug).execute()
+
+        if profile_result.data:
+            profile_data = profile_result.data[0]
+            rate_allowed, rate_error = await check_rate_limit(
+                supabase,
+                user["id"],
+                profile_slug,
+                profile_data.get("rate_limit_rpm"),
+                profile_data.get("rate_limit_rph"),
+                profile_data.get("rate_limit_rpd")
+            )
+
+            if not rate_allowed:
+                raise HTTPException(status_code=429, detail=rate_error)
+
+    # ========================================================================
+    # 5. WALLET BALANCE CHECK
+    # ========================================================================
+
+    # Estimate cost (rough approximation - will deduct actual cost after inference)
+    estimated_input_tokens = sum(len(msg["content"]) // 4 for msg in conversation)
+    estimated_output_tokens = 500  # Conservative estimate
+
+    estimated_cost = calculate_cost(
+        model_choice["vendor"],
+        model_choice["model_name"],
+        estimated_input_tokens,
+        estimated_output_tokens
+    )
+
+    # Check if user has sufficient balance
+    has_balance = await check_sufficient_balance(supabase, user["id"], estimated_cost)
+    if not has_balance:
+        current_balance = await get_wallet_balance(supabase, user["id"])
+        raise HTTPException(
+            status_code=402,
+            detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
+        )
+
+    # ========================================================================
+    # 6. STREAMING vs NON-STREAMING
     # ========================================================================
 
     if request.stream:
@@ -160,10 +217,48 @@ async def chat_completions(
 
         async def stream_generator():
             chunk_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+            total_input_tokens = 0
+            total_output_tokens = 0
+            request_start = time.time()
 
             try:
                 async for chunk in inference.inference_stream(model_choice, conversation):
                     if chunk.get("done"):
+                        # Get actual token usage
+                        usage = chunk.get("usage", {})
+                        total_input_tokens = usage.get("input_tokens", 0)
+                        total_output_tokens = usage.get("output_tokens", 0)
+
+                        # Calculate actual cost
+                        actual_cost = calculate_cost(
+                            model_choice["vendor"],
+                            model_choice["model_name"],
+                            total_input_tokens,
+                            total_output_tokens
+                        )
+
+                        # Deduct from wallet
+                        await deduct_from_wallet(supabase, user["id"], actual_cost)
+
+                        # Log usage
+                        request_duration = int((time.time() - request_start) * 1000)
+                        await log_api_usage(
+                            supabase,
+                            user["id"],
+                            user.get("api_key_id"),
+                            "/v1/chat/completions",
+                            "POST",
+                            model_choice["vendor"],
+                            model_choice["model_name"],
+                            profile_slug,
+                            total_input_tokens,
+                            total_output_tokens,
+                            actual_cost,
+                            200,
+                            None,
+                            request_duration
+                        )
+
                         # Final chunk with usage
                         sse_chunk = create_streaming_chunk(
                             chunk_id=chunk_id,
@@ -171,7 +266,7 @@ async def chat_completions(
                             delta_content="",
                             done=True,
                             finish_reason="stop",
-                            usage=chunk.get("usage")
+                            usage=usage
                         )
                         yield sse_chunk
                     else:
@@ -188,6 +283,25 @@ async def chat_completions(
                 yield create_streaming_done()
 
             except Exception as e:
+                # Log error
+                request_duration = int((time.time() - request_start) * 1000)
+                await log_api_usage(
+                    supabase,
+                    user["id"],
+                    user.get("api_key_id"),
+                    "/v1/chat/completions",
+                    "POST",
+                    model_choice["vendor"],
+                    model_choice["model_name"],
+                    profile_slug,
+                    0,
+                    0,
+                    Decimal("0"),
+                    500,
+                    str(e),
+                    request_duration
+                )
+
                 # Send error as SSE comment
                 yield f": Error - {str(e)}\n\n"
                 yield create_streaming_done()
@@ -198,7 +312,7 @@ async def chat_completions(
         )
 
     # ========================================================================
-    # 5. NON-STREAMING INFERENCE
+    # 7. NON-STREAMING INFERENCE
     # ========================================================================
 
     inference_start = time.time()
@@ -210,6 +324,25 @@ async def chat_completions(
         output_tokens = result["output_tokens"]
 
     except Exception as e:
+        # Log error
+        request_duration = int((time.time() - inference_start) * 1000)
+        await log_api_usage(
+            supabase,
+            user["id"],
+            user.get("api_key_id"),
+            "/v1/chat/completions",
+            "POST",
+            model_choice["vendor"],
+            model_choice["model_name"],
+            profile_slug,
+            0,
+            0,
+            Decimal("0"),
+            500,
+            str(e),
+            request_duration
+        )
+
         raise HTTPException(
             status_code=500,
             detail=f"Inference failed: {str(e)}"
@@ -218,7 +351,40 @@ async def chat_completions(
     inference_time = (time.time() - inference_start) * 1000  # ms
 
     # ========================================================================
-    # 6. FORMAT RESPONSE
+    # 8. COST DEDUCTION AND LOGGING
+    # ========================================================================
+
+    # Calculate actual cost
+    actual_cost = calculate_cost(
+        model_choice["vendor"],
+        model_choice["model_name"],
+        input_tokens,
+        output_tokens
+    )
+
+    # Deduct from wallet
+    await deduct_from_wallet(supabase, user["id"], actual_cost)
+
+    # Log usage
+    await log_api_usage(
+        supabase,
+        user["id"],
+        user.get("api_key_id"),
+        "/v1/chat/completions",
+        "POST",
+        model_choice["vendor"],
+        model_choice["model_name"],
+        profile_slug,
+        input_tokens,
+        output_tokens,
+        actual_cost,
+        200,
+        None,
+        int(inference_time)
+    )
+
+    # ========================================================================
+    # 9. FORMAT RESPONSE
     # ========================================================================
 
     response = create_completion_response(
@@ -266,10 +432,15 @@ async def list_models():
 @router.post("/keys")
 async def create_key(
     authorization: str = Header(None),
-    name: Optional[str] = Query(None)
+    name: Optional[str] = Query(None),
+    expires_at: Optional[str] = Query(None)
 ):
     """
     Create a new API key.
+
+    Args:
+        name: Optional name for the key
+        expires_at: Optional expiration timestamp in ISO format (e.g., "2024-12-31T23:59:59Z")
 
     The key is only shown once - save it securely.
     """
@@ -278,13 +449,14 @@ async def create_key(
 
     user = await authenticate_request(authorization)
 
-    result = await create_api_key(supabase, user["id"], name)
+    result = await create_api_key(supabase, user["id"], name, expires_at)
 
     return {
         "id": result["id"],
         "key": result["key"],
         "key_prefix": result["key_prefix"],
         "name": result["name"],
+        "expires_at": result.get("expires_at"),
         "created_at": result["created_at"],
         "warning": "Save this key securely - it will not be shown again"
     }
@@ -310,6 +482,28 @@ async def list_keys(authorization: str = Header(None)):
     }
 
 
+@router.patch("/keys/{key_id}")
+async def update_key(
+    key_id: str,
+    authorization: str = Header(None),
+    name: Optional[str] = Query(None)
+):
+    """
+    Update an API key's name.
+    """
+    from backend_code.app import supabase
+    from .api_keys_update import update_api_key
+
+    user = await authenticate_request(authorization)
+
+    success = await update_api_key(supabase, user["id"], key_id, name)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    return {"updated": True, "id": key_id, "name": name}
+
+
 @router.delete("/keys/{key_id}")
 async def delete_key(key_id: str, authorization: str = Header(None)):
     """
@@ -326,3 +520,71 @@ async def delete_key(key_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=404, detail="API key not found")
 
     return {"deleted": True, "id": key_id}
+
+
+@router.get("/wallet")
+async def get_wallet(authorization: str = Header(None)):
+    """
+    Get wallet balance for authenticated user.
+    """
+    from backend_code.app import supabase
+
+    user = await authenticate_request(authorization)
+
+    balance = await get_wallet_balance(supabase, user["id"])
+
+    return {
+        "balance": float(balance),
+        "currency": "USD"
+    }
+
+
+@router.post("/wallet/add-funds")
+async def add_wallet_funds(
+    amount: float,
+    authorization: str = Header(None)
+):
+    """
+    Add funds to wallet.
+
+    NOTE: This endpoint does NOT process actual payments yet.
+    It's for testing/admin purposes only.
+    """
+    from backend_code.app import supabase
+    from .wallet import add_funds
+
+    user = await authenticate_request(authorization)
+
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    result = await add_funds(supabase, user["id"], Decimal(str(amount)))
+
+    return {
+        "balance": result["balance"],
+        "added": result["added"],
+        "currency": "USD",
+        "warning": "This endpoint does not process real payments yet"
+    }
+
+
+@router.get("/usage")
+async def get_usage(
+    limit: int = Query(default=100, le=1000),
+    authorization: str = Header(None)
+):
+    """
+    Get API usage history for authenticated user.
+    """
+    from backend_code.app import supabase
+
+    user = await authenticate_request(authorization)
+
+    result = supabase.table("api_usage").select("*").eq(
+        "user_id", user["id"]
+    ).order("created_at", desc=True).limit(limit).execute()
+
+    return {
+        "object": "list",
+        "data": result.data
+    }
