@@ -588,3 +588,81 @@ async def get_usage(
         "object": "list",
         "data": result.data
     }
+
+
+@router.get("/statistics/dashboard")
+async def get_statistics_dashboard(authorization: str = Header(None)):
+    """
+    Get comprehensive dashboard metrics (daily, weekly, monthly, yearly).
+    """
+    from backend_code.app import supabase
+    from .statistics import get_dashboard_metrics
+
+    user = await authenticate_request(authorization)
+    metrics = await get_dashboard_metrics(supabase, user["id"])
+
+    return {
+        "object": "dashboard_metrics",
+        "data": metrics
+    }
+
+
+@router.get("/statistics/models")
+async def get_statistics_models(
+    profile: Optional[str] = Query(default=None),
+    authorization: str = Header(None)
+):
+    """
+    Get usage breakdown by model.
+    Query params:
+        - profile: Filter by profile name (optional, default = all profiles)
+    """
+    from backend_code.app import supabase
+    from .statistics import get_model_breakdown
+
+    user = await authenticate_request(authorization)
+    breakdown = await get_model_breakdown(supabase, user["id"], profile)
+
+    return {
+        "object": "model_breakdown",
+        "data": breakdown
+    }
+
+
+@router.get("/statistics/profiles")
+async def get_statistics_profiles(authorization: str = Header(None)):
+    """
+    Get usage breakdown by profile.
+    """
+    from backend_code.app import supabase
+    from .statistics import get_profile_breakdown
+
+    user = await authenticate_request(authorization)
+    breakdown = await get_profile_breakdown(supabase, user["id"])
+
+    return {
+        "object": "profile_breakdown",
+        "data": breakdown
+    }
+
+
+@router.get("/statistics/timeline")
+async def get_statistics_timeline(
+    days: int = Query(default=30, le=365),
+    authorization: str = Header(None)
+):
+    """
+    Get daily usage timeline for charting.
+    Query params:
+        - days: Number of days to include (default 30, max 365)
+    """
+    from backend_code.app import supabase
+    from .statistics import get_usage_timeline
+
+    user = await authenticate_request(authorization)
+    timeline = await get_usage_timeline(supabase, user["id"], days)
+
+    return {
+        "object": "usage_timeline",
+        "data": timeline
+    }
