@@ -1336,6 +1336,20 @@ textarea {
     background: var(--accent-bg-subtle);
 }
 
+.tracking-model-card {
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid var(--border-subtle);
+    transition: all 0.2s ease;
+}
+
+.tracking-model-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 16px rgba(142, 60, 44, 0.12);
+    transform: translateY(-2px);
+}
+
 .model-table-wrapper {
     margin-top: 16px;
     overflow-x: auto;

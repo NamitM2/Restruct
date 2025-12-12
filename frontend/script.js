@@ -4439,10 +4439,10 @@ function populateTracking(selectedProfile = 'all') {
 
 function init() {
     wireTabs();
-    hydrateDashboard();
+    // hydrateDashboard(); // Disabled - using real data from statistics.js
     initCostComparisonChart();
     populateMarketplace();
-    populateTracking();
+    // populateTracking(); // Disabled - using real data from statistics.js
     testConnection();
     loadConversationsFromBackend();  // Load user's conversations from backend
     promptInput?.focus();
