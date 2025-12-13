@@ -1,0 +1,13 @@
+{
+  "model": "auto",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello!"
+    }
+  ],
+  "restruct": {
+    "profile": "Test"
+  },
+  "stream": false
+}

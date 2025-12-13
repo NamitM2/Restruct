@@ -1,5 +1,5 @@
 """
-Test streaming responses from the Restruct API with OpenAI SDK.
+Test streaming responses from OpenAI models via Restruct API.
 """
 
 from openai import OpenAI
@@ -13,14 +13,13 @@ client = OpenAI(
     api_key=API_KEY
 )
 
-print("Testing Restruct API Streaming...")
+print("Testing Restruct API Streaming with OpenAI...")
 print("=" * 60)
 
-# Make streaming request with Lebron profile
+# Make streaming request forcing OpenAI model
 stream = client.chat.completions.create(
-    model="auto",
-    messages=[{"role": "user", "content": "Say hello!"}],
-    extra_body={"restruct": {"profile": "Test"}},
+    model="openai:gpt-5-mini",
+    messages=[{"role": "user", "content": "Say hello in one sentence!"}],
     stream=True
 )
 
