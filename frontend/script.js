@@ -36,7 +36,7 @@ function logout() {
 
 function debounce(func, wait = 300) {
     let timeout;
-    return function(...args) {
+    return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
@@ -518,7 +518,7 @@ function setupSigninForm() {
         }
     }
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
         hideError();
 
@@ -535,49 +535,49 @@ function setupSigninForm() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         })
-        .then(response => response.json().then(data => ({ ok: response.ok, data })))
-        .then(({ ok, data }) => {
-            if (ok && data.success) {
-                localStorage.setItem('access_token', data.session.access_token);
-                localStorage.setItem('refresh_token', data.session.refresh_token);
-                localStorage.setItem('user_id', data.user.id);
-                localStorage.setItem('user_email', data.user.email);
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    localStorage.setItem('access_token', data.session.access_token);
+                    localStorage.setItem('refresh_token', data.session.refresh_token);
+                    localStorage.setItem('user_id', data.user.id);
+                    localStorage.setItem('user_email', data.user.email);
 
-                const applySignedInState = () => {
-                    showAppSection();
-                    loadConversationsFromBackend();  // Load user's conversations after login
-                    loadProfilesFromBackend();
-                    loadApiKeys(); // Load API keys from database
-                    // Update user displays
-                    const userEmailDisplay = document.getElementById('userEmailDisplay');
-                    const userEmailIndicator = document.getElementById('userEmail');
-                    const navSignInBtn = document.getElementById('navSignInBtn');
-                    const navSignOutBtn = document.getElementById('navSignOutBtn');
+                    const applySignedInState = () => {
+                        showAppSection();
+                        loadConversationsFromBackend();  // Load user's conversations after login
+                        loadProfilesFromBackend();
+                        loadApiKeys(); // Load API keys from database
+                        // Update user displays
+                        const userEmailDisplay = document.getElementById('userEmailDisplay');
+                        const userEmailIndicator = document.getElementById('userEmail');
+                        const navSignInBtn = document.getElementById('navSignInBtn');
+                        const navSignOutBtn = document.getElementById('navSignOutBtn');
 
-                    if (userEmailDisplay) userEmailDisplay.textContent = `Signed in as ${data.user.email}`;
-                    if (userEmailIndicator) userEmailIndicator.textContent = data.user.email;
-                    if (navSignInBtn) navSignInBtn.style.display = 'none';
-                    if (navSignOutBtn) navSignOutBtn.style.display = 'block';
-                };
+                        if (userEmailDisplay) userEmailDisplay.textContent = `Signed in as ${data.user.email}`;
+                        if (userEmailIndicator) userEmailIndicator.textContent = data.user.email;
+                        if (navSignInBtn) navSignInBtn.style.display = 'none';
+                        if (navSignOutBtn) navSignOutBtn.style.display = 'block';
+                    };
 
-                playWaveTransition(applySignedInState);
-            } else {
+                    playWaveTransition(applySignedInState);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    const msg = data.detail || '';
+                    if (msg.toLowerCase().includes('email not confirmed')) {
+                        showError('Please confirm your email before signing in. Check your inbox for a confirmation link.');
+                    } else {
+                        showError(msg || 'Sign in failed. Please check your credentials.');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Sign in error:', err);
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
-                const msg = data.detail || '';
-                if (msg.toLowerCase().includes('email not confirmed')) {
-                    showError('Please confirm your email before signing in. Check your inbox for a confirmation link.');
-                } else {
-                    showError(msg || 'Sign in failed. Please check your credentials.');
-                }
-            }
-        })
-        .catch(err => {
-            console.error('Sign in error:', err);
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            showError('Could not connect to server. Is the backend running?');
-        });
+                showError('Could not connect to server. Is the backend running?');
+            });
     });
 }
 
@@ -960,9 +960,11 @@ function buildProfileCard(slug, displayName, profileData) {
 
     const isDefault = ['default', 'cost-optimized', 'performance-first'].includes(slug);
     const isPublished = profileStats[slug]?.published;
-    const publishButtonHtml = isDefault ? '' : `
-        <button class="profile-publish-btn ${isPublished ? 'published' : ''}" data-profile="${slug}" title="${isPublished ? 'Published' : 'Publish'}" aria-label="Publish profile">
-            ${isPublished ? 'Published' : 'Publish'}
+    const publishButtonHtml = isDefault ? '' : isPublished ? `
+        <span class="profile-publish-btn published" title="Already published">Published</span>
+    ` : `
+        <button class="profile-publish-btn" data-profile="${slug}" title="Publish to community" aria-label="Publish profile">
+            Publish
         </button>
     `;
     const routeButtonHtml = isDefault ? '' : `
@@ -1491,73 +1493,485 @@ function showShareCodeModal(shareCode) {
     };
 }
 
-function generateMockCommunityProfiles() {
-    const names = [
-        'Ultra Cost Saver', 'Code Generator Pro', 'Speed Demon', 'Research Assistant', 'Creative Writer',
-        'Data Cruncher', 'Enterprise Guard', 'Context King', 'Prompt Whisperer', 'Latency Slayer',
-        'Polyglot Translator', 'Doc Summarizer', 'Productivity Booster', 'Secure Chat', 'Brainstorm Buddy',
-        'Support Sidekick', 'Ops Automator', 'QA Reviewer', 'Email Polisher', 'API Tutor',
-        'Visionary', 'Audio Sage', 'Synthetic QA', 'Notebook Ninja', 'Benchmark Beast'
-    ];
-    const publishers = [
-        'Alex Rivera', 'Sarah Chen', 'Priya Nair', 'Liam O\'Connor', 'Maya Patel',
-        'Jonas Keller', 'Mina Park', 'Diego Alvarez', 'Casey Jordan', 'Samira Rahman'
-    ];
+// ============================================
+// COMMUNITY PROFILES SYSTEM
+// ============================================
 
-    const generated = Array.from({ length: 100 }, (_, i) => {
-        const name = `${names[i % names.length]} v${Math.floor(i / names.length) + 1}`;
-        const tokensRouted = Math.max(15000, 195000 - i * 1200);
-        const tokensGenerated = Math.round(tokensRouted * (1.05 + (i % 7) * 0.03));
-        const publisher = i % 6 === 0 ? 'Anonymous' : publishers[i % publishers.length];
-        const slug = `${slugifyProfileName(name)}-${i}`;
-        return {
-            id: slug,
-            name,
-            publisher,
-            tokensRouted,
-            tokensGenerated
-        };
-    });
+// Icon gradients for community profiles
+const PROFILE_ICON_GRADIENTS = [
+    'linear-gradient(135deg, #8e3c2c, #c98454)',
+    'linear-gradient(135deg, #a34734, #d8af7c)',
+    'linear-gradient(135deg, #c98454, #f6efe7)',
+    'linear-gradient(135deg, #5b2a1a, #8e3c2c)',
+    'linear-gradient(135deg, #b56747, #d8af7c)',
+];
 
-    return generated.sort((a, b) => b.tokensRouted - a.tokensRouted);
+// Lucide icon names for profiles
+const PROFILE_ICONS = ['zap', 'dollar-sign', 'code-2', 'cpu', 'brain', 'rocket', 'sparkles', 'shield'];
+
+// State for community profiles
+let communityProfiles = [];
+let allTags = [];
+let selectedTags = [];
+let currentRatingProfileSlug = null;
+let currentRatingValue = 0;
+
+// Get icon gradient based on profile icon name
+function getIconGradient(iconName) {
+    const index = PROFILE_ICONS.indexOf(iconName) % PROFILE_ICON_GRADIENTS.length;
+    return PROFILE_ICON_GRADIENTS[Math.abs(index >= 0 ? index : 0)];
 }
 
-const communityProfiles = generateMockCommunityProfiles();
+// Generate star rating HTML
+function generateStarRating(avgRating, ratingCount) {
+    const fullStars = Math.floor(avgRating);
+    const hasHalf = avgRating % 1 >= 0.5;
+    let starsHtml = '';
 
+    for (let i = 1; i <= 5; i++) {
+        if (i <= fullStars) {
+            starsHtml += '<span class="community-rating-star filled">★</span>';
+        } else if (i === fullStars + 1 && hasHalf) {
+            starsHtml += '<span class="community-rating-star filled">★</span>';
+        } else {
+            starsHtml += '<span class="community-rating-star">★</span>';
+        }
+    }
+
+    return `
+        <div class="community-rating">
+            <div class="community-rating-stars">${starsHtml}</div>
+            <span class="community-rating-value">${avgRating.toFixed(1)}</span>
+            <span class="community-rating-count">(${ratingCount})</span>
+        </div>
+    `;
+}
+
+// Generate tags HTML
+function generateTagsHtml(tags) {
+    if (!tags || tags.length === 0) return '';
+
+    return `
+        <div class="community-profile-tags">
+            ${tags.slice(0, 3).map(tag => {
+        const categoryClass = tag.category === 'performance' ? 'performance' :
+            tag.category === 'use-case' ? 'use-case' : '';
+        return `<span class="community-tag ${categoryClass}">${tag.name}</span>`;
+    }).join('')}
+            ${tags.length > 3 ? `<span class="community-tag">+${tags.length - 3}</span>` : ''}
+        </div>
+    `;
+}
+
+// Lucide icon SVG map (simplified)
+const LUCIDE_ICONS = {
+    zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
+    'dollar-sign': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
+    'code-2': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg>',
+    cpu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>',
+    brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></svg>',
+    rocket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+};
+
+function getIconSvg(iconName) {
+    return LUCIDE_ICONS[iconName] || LUCIDE_ICONS.zap;
+}
+
+// Fetch community profiles from API
+async function loadCommunityProfiles(search = '', tags = [], sort = 'popular') {
+    try {
+        let url = `${API_URL}/profiles/community?sort=${sort}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (tags.length > 0) url += `&tags=${encodeURIComponent(tags.join(','))}`;
+
+        const response = await fetch(url, {
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        });
+
+        if (!response.ok) throw new Error('Failed to load community profiles');
+
+        const data = await response.json();
+        communityProfiles = data.profiles || [];
+        renderCommunityProfiles(communityProfiles);
+    } catch (err) {
+        console.error('Failed to load community profiles:', err);
+        // Show empty state
+        if (communityProfilesGrid) {
+            communityProfilesGrid.innerHTML = `
+                <div class="community-empty-state" style="grid-column: 1 / -1;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <h4>No community profiles yet</h4>
+                    <p>Be the first to publish a profile and share it with the community!</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Fetch all tags
+async function loadTags() {
+    try {
+        const response = await fetch(`${API_URL}/tags`, {
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        });
+
+        if (!response.ok) throw new Error('Failed to load tags');
+
+        const data = await response.json();
+        allTags = data.tags || [];
+        renderTagFilters();
+    } catch (err) {
+        console.error('Failed to load tags:', err);
+    }
+}
+
+// Render tag filter chips
+function renderTagFilters() {
+    const tagFilterContainer = document.getElementById('communityTagFilter');
+    if (!tagFilterContainer) return;
+
+    // Show predefined tags first
+    const predefinedTags = allTags.filter(t => t.is_predefined);
+
+    tagFilterContainer.innerHTML = predefinedTags.map(tag => {
+        const isActive = selectedTags.includes(tag.name);
+        return `
+            <button class="community-tag-chip ${isActive ? 'active' : ''}" data-tag="${tag.name}">
+                ${tag.name}
+                ${isActive ? '<span class="remove-tag">×</span>' : ''}
+            </button>
+        `;
+    }).join('');
+}
+
+// Render community profiles
 function renderCommunityProfiles(list = communityProfiles) {
     if (!communityProfilesGrid) return;
+
+    if (list.length === 0) {
+        communityProfilesGrid.innerHTML = `
+            <div class="community-empty-state" style="grid-column: 1 / -1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <h4>No profiles found</h4>
+                <p>Try adjusting your search or filters.</p>
+            </div>
+        `;
+        return;
+    }
+
     communityProfilesGrid.innerHTML = '';
 
     list.forEach(profile => {
-        const added = Boolean(profiles[profile.id]);
+        const added = Boolean(profiles[profile.slug]);
+        const iconName = profile.icon || 'zap';
+        const gradient = getIconGradient(iconName);
+        const avgRating = parseFloat(profile.avg_rating) || 0;
+        const ratingCount = profile.rating_count || 0;
+        const downloadCount = profile.download_count || 0;
+        const totalTokens = profile.total_tokens || 0;
+
         const card = document.createElement('div');
         card.className = 'community-profile-card';
-        card.dataset.slug = profile.id;
+        card.dataset.slug = profile.slug;
+
         card.innerHTML = `
-            <div class="community-card-top">
-                <div class="community-title-row">
-                    <h4 class="community-profile-title">${profile.name}</h4>
-                    <button class="community-add-btn ${added ? 'added' : ''}" data-slug="${profile.id}" title="${added ? 'Added' : 'Add to your profiles'}">
-                        ${added ? '<span class="add-icon">✔</span>' : '<span class="add-icon">＋</span>'}
-                    </button>
+            <div class="community-card-header">
+                <div class="community-profile-icon" style="background: ${gradient};">
+                    ${getIconSvg(iconName)}
                 </div>
-                <p class="community-profile-publisher">${profile.publisher === 'Anonymous' ? 'Anonymous' : `By ${profile.publisher}`}</p>
+                <div class="community-card-meta">
+                    <div class="community-title-row">
+                        <h4 class="community-profile-title">${profile.name}</h4>
+                        <button class="community-add-btn ${added ? 'added' : ''}" data-slug="${profile.slug}" title="${added ? 'Added' : 'Add to your profiles'}">
+                            ${added ? '<span class="add-icon">✔</span>' : '<span class="add-icon">＋</span>'}
+                        </button>
+                    </div>
+                    <p class="community-profile-author">${profile.author_name ? `By ${profile.author_name}` : 'Anonymous'}</p>
+                    ${generateStarRating(avgRating, ratingCount)}
+                </div>
             </div>
+            ${profile.description ? `<p class="community-profile-description">${profile.description}</p>` : ''}
+            ${generateTagsHtml(profile.tags)}
             <div class="community-profile-metrics">
                 <div class="community-metric-chip">
-                    <span class="community-metric-label">Tokens routed</span>
-                    <span class="community-metric-value">${formatNumber(profile.tokensRouted)}</span>
+                    <span class="community-metric-label">Downloads</span>
+                    <span class="community-metric-value">${formatNumber(downloadCount)}</span>
                 </div>
                 <div class="community-metric-chip">
-                    <span class="community-metric-label">Tokens generated</span>
-                    <span class="community-metric-value">${formatNumber(profile.tokensGenerated)}</span>
+                    <span class="community-metric-label">Rating</span>
+                    <span class="community-metric-value">${avgRating.toFixed(1)}</span>
+                </div>
+                <div class="community-metric-chip">
+                    <span class="community-metric-label">Tokens</span>
+                    <span class="community-metric-value">${formatNumber(totalTokens)}</span>
                 </div>
             </div>
+            <div class="community-card-actions">
+                <button class="community-action-btn rate-profile-btn" data-slug="${profile.slug}">
+                    ★ Rate
+                </button>
+                <button class="community-action-btn primary import-profile-btn" data-slug="${profile.slug}">
+                    Import
+                </button>
+            </div>
         `;
+
         communityProfilesGrid.appendChild(card);
     });
 }
 
+// Open rating modal
+function openRatingModal(profileSlug) {
+    const profile = communityProfiles.find(p => p.slug === profileSlug);
+    if (!profile) return;
+
+    currentRatingProfileSlug = profileSlug;
+    currentRatingValue = 0;
+
+    const modal = document.getElementById('ratingModal');
+    const title = document.getElementById('ratingModalTitle');
+    const subtitle = document.getElementById('ratingModalSubtitle');
+    const starButtons = document.querySelectorAll('.rating-star-btn');
+
+    if (title) title.textContent = `Rate "${profile.name}"`;
+    if (subtitle) subtitle.textContent = 'How would you rate this profile?';
+
+    // Reset stars
+    starButtons.forEach(btn => btn.classList.remove('active'));
+
+    if (modal) modal.classList.add('active');
+}
+
+// Close rating modal
+function closeRatingModal() {
+    const modal = document.getElementById('ratingModal');
+    if (modal) modal.classList.remove('active');
+    currentRatingProfileSlug = null;
+    currentRatingValue = 0;
+}
+
+// Submit rating
+async function submitRating() {
+    if (!currentRatingProfileSlug || currentRatingValue < 1) {
+        showToast('Please select a rating');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/profiles/${currentRatingProfileSlug}/rate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({ rating: currentRatingValue })
+        });
+
+        if (!response.ok) throw new Error('Failed to submit rating');
+
+        const data = await response.json();
+        showToast(`Rated ${currentRatingValue} star${currentRatingValue > 1 ? 's' : ''}!`);
+        closeRatingModal();
+
+        // Refresh community profiles
+        const search = document.getElementById('communityProfilesSearch')?.value || '';
+        const sort = document.getElementById('communitySortSelect')?.value || 'popular';
+        loadCommunityProfiles(search, selectedTags, sort);
+    } catch (err) {
+        console.error('Failed to submit rating:', err);
+        showToast('Failed to submit rating. Please try again.');
+    }
+}
+
+// Import/download community profile
+async function importCommunityProfile(profileSlug) {
+    const profile = communityProfiles.find(p => p.slug === profileSlug);
+    if (!profile) return;
+
+    // Track download
+    try {
+        await fetch(`${API_URL}/profiles/${profileSlug}/download`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+        });
+    } catch (err) {
+        console.error('Failed to track download:', err);
+    }
+
+    // Add to local profiles
+    if (!profiles[profileSlug]) {
+        profiles[profileSlug] = {
+            name: profile.name,
+            description: profile.description || 'Imported community profile',
+            latency: 'medium',
+            cost: 'medium',
+            quality: 'medium',
+            graph_state: profile.graph_state,
+            icon: profile.icon
+        };
+
+        profileStats[profileSlug] = {
+            tokensRouted: 0,
+            tokensGenerated: 0,
+            spend: 0,
+            globalRouted: null,
+            globalGenerated: null,
+            published: false,
+            messageCount: 0
+        };
+
+        renderYourProfiles();
+        showToast('Profile imported successfully!');
+
+        // Update button in community grid
+        const addBtn = communityProfilesGrid?.querySelector(`.community-add-btn[data-slug="${profileSlug}"]`);
+        if (addBtn) {
+            addBtn.classList.add('added');
+            addBtn.innerHTML = '<span class="add-icon">✔</span>';
+        }
+    } else {
+        showToast('Profile already in your collection');
+    }
+}
+
+// Initialize community profiles
+function initCommunityProfiles() {
+    // Load tags first, then profiles
+    loadTags();
+    loadCommunityProfiles();
+
+    // Sort dropdown
+    const sortSelect = document.getElementById('communitySortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            const search = document.getElementById('communityProfilesSearch')?.value || '';
+            loadCommunityProfiles(search, selectedTags, sortSelect.value);
+        });
+    }
+
+    // Tag filter clicks
+    const tagFilterContainer = document.getElementById('communityTagFilter');
+    if (tagFilterContainer) {
+        tagFilterContainer.addEventListener('click', (e) => {
+            const chip = e.target.closest('.community-tag-chip');
+            if (!chip) return;
+
+            const tagName = chip.dataset.tag;
+            if (selectedTags.includes(tagName)) {
+                selectedTags = selectedTags.filter(t => t !== tagName);
+            } else {
+                selectedTags.push(tagName);
+            }
+
+            renderTagFilters();
+            const search = document.getElementById('communityProfilesSearch')?.value || '';
+            const sort = document.getElementById('communitySortSelect')?.value || 'popular';
+            loadCommunityProfiles(search, selectedTags, sort);
+        });
+    }
+
+    // Search input
+    if (communityProfilesSearch) {
+        communityProfilesSearch.addEventListener('input', debounce((e) => {
+            const query = e.target.value.trim();
+            const sort = document.getElementById('communitySortSelect')?.value || 'popular';
+            loadCommunityProfiles(query, selectedTags, sort);
+        }, 300));
+    }
+
+    // Community grid clicks (add/rate/import buttons)
+    if (communityProfilesGrid) {
+        communityProfilesGrid.addEventListener('click', (e) => {
+            // Add button
+            const addBtn = e.target.closest('.community-add-btn');
+            if (addBtn) {
+                const slug = addBtn.dataset.slug;
+                importCommunityProfile(slug);
+                return;
+            }
+
+            // Rate button
+            const rateBtn = e.target.closest('.rate-profile-btn');
+            if (rateBtn) {
+                const slug = rateBtn.dataset.slug;
+                openRatingModal(slug);
+                return;
+            }
+
+            // Import button
+            const importBtn = e.target.closest('.import-profile-btn');
+            if (importBtn) {
+                const slug = importBtn.dataset.slug;
+                importCommunityProfile(slug);
+                return;
+            }
+        });
+    }
+
+    // Rating modal
+    const ratingStarsInput = document.getElementById('ratingStarsInput');
+    if (ratingStarsInput) {
+        ratingStarsInput.addEventListener('click', (e) => {
+            const btn = e.target.closest('.rating-star-btn');
+            if (!btn) return;
+
+            currentRatingValue = parseInt(btn.dataset.rating);
+
+            // Update visual state
+            document.querySelectorAll('.rating-star-btn').forEach((star, idx) => {
+                star.classList.toggle('active', idx < currentRatingValue);
+            });
+        });
+
+        // Hover effect
+        ratingStarsInput.addEventListener('mouseover', (e) => {
+            const btn = e.target.closest('.rating-star-btn');
+            if (!btn) return;
+
+            const hoverValue = parseInt(btn.dataset.rating);
+            document.querySelectorAll('.rating-star-btn').forEach((star, idx) => {
+                star.style.color = idx < hoverValue ? '#f5a623' : '#d4d4d4';
+            });
+        });
+
+        ratingStarsInput.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.rating-star-btn').forEach((star, idx) => {
+                star.style.color = idx < currentRatingValue ? '#f5a623' : '#d4d4d4';
+            });
+        });
+    }
+
+    const ratingCancelBtn = document.getElementById('ratingCancelBtn');
+    if (ratingCancelBtn) {
+        ratingCancelBtn.addEventListener('click', closeRatingModal);
+    }
+
+    const ratingSubmitBtn = document.getElementById('ratingSubmitBtn');
+    if (ratingSubmitBtn) {
+        ratingSubmitBtn.addEventListener('click', submitRating);
+    }
+
+    const ratingModal = document.getElementById('ratingModal');
+    if (ratingModal) {
+        ratingModal.addEventListener('click', (e) => {
+            if (e.target === ratingModal) closeRatingModal();
+        });
+    }
+}
+
+// Initialize when DOM is ready
+if (communityProfilesGrid) {
+    initCommunityProfiles();
+}
+
+// Profile builder buttons
 if (newProfileBtn) {
     newProfileBtn.addEventListener('click', () => {
         window.profileBuilderOverlay?.open();
@@ -1568,54 +1982,6 @@ if (createNewProfileCard) {
     createNewProfileCard.addEventListener('click', () => {
         window.profileBuilderOverlay?.open();
     });
-}
-
-if (communityProfilesGrid) {
-    renderCommunityProfiles();
-    communityProfilesGrid.addEventListener('click', (e) => {
-        const addBtn = e.target.closest('.community-add-btn');
-        if (!addBtn) return;
-        const slug = addBtn.dataset.slug;
-        const communityProfile = communityProfiles.find(p => p.id === slug);
-        if (!communityProfile) return;
-
-        if (!profiles[slug]) {
-            profiles[slug] = {
-                name: communityProfile.name,
-                latency: 'medium',
-                cost: 'medium',
-                quality: 'medium',
-                description: `Community profile by ${communityProfile.publisher}`
-            };
-            profileStats[slug] = {
-                tokensRouted: communityProfile.tokensRouted,
-                tokensGenerated: communityProfile.tokensGenerated,
-                spend: Math.max(25, Math.round(communityProfile.tokensRouted / 1000) / 2),
-                globalRouted: null,
-                globalGenerated: null,
-                published: false,
-                messageCount: 0
-            };
-            renderYourProfiles();
-            showToast('Profile added to your profiles');
-        }
-
-        addBtn.classList.add('added');
-        addBtn.innerHTML = '<span class="add-icon">✔</span>';
-    });
-}
-
-if (communityProfilesSearch) {
-    communityProfilesSearch.addEventListener('input', debounce((e) => {
-        const query = e.target.value.toLowerCase().trim();
-        const filtered = communityProfiles.filter(profile => {
-            return (
-                profile.name.toLowerCase().includes(query) ||
-                profile.publisher.toLowerCase().includes(query)
-            );
-        });
-        renderCommunityProfiles(filtered);
-    }, 300));
 }
 
 const yourProfilesSearch = document.getElementById('yourProfilesSearch');
@@ -1730,36 +2096,145 @@ async function openProfileStatsModal(profileName) {
     if (profileStatsModal) ModalA11yManager.open(profileStatsModal);
 }
 
-async function publishProfile(profileName, buttonEl) {
+// ============================================
+// PUBLISH PROFILE MODAL SYSTEM
+// ============================================
+
+let publishTargetSlug = null;
+let publishSelectedIcon = 'zap';
+let publishSelectedTags = [];
+
+// Open publish modal instead of direct publish
+function publishProfile(profileName, buttonEl) {
     const profile = profiles[profileName] || {};
-    const fallbackStats = profileStats[profileName] || { tokensRouted: 0, tokensGenerated: 0, spend: 0, globalRouted: null, globalGenerated: null, published: false, messageCount: 0 };
     const isDefaultProfile = baseProfileOrder.includes(profileName);
 
     if (isDefaultProfile) {
-        if (buttonEl) {
-            buttonEl.disabled = false;
-            buttonEl.textContent = buttonEl.dataset.originalText || buttonEl.textContent;
-        }
         showToast('Default profiles cannot be published.');
         return;
     }
 
-    // Optimistic UI state
-    if (buttonEl) {
-        buttonEl.disabled = true;
-        const originalText = buttonEl.textContent;
-        buttonEl.dataset.originalText = originalText;
-        buttonEl.textContent = 'Publishing...';
+    // Check if already published
+    if (profileStats[profileName]?.published) {
+        showToast('This profile is already published.');
+        return;
     }
 
-    const body = { published: true };
-    let succeeded = false;
+    // Store reference for later
+    publishTargetSlug = profileName;
+    publishSelectedIcon = profile.icon || 'zap';
+    publishSelectedTags = [];
+
+    // Open the modal
+    openPublishModal(profileName, profile);
+}
+
+function openPublishModal(profileSlug, profile) {
+    const modal = document.getElementById('publishModal');
+    const nameInput = document.getElementById('publishProfileName');
+    const descInput = document.getElementById('publishProfileDescription');
+    const iconGrid = document.getElementById('publishIconGrid');
+    const tagsContainer = document.getElementById('publishTagsContainer');
+
+    if (!modal) return;
+
+    // Pre-fill form with existing data
+    if (nameInput) nameInput.value = profile.name || getProfileDisplayName(profileSlug);
+    if (descInput) descInput.value = profile.description || '';
+
+    // Reset icon selection
+    if (iconGrid) {
+        iconGrid.querySelectorAll('.publish-icon-option').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.icon === publishSelectedIcon);
+        });
+    }
+
+    // Populate tags
+    renderPublishTags();
+
+    // Show modal
+    modal.classList.add('active');
+}
+
+function closePublishModal() {
+    const modal = document.getElementById('publishModal');
+    if (modal) modal.classList.remove('active');
+    publishTargetSlug = null;
+    publishSelectedIcon = 'zap';
+    publishSelectedTags = [];
+}
+
+function renderPublishTags() {
+    const tagsContainer = document.getElementById('publishTagsContainer');
+    if (!tagsContainer) return;
+
+    // Use allTags from community profiles, or fallback to predefined
+    const tagsToShow = allTags.length > 0 ? allTags : [
+        { name: 'coding', is_predefined: true },
+        { name: 'creative', is_predefined: true },
+        { name: 'research', is_predefined: true },
+        { name: 'productivity', is_predefined: true },
+        { name: 'cost-saving', is_predefined: true },
+        { name: 'fast', is_predefined: true },
+        { name: 'high-quality', is_predefined: true },
+    ];
+
+    tagsContainer.innerHTML = tagsToShow.map(tag => {
+        const isSelected = publishSelectedTags.includes(tag.name);
+        return `
+            <button class="publish-tag-chip ${isSelected ? 'selected' : ''}" data-tag="${tag.name}">
+                ${tag.name}
+            </button>
+        `;
+    }).join('');
+
+    // Add custom tags that aren't in the predefined list
+    publishSelectedTags.forEach(tagName => {
+        const exists = tagsToShow.some(t => t.name === tagName);
+        if (!exists) {
+            const chip = document.createElement('button');
+            chip.className = 'publish-tag-chip selected';
+            chip.dataset.tag = tagName;
+            chip.textContent = tagName;
+            tagsContainer.appendChild(chip);
+        }
+    });
+}
+
+async function submitPublish() {
+    if (!publishTargetSlug) return;
+
+    const nameInput = document.getElementById('publishProfileName');
+    const descInput = document.getElementById('publishProfileDescription');
+    const submitBtn = document.getElementById('publishSubmitBtn');
+
+    const profileName = nameInput?.value.trim() || getProfileDisplayName(publishTargetSlug);
+    const description = descInput?.value.trim() || '';
+
+    if (!profileName) {
+        showToast('Please enter a profile name');
+        return;
+    }
+
+    // Disable button
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Publishing...';
+    }
 
     try {
-        const response = await fetch(`${API_URL}/profiles/${encodeURIComponent(profileName)}`, {
+        // First update the profile with new details
+        const updateBody = {
+            name: profileName,
+            description: description,
+            icon: publishSelectedIcon,
+            published: true
+        };
+
+        const response = await fetch(`${API_URL}/profiles/${encodeURIComponent(publishTargetSlug)}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-            body: JSON.stringify(body)
+            body: JSON.stringify(updateBody)
         });
 
         if (!response.ok) {
@@ -1767,31 +2242,143 @@ async function publishProfile(profileName, buttonEl) {
         }
 
         const data = await response.json();
-        profileStats[profileName] = {
-            ...fallbackStats,
-            published: !!data.profile?.published
-        };
-        profiles[profileName] = {
+
+        // Assign tags if any selected
+        if (publishSelectedTags.length > 0 && data.profile?.id) {
+            try {
+                await fetch(`${API_URL}/profiles/${encodeURIComponent(publishTargetSlug)}/tags`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                    body: JSON.stringify({ tags: publishSelectedTags })
+                });
+            } catch (tagErr) {
+                console.error('Failed to assign tags:', tagErr);
+            }
+        }
+
+        // Update local state
+        const profile = profiles[publishTargetSlug] || {};
+        profiles[publishTargetSlug] = {
             ...profile,
+            name: profileName,
+            description: description,
+            icon: publishSelectedIcon,
             supabase_id: data.profile?.id || profile.supabase_id,
             user_id: data.profile?.user_id || profile.user_id
         };
-        succeeded = true;
+
+        profileStats[publishTargetSlug] = {
+            ...(profileStats[publishTargetSlug] || {}),
+            published: true
+        };
+
+        // Update UI
+        renderYourProfiles();
+        closePublishModal();
+        showToast('Profile published successfully!');
+
+        // Refresh community profiles to show the newly published profile
+        loadCommunityProfiles();
+
+        // Update publish button in the grid
+        const publishBtn = document.querySelector(`.profile-publish-btn[data-profile="${publishTargetSlug}"]`);
+        if (publishBtn) {
+            publishBtn.classList.add('published');
+            publishBtn.textContent = 'Published';
+        }
+
     } catch (err) {
         console.error('Publish failed', err);
         showToast('Could not publish profile. Please try again.');
-    }
-
-    if (buttonEl) {
-        buttonEl.disabled = false;
-        if (succeeded) {
-            buttonEl.classList.add('published');
-            buttonEl.textContent = 'Published';
-        } else {
-            buttonEl.textContent = buttonEl.dataset.originalText || 'Publish';
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publish Profile';
         }
     }
 }
+
+// Initialize publish modal events
+function initPublishModal() {
+    const modal = document.getElementById('publishModal');
+    const closeBtn = document.getElementById('publishModalClose');
+    const cancelBtn = document.getElementById('publishCancelBtn');
+    const submitBtn = document.getElementById('publishSubmitBtn');
+    const iconGrid = document.getElementById('publishIconGrid');
+    const tagsContainer = document.getElementById('publishTagsContainer');
+    const customTagInput = document.getElementById('publishCustomTagInput');
+    const addTagBtn = document.getElementById('publishAddTagBtn');
+
+    // Close handlers
+    if (closeBtn) closeBtn.addEventListener('click', closePublishModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closePublishModal);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closePublishModal();
+        });
+    }
+
+    // Submit handler
+    if (submitBtn) submitBtn.addEventListener('click', submitPublish);
+
+    // Icon selection
+    if (iconGrid) {
+        iconGrid.addEventListener('click', (e) => {
+            const btn = e.target.closest('.publish-icon-option');
+            if (!btn) return;
+
+            publishSelectedIcon = btn.dataset.icon;
+            iconGrid.querySelectorAll('.publish-icon-option').forEach(b => {
+                b.classList.toggle('selected', b === btn);
+            });
+        });
+    }
+
+    // Tag selection
+    if (tagsContainer) {
+        tagsContainer.addEventListener('click', (e) => {
+            const chip = e.target.closest('.publish-tag-chip');
+            if (!chip) return;
+
+            const tagName = chip.dataset.tag;
+            if (publishSelectedTags.includes(tagName)) {
+                publishSelectedTags = publishSelectedTags.filter(t => t !== tagName);
+                chip.classList.remove('selected');
+            } else {
+                publishSelectedTags.push(tagName);
+                chip.classList.add('selected');
+            }
+        });
+    }
+
+    // Custom tag
+    const addCustomTag = () => {
+        if (!customTagInput) return;
+        const tagName = customTagInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        if (!tagName || publishSelectedTags.includes(tagName)) {
+            customTagInput.value = '';
+            return;
+        }
+
+        publishSelectedTags.push(tagName);
+        customTagInput.value = '';
+        renderPublishTags();
+    };
+
+    if (addTagBtn) addTagBtn.addEventListener('click', addCustomTag);
+    if (customTagInput) {
+        customTagInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomTag();
+            }
+        });
+    }
+}
+
+// Init publish modal
+initPublishModal();
+
 
 function closeProfileStatsModal() {
     if (profileStatsModal) ModalA11yManager.close(profileStatsModal);
@@ -1959,15 +2546,15 @@ if (confirmDeleteBtn) {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to delete profile (${response.status})`);
-                }
-                return response.json();
-            })
-            .then(() => {
-                deleteFromFrontend();
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to delete profile (${response.status})`);
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    deleteFromFrontend();
+                });
         } else {
             // Imported profile - only exists locally, delete immediately
             deleteFromFrontend();
@@ -3187,7 +3774,7 @@ async function loadConversation(conversationId) {
             const groupedMessages = [];
 
             while (i < messagesToLoad.length &&
-                   messagesToLoad[i].message_group_id === groupId) {
+                messagesToLoad[i].message_group_id === groupId) {
                 groupedMessages.push(messagesToLoad[i]);
                 i++;
             }

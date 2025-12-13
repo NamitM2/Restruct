@@ -1,6 +1,6 @@
 """
 FastAPI app: orchestrates routing + inference.
-Minimal endpoints, no error handling (errors will bubble up).
+Community profiles with ratings, tags, icons, and downloads.
 """
 
 from fastapi import FastAPI, HTTPException, Header
@@ -502,7 +502,8 @@ def root():
     return {
         "status": "online",
         "service": "Restruct Model Router",
-        "version": "0.1.0"
+        "version": "0.1.0",
+        "code_version": "2024-12-13-community-profiles"
     }
 
 
@@ -932,6 +933,18 @@ async def create_profile(body: dict, authorization: str = Header(None)):
     return {"profile": profile}
 
 
+@app.get("/profiles/community")
+async def get_community_profiles(
+    search: Optional[str] = None,
+    tags: Optional[str] = None,
+    sort: str = "popular"
+):
+    """List all published community profiles with filtering and sorting."""
+    tag_list = tags.split(",") if tags else None
+    community_profiles = profiles.get_community_profiles(supabase, search, tag_list, sort)
+    return {"profiles": community_profiles}
+
+
 @app.get("/profiles/{profile_slug}/stats")
 async def profile_stats(profile_slug: str, authorization: str = Header(None)):
     """Return per-user and global usage for a routing profile."""
@@ -953,7 +966,7 @@ async def update_profile(profile_slug: str, body: dict, authorization: str = Hea
     if profile_slug in DEFAULT_PROFILE_SLUGS:
         raise HTTPException(status_code=403, detail="Default profiles cannot be modified")
 
-    allowed_fields = {"published", "graph_state", "description", "name"}
+    allowed_fields = {"published", "graph_state", "description", "name", "icon"}
     updates = {k: v for k, v in body.items() if k in allowed_fields}
     if not updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")
@@ -1073,6 +1086,101 @@ JSON:"""
         "all_models": all_models[:5],
         "scores": normalized_scores
     }
+
+
+# ============================================
+# COMMUNITY PROFILE ENDPOINTS
+# ============================================
+
+@app.get("/tags")
+async def list_tags():
+    """List all available tags (predefined + custom)."""
+    tags = profiles.list_all_tags(supabase)
+    return {"tags": tags}
+
+
+@app.post("/tags")
+async def create_tag(body: dict, authorization: str = Header(None)):
+    """Create a custom tag."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    name = body.get("name")
+    if not name:
+        raise HTTPException(status_code=400, detail="Tag name is required")
+
+    category = body.get("category", "custom")
+    tag = profiles.create_tag(supabase, name, category, user.id)
+    return {"tag": tag}
+
+
+@app.post("/profiles/{profile_slug}/rate")
+async def rate_profile(profile_slug: str, body: dict, authorization: str = Header(None)):
+    """Rate a profile (1-5 stars)."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    rating = body.get("rating")
+    if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be an integer between 1 and 5")
+
+    profile = profiles.get_profile_by_slug(supabase, profile_slug)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    result = profiles.rate_profile(supabase, profile["id"], user.id, rating)
+    return {"success": True, **result}
+
+
+@app.get("/profiles/{profile_slug}/ratings")
+async def get_profile_ratings(profile_slug: str, authorization: str = Header(None)):
+    """Get rating breakdown for a profile."""
+    user = await get_user_from_token(authorization) if authorization else None
+    user_id = user.id if user else None
+
+    profile = profiles.get_profile_by_slug(supabase, profile_slug)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    breakdown = profiles.get_profile_ratings_breakdown(supabase, profile["id"], user_id)
+    return breakdown
+
+
+@app.post("/profiles/{profile_slug}/download")
+async def download_profile(profile_slug: str, authorization: str = Header(None)):
+    """Track profile download/import."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    profile = profiles.get_profile_by_slug(supabase, profile_slug)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    profiles.track_profile_download(supabase, profile["id"], user.id)
+
+    return {"success": True, "profile": profile}
+
+
+@app.get("/profiles/{profile_slug}/analytics")
+async def get_profile_analytics(profile_slug: str, authorization: str = Header(None)):
+    """Get analytics for a profile owner."""
+    user = await get_user_from_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    profile = profiles.get_profile_by_slug(supabase, profile_slug)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Only allow profile owner to view analytics
+    if profile["user_id"] != user.id:
+        raise HTTPException(status_code=403, detail="You can only view analytics for your own profiles")
+
+    analytics = profiles.get_profile_analytics(supabase, profile["id"], user.id)
+    return analytics
 
 
 async def resolve_model_choice(router_mode: str, model_override: Optional[str], conversation, profile_slug: Optional[str] = None, supabase_client: Optional[Client] = None):

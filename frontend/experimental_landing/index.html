@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restruct - Intelligent AI Routing</title>
+    <title>Restruct - Intelligent AI Routing Platform</title>
     <meta name="description"
-        content="Route every prompt to the optimal AI model. Reduce costs, improve performance, and simplify your AI infrastructure.">
+        content="Route every prompt to the optimal AI model. Advanced routing lab, cost analytics, community profiles, and local model support coming soon.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
@@ -20,6 +20,7 @@
     <!-- Animated Background -->
     <div class="bg-gradient"></div>
     <div class="bg-noise"></div>
+    <div class="particle-container" id="particles"></div>
 
     <div class="main-container">
         <!-- Header -->
@@ -29,10 +30,10 @@
                 <span>Restruct</span>
             </div>
             <nav>
-                <a href="#">Features</a>
-                <a href="#">Pricing</a>
-                <a href="#">Docs</a>
-                <a href="#" class="nav-cta">Get Started <i data-lucide="arrow-right" class="nav-cta-icon"></i></a>
+                <a href="#features">Features</a>
+                <a href="#routing-lab">Routing Lab</a>
+                <a href="#analytics">Analytics</a>
+                <a href="../index.html" class="nav-cta">Sign In <i data-lucide="arrow-right" class="nav-cta-icon"></i></a>
             </nav>
         </header>
 
@@ -88,13 +89,13 @@
                         <div class="badge-row">
                             <div class="badge">Now in Beta</div>
                             <div class="badge badge-secondary">v2.0</div>
+                            <div class="badge badge-accent">Local Models Soon</div>
                         </div>
                         <h1>The Right Model,<br><span class="gradient-text">Every Time.</span></h1>
-                        <p>Intelligent routing that automatically selects the optimal AI model for each query. Cut costs
-                            by 40%, reduce latency, and never compromise on quality.</p>
+                        <p>Every model in one place, community-powered profiles, and a powerful routing lab. Cut costs, boost performance, and take control of your AI infrastructure.</p>
                         <div class="cta-group">
-                            <a href="#" class="btn-primary">
-                                <span>Start Free</span>
+                            <a href="../index.html" class="btn-primary">
+                                <span>Sign In</span>
                                 <i data-lucide="arrow-right"></i>
                             </a>
                             <a href="#" class="btn-ghost">
@@ -102,23 +103,23 @@
                                 <span>Watch Demo</span>
                             </a>
                         </div>
-                        <div class="social-proof">
-                            <div class="avatars">
-                                <div class="avatar" style="background: linear-gradient(135deg, #a34734, #d8af7c);">
-                                </div>
-                                <div class="avatar" style="background: linear-gradient(135deg, #c98454, #f6efe7);">
-                                </div>
-                                <div class="avatar" style="background: linear-gradient(135deg, #8e3c2c, #c98454);">
-                                </div>
-                            </div>
-                            <span class="social-text">Join <strong>2,400+</strong> developers already routing</span>
-                        </div>
                     </div>
                 </div>
 
                 <div class="logo-overlap-wrapper">
-                    <div class="logo-glow"></div>
+                    <div class="logo-glow-animated"></div>
+                    <div class="logo-rings">
+                        <div class="ring ring-1"></div>
+                        <div class="ring ring-2"></div>
+                        <div class="ring ring-3"></div>
+                    </div>
                     <img src="../assets/logo.png" alt="R Logo" class="hero-logo">
+                    <div class="logo-sparkles">
+                        <div class="sparkle sparkle-1"></div>
+                        <div class="sparkle sparkle-2"></div>
+                        <div class="sparkle sparkle-3"></div>
+                        <div class="sparkle sparkle-4"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -133,21 +134,25 @@
             </div>
             <div class="stats-grid">
                 <div class="stat-card">
+                    <div class="stat-icon"><i data-lucide="trending-down"></i></div>
                     <div class="stat-number">40%</div>
                     <div class="stat-label">Cost Reduction</div>
                     <div class="stat-desc">Average savings on API costs</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon"><i data-lucide="zap"></i></div>
                     <div class="stat-number">15ms</div>
                     <div class="stat-label">Routing Latency</div>
                     <div class="stat-desc">Near-instant model selection</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon"><i data-lucide="activity"></i></div>
                     <div class="stat-number">99.9%</div>
                     <div class="stat-label">Uptime</div>
                     <div class="stat-desc">Enterprise-grade reliability</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
                     <div class="stat-number">9+</div>
                     <div class="stat-label">LLM Providers</div>
                     <div class="stat-desc">All major models supported</div>
@@ -155,56 +160,210 @@
             </div>
         </section>
 
-        <!-- Features Section -->
-        <section class="features-section">
+        <!-- Routing Lab Section -->
+        <section class="routing-lab-section" id="routing-lab">
             <div class="mesh-bg"></div>
             <div class="section-header">
-                <div class="section-badge">Features</div>
-                <h2>Built for <span class="gradient-text">Production</span></h2>
-                <p class="section-desc">Everything you need to deploy intelligent AI routing at scale.</p>
+                <div class="section-badge"><i data-lucide="flask-conical"></i> Routing Lab</div>
+                <h2>Build Your Perfect <span class="gradient-text">Routing Strategy</span></h2>
+                <p class="section-desc">Visual profile builder with drag-and-drop rules, real-time testing, and performance simulation.</p>
             </div>
 
-            <div class="features-grid">
-                <div class="feature-card feature-large">
-                    <div class="feature-icon-wrap">
-                        <i data-lucide="route"></i>
-                    </div>
-                    <h3>Smart Routing</h3>
-                    <p>Our ML-powered router analyzes each prompt and routes to the optimal model based on complexity,
-                        cost, and latency requirements.</p>
-                    <div class="feature-visual">
-                        <div class="routing-demo">
-                            <div class="route-node input-node">Prompt</div>
-                            <div class="route-lines">
-                                <div class="route-line line-1"></div>
-                                <div class="route-line line-2"></div>
-                                <div class="route-line line-3"></div>
+            <div class="lab-showcase">
+                <div class="lab-visual">
+                    <div class="lab-card">
+                        <div class="lab-header">
+                            <div class="lab-icon"><i data-lucide="settings"></i></div>
+                            <span>Profile Builder</span>
+                        </div>
+                        <div class="lab-rules">
+                            <div class="lab-rule">
+                                <div class="rule-condition">If prompt contains <code>code</code></div>
+                                <div class="rule-arrow">→</div>
+                                <div class="rule-action">Route to <strong>Claude Opus</strong></div>
                             </div>
-                            <div class="route-outputs">
-                                <div class="route-node output-node">GPT-4</div>
-                                <div class="route-node output-node active">Claude</div>
-                                <div class="route-node output-node">Gemini</div>
+                            <div class="lab-rule">
+                                <div class="rule-condition">If tokens &lt; 1000</div>
+                                <div class="rule-arrow">→</div>
+                                <div class="rule-action">Route to <strong>GPT-4o-mini</strong></div>
+                            </div>
+                            <div class="lab-rule">
+                                <div class="rule-condition">Default</div>
+                                <div class="rule-arrow">→</div>
+                                <div class="rule-action">Smart routing</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrap">
-                        <i data-lucide="sliders-horizontal"></i>
+                <div class="lab-features">
+                    <div class="lab-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="paintbrush-2"></i>
+                        </div>
+                        <h3>Visual Rule Builder</h3>
+                        <p>Drag-and-drop interface to create complex routing rules without writing code.</p>
                     </div>
-                    <h3>Custom Profiles</h3>
-                    <p>Create routing profiles tailored to your use case. Prioritize cost, quality, or speed — your
-                        rules, our execution.</p>
+                    <div class="lab-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="test-tube"></i>
+                        </div>
+                        <h3>Live Testing</h3>
+                        <p>Test your profiles in real-time with sample prompts before deploying to production.</p>
+                    </div>
+                    <div class="lab-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="git-fork"></i>
+                        </div>
+                        <h3>A/B Testing</h3>
+                        <p>Compare different routing strategies and optimize for cost, latency, or quality.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Profiles Section -->
+        <section class="community-section">
+            <div class="section-bg-accent"></div>
+            <div class="section-header">
+                <div class="section-badge"><i data-lucide="users"></i> Community</div>
+                <h2>Shared <span class="gradient-text">Routing Profiles</span></h2>
+                <p class="section-desc">Browse and use community-created profiles optimized for different use cases.</p>
+            </div>
+
+            <div class="community-grid">
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" style="background: linear-gradient(135deg, #8e3c2c, #c98454);">
+                            <i data-lucide="zap"></i>
+                        </div>
+                        <div class="profile-meta">
+                            <h3>Speed Optimized</h3>
+                            <div class="profile-stats">
+                                <span><i data-lucide="star"></i> 4.8</span>
+                                <span><i data-lucide="download"></i> 1.2k uses</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>Prioritizes low-latency models for real-time applications.</p>
+                    <div class="profile-tags">
+                        <span class="tag">Low Latency</span>
+                        <span class="tag">Real-time</span>
+                    </div>
                 </div>
 
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" style="background: linear-gradient(135deg, #a34734, #d8af7c);">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="profile-meta">
+                            <h3>Cost Saver</h3>
+                            <div class="profile-stats">
+                                <span><i data-lucide="star"></i> 4.9</span>
+                                <span><i data-lucide="download"></i> 3.5k uses</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>Maximizes savings by routing to cheaper models when possible.</p>
+                    <div class="profile-tags">
+                        <span class="tag">Budget</span>
+                        <span class="tag">Efficient</span>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" style="background: linear-gradient(135deg, #c98454, #f6efe7);">
+                            <i data-lucide="code-2"></i>
+                        </div>
+                        <div class="profile-meta">
+                            <h3>Code Assistant</h3>
+                            <div class="profile-stats">
+                                <span><i data-lucide="star"></i> 5.0</span>
+                                <span><i data-lucide="download"></i> 2.8k uses</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>Optimized for code generation and debugging tasks.</p>
+                    <div class="profile-tags">
+                        <span class="tag">Code</span>
+                        <span class="tag">Claude</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section class="analytics-section" id="analytics">
+            <div class="mesh-bg"></div>
+            <div class="section-header">
+                <div class="section-badge"><i data-lucide="bar-chart-3"></i> Analytics</div>
+                <h2>Track Every <span class="gradient-text">Dollar & Token</span></h2>
+                <p class="section-desc">Real-time cost analytics, usage trends, and model performance insights.</p>
+            </div>
+
+            <div class="analytics-showcase">
+                <div class="analytics-visual">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Cost Distribution by Family</h3>
+                            <span class="chart-value">$142.50 <span class="chart-trend">↓ 12%</span></span>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="chart-bar" style="height: 60%; background: #8e3c2c;"></div>
+                            <div class="chart-bar" style="height: 85%; background: #b56747;"></div>
+                            <div class="chart-bar" style="height: 40%; background: #c98454;"></div>
+                        </div>
+                        <div class="chart-legend">
+                            <span><span class="dot" style="background: #8e3c2c;"></span> OpenAI</span>
+                            <span><span class="dot" style="background: #b56747;"></span> Anthropic</span>
+                            <span><span class="dot" style="background: #c98454;"></span> Google</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-features">
+                    <div class="analytics-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="pie-chart"></i>
+                        </div>
+                        <h3>Cost Breakdown</h3>
+                        <p>Track spending by provider, model, and profile with interactive visualizations.</p>
+                    </div>
+                    <div class="analytics-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <h3>Usage Trends</h3>
+                        <p>Monitor token consumption and request patterns over time.</p>
+                    </div>
+                    <div class="analytics-feature">
+                        <div class="feature-icon-wrap">
+                            <i data-lucide="target"></i>
+                        </div>
+                        <h3>Performance Metrics</h3>
+                        <p>Compare latency, quality, and cost efficiency across all models.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features-section" id="features">
+            <div class="section-header">
+                <div class="section-badge">Platform</div>
+                <h2>Everything You Need to <span class="gradient-text">Scale</span></h2>
+                <p class="section-desc">Built for developers, optimized for production.</p>
+            </div>
+
+            <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon-wrap">
-                        <i data-lucide="bar-chart-3"></i>
+                        <i data-lucide="route"></i>
                     </div>
-                    <h3>Real-time Analytics</h3>
-                    <p>Monitor costs, latency, and model performance across all your requests with granular dashboards.
-                    </p>
+                    <h3>Smart Routing</h3>
+                    <p>ML-powered router analyzes each prompt and selects the optimal model based on complexity, cost, and latency.</p>
                 </div>
 
                 <div class="feature-card">
@@ -222,6 +381,31 @@
                     <h3>Simple Integration</h3>
                     <p>Drop-in replacement for OpenAI SDK. Switch in minutes, not days.</p>
                 </div>
+
+                <div class="feature-card feature-coming-soon">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="feature-icon-wrap">
+                        <i data-lucide="hard-drive"></i>
+                    </div>
+                    <h3>Local Model Support</h3>
+                    <p>Run open-source models locally while routing cloud requests. Full control, zero lock-in.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i data-lucide="gauge"></i>
+                    </div>
+                    <h3>Rate Limiting</h3>
+                    <p>Profile-based rate limits and spend controls to prevent runaway costs.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i data-lucide="wallet"></i>
+                    </div>
+                    <h3>Prepaid Wallet</h3>
+                    <p>Simple pay-as-you-go pricing with real-time balance tracking.</p>
+                </div>
             </div>
         </section>
 
@@ -230,10 +414,10 @@
             <div class="cta-card">
                 <div class="cta-glow"></div>
                 <h2>Ready to optimize your AI spend?</h2>
-                <p>Start routing in under 5 minutes. No credit card required.</p>
+                <p>Start routing in under 5 minutes. Access the routing lab, analytics, and community profiles.</p>
                 <div class="cta-buttons">
-                    <a href="#" class="btn-primary btn-large">
-                        <span>Get Started Free</span>
+                    <a href="../index.html" class="btn-primary btn-large">
+                        <span>Sign In</span>
                         <i data-lucide="arrow-right"></i>
                     </a>
                     <a href="#" class="btn-secondary">Talk to Sales</a>
@@ -254,9 +438,10 @@
                 <div class="footer-links">
                     <div class="footer-col">
                         <h4>Product</h4>
-                        <a href="#">Features</a>
-                        <a href="#">Pricing</a>
-                        <a href="#">Changelog</a>
+                        <a href="#features">Features</a>
+                        <a href="#routing-lab">Routing Lab</a>
+                        <a href="#analytics">Analytics</a>
+                        <a href="#">Community</a>
                     </div>
                     <div class="footer-col">
                         <h4>Developers</h4>
@@ -285,6 +470,24 @@
     <script>
         lucide.createIcons();
 
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
         // Intersection Observer for scroll animations
         const observerOptions = {
             threshold: 0.1,
@@ -299,10 +502,32 @@
             });
         }, observerOptions);
 
-        document.querySelectorAll('.stat-card, .feature-card, .section-header').forEach(el => {
+        document.querySelectorAll('.stat-card, .feature-card, .section-header, .lab-showcase, .community-grid, .analytics-showcase, .profile-card, .lab-feature, .analytics-feature').forEach(el => {
             el.classList.add('animate-on-scroll');
             observer.observe(el);
         });
+
+        // Logo tilt on mouse move
+        const logoWrapper = document.querySelector('.logo-overlap-wrapper');
+        const heroLogo = document.querySelector('.hero-logo');
+
+        if (logoWrapper && heroLogo) {
+            logoWrapper.addEventListener('mousemove', (e) => {
+                const rect = logoWrapper.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 10;
+                const rotateY = (centerX - x) / 10;
+
+                heroLogo.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+            });
+
+            logoWrapper.addEventListener('mouseleave', () => {
+                heroLogo.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+            });
+        }
     </script>
 </body>
 
