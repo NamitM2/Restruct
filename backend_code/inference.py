@@ -231,10 +231,9 @@ async def call_google_stream(model: Dict[str, Any], conversation):
     def stream_in_thread():
         try:
             client = genai.Client(api_key=api_key)
-            stream = client.models.generate_content(
+            stream = client.models.generate_content_stream(
                 model=model_name,
-                contents=_conversation_to_google_history(conversation),
-                config={"stream": True}
+                contents=_conversation_to_google_history(conversation)
             )
 
             input_tokens = 0

@@ -6,6 +6,7 @@
 const STATS_API_BASE = 'http://localhost:8000/v1';
 let dashboardChart = null;
 let modelUsageChart = null;
+let tokenUsageChart = null;
 
 // Load real dashboard metrics
 async function loadRealDashboardMetrics() {
@@ -231,6 +232,9 @@ async function loadRealModelBreakdown(selectedProfile = 'all') {
         // Create model usage chart
         createModelUsageChart(breakdown);
 
+        // Create token usage chart
+        createTokenUsageChart(breakdown);
+
         console.log('Model breakdown loaded successfully:', breakdown.length, 'models');
 
     } catch (error) {
@@ -262,10 +266,10 @@ function populateTrackingTable(breakdown) {
         return `
             <div class="tracking-model-card">
                 <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
-                    <div style="width: 48px; height: 48px; min-width: 48px; display: flex; align-items: center; justify-content: center;">
-                        <img src="${logoInfo.logo}" alt="${model.provider}" style="width: 48px; height: 48px; object-fit: contain; transform: scale(${logoInfo.scale});">
+                    <div style="width: 120px; height: 60px; min-width: 120px; display: flex; align-items: center; justify-content: center; overflow: visible;">
+                        <img src="${logoInfo.logo}" alt="${model.provider}" style="height: 40px; width: 120px; object-fit: contain; display: block; transform: scale(${logoInfo.scale});">
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; text-align: right;">
                         <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${model.model}</div>
                         <div style="font-size: 12px; color: var(--text-muted); text-transform: capitalize;">${model.provider}</div>
                     </div>
@@ -336,6 +340,13 @@ function createModelUsageChart(breakdown) {
     };
     const colors = labels.map(label => familyColors[label] || '#7C4D3A');
 
+    // Provider logos
+    const familyLogos = {
+        'Openai': { logo: 'assets/chatgpt-logo.png', scale: '1.0' },
+        'Anthropic': { logo: 'assets/claude-logo.png', scale: '2.88' },
+        'Google': { logo: 'assets/gemini-logo.png', scale: '4.0' }
+    };
+
     modelUsageChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -353,16 +364,13 @@ function createModelUsageChart(breakdown) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
+            layout: {
+                padding: 0
+            },
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        padding: 15,
-                        font: { size: 13, weight: '500' },
-                        color: '#2b1d14',
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                    display: false
                 },
                 title: {
                     display: false
@@ -386,16 +394,216 @@ function createModelUsageChart(breakdown) {
                             return '\n' + lines.join('\n');
                         }
                     },
-                    backgroundColor: 'rgba(43, 29, 20, 0.95)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false
+                    backgroundColor: 'rgba(43, 29, 20, 0.96)',
+                    titleColor: '#fffef9',
+                    bodyColor: 'rgba(255, 254, 249, 0.9)',
+                    padding: 16,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '700',
+                        family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 13,
+                        weight: '500',
+                        family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                        lineHeight: 1.6
+                    },
+                    titleMarginBottom: 12,
+                    bodySpacing: 6,
+                    boxPadding: 6,
+                    borderColor: 'rgba(142, 60, 44, 0.3)',
+                    borderWidth: 1
                 }
             }
         }
     });
+
+    // Create custom legend with logos
+    const legendContainer = document.getElementById('chartLegend');
+    if (legendContainer) {
+        legendContainer.innerHTML = labels.map((label, index) => {
+            const logoInfo = familyLogos[label] || { logo: 'assets/default-logo.png', scale: '1.0' };
+            const color = colors[index];
+            const cost = costs[index];
+            const total = costs.reduce((a, b) => a + b, 0);
+            const percentage = ((cost / total) * 100).toFixed(1);
+
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.2s ease;"
+                     onmouseover="this.style.background='var(--bg-secondary)'"
+                     onmouseout="this.style.background='transparent'">
+                    <div style="width: 16px; height: 16px; min-width: 16px; border-radius: 50%; background: ${color};"></div>
+                    <div style="width: 60px; height: 30px; min-width: 60px; display: flex; align-items: center; justify-content: center;">
+                        <img src="${logoInfo.logo}" alt="${label}" style="height: 20px; width: 60px; object-fit: contain; transform: scale(${logoInfo.scale});">
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${label}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">${percentage}%</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+// Create token usage pie chart (grouped by provider family)
+function createTokenUsageChart(breakdown) {
+    const ctx = document.getElementById('tokenUsageChart');
+    if (!ctx) return;
+
+    if (breakdown.length === 0) {
+        console.log('No model data for token chart');
+        return;
+    }
+
+    // Destroy existing chart
+    if (tokenUsageChart) {
+        tokenUsageChart.destroy();
+    }
+
+    // Group by provider family
+    const familyTokens = {};
+    const familyModels = {}; // Store models per family for tooltip
+
+    breakdown.forEach(model => {
+        const family = model.provider.charAt(0).toUpperCase() + model.provider.slice(1);
+        const totalTokens = model.input_tokens + model.output_tokens;
+        if (!familyTokens[family]) {
+            familyTokens[family] = 0;
+            familyModels[family] = [];
+        }
+        familyTokens[family] += totalTokens;
+        familyModels[family].push({
+            model: model.model,
+            input_tokens: model.input_tokens,
+            output_tokens: model.output_tokens,
+            total_tokens: totalTokens
+        });
+    });
+
+    const labels = Object.keys(familyTokens);
+    const tokens = Object.values(familyTokens);
+
+    // Provider family colors (same as cost chart)
+    const familyColors = {
+        'Openai': '#1AA8CC',
+        'Anthropic': '#D4356F',
+        'Google': '#E6A930'
+    };
+    const colors = labels.map(label => familyColors[label] || '#7C4D3A');
+
+    // Provider logos
+    const familyLogos = {
+        'Openai': { logo: 'assets/chatgpt-logo.png', scale: '1.0' },
+        'Anthropic': { logo: 'assets/claude-logo.png', scale: '2.88' },
+        'Google': { logo: 'assets/gemini-logo.png', scale: '4.0' }
+    };
+
+    tokenUsageChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Tokens by Provider',
+                data: tokens,
+                backgroundColor: colors,
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverBorderWidth: 4,
+                hoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            layout: {
+                padding: 0
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label + ' Models';
+                        },
+                        label: function(context) {
+                            const family = context.label;
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `Total: ${value.toLocaleString()} tokens (${percentage}%)`;
+                        },
+                        afterLabel: function(context) {
+                            const family = context.label;
+                            const models = familyModels[family] || [];
+                            const lines = models.map(m =>
+                                `  ${m.model}:\n    Input: ${m.input_tokens.toLocaleString()}\n    Output: ${m.output_tokens.toLocaleString()}`
+                            );
+                            return '\n' + lines.join('\n');
+                        }
+                    },
+                    backgroundColor: 'rgba(43, 29, 20, 0.96)',
+                    titleColor: '#fffef9',
+                    bodyColor: 'rgba(255, 254, 249, 0.9)',
+                    padding: 16,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '700',
+                        family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 13,
+                        weight: '500',
+                        family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                        lineHeight: 1.6
+                    },
+                    titleMarginBottom: 12,
+                    bodySpacing: 6,
+                    boxPadding: 6,
+                    borderColor: 'rgba(142, 60, 44, 0.3)',
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+
+    // Create custom legend with logos
+    const legendContainer = document.getElementById('tokenChartLegend');
+    if (legendContainer) {
+        legendContainer.innerHTML = labels.map((label, index) => {
+            const logoInfo = familyLogos[label] || { logo: 'assets/default-logo.png', scale: '1.0' };
+            const color = colors[index];
+            const tokenCount = tokens[index];
+            const total = tokens.reduce((a, b) => a + b, 0);
+            const percentage = ((tokenCount / total) * 100).toFixed(1);
+
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.2s ease;"
+                     onmouseover="this.style.background='var(--bg-secondary)'"
+                     onmouseout="this.style.background='transparent'">
+                    <div style="width: 16px; height: 16px; min-width: 16px; border-radius: 50%; background: ${color};"></div>
+                    <div style="width: 60px; height: 30px; min-width: 60px; display: flex; align-items: center; justify-content: center;">
+                        <img src="${logoInfo.logo}" alt="${label}" style="height: 20px; width: 60px; object-fit: contain; transform: scale(${logoInfo.scale});">
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${label}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">${percentage}%</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 // Load profile breakdown

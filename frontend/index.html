@@ -612,11 +612,28 @@
                                 </div>
                             </div>
 
-                            <!-- Model Usage Chart -->
-                            <div style="background: var(--bg-elevated); border-radius: 16px; padding: 32px; margin-bottom: 32px; border: 1px solid var(--border-subtle);">
-                                <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; text-align: center;">Cost Distribution by Provider</h3>
-                                <div style="height: 350px;">
-                                    <canvas id="modelUsageChart"></canvas>
+                            <!-- Charts Section -->
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px;">
+                                <!-- Cost Distribution Chart -->
+                                <div style="background: var(--bg-elevated); border-radius: 16px; padding: 32px; border: 1px solid var(--border-subtle);">
+                                    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; text-align: center;">Cost Distribution by Family</h3>
+                                    <div style="height: 350px; display: flex; align-items: center; gap: 20px;">
+                                        <div style="flex: 1; height: 100%; position: relative;">
+                                            <canvas id="modelUsageChart"></canvas>
+                                        </div>
+                                        <div id="chartLegend" style="display: flex; flex-direction: column; gap: 16px; flex-shrink: 0;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Token Usage Chart -->
+                                <div style="background: var(--bg-elevated); border-radius: 16px; padding: 32px; border: 1px solid var(--border-subtle);">
+                                    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; text-align: center;">Usage by Family</h3>
+                                    <div style="height: 350px; display: flex; align-items: center; gap: 20px;">
+                                        <div style="flex: 1; height: 100%; position: relative;">
+                                            <canvas id="tokenUsageChart"></canvas>
+                                        </div>
+                                        <div id="tokenChartLegend" style="display: flex; flex-direction: column; gap: 16px; flex-shrink: 0;"></div>
+                                    </div>
                                 </div>
                             </div>
 
