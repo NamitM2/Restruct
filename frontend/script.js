@@ -2272,20 +2272,17 @@ async function submitPublish() {
             published: true
         };
 
-        // Update UI
+        // Remove the existing card so it gets rebuilt with the new published state
+        const existingCard = document.querySelector(`.profile-card[data-profile="${publishTargetSlug}"]`);
+        if (existingCard) existingCard.remove();
+
+        // Update UI - will rebuild the card with "Published" label
         renderYourProfiles();
         closePublishModal();
         showToast('Profile published successfully!');
 
         // Refresh community profiles to show the newly published profile
         loadCommunityProfiles();
-
-        // Update publish button in the grid
-        const publishBtn = document.querySelector(`.profile-publish-btn[data-profile="${publishTargetSlug}"]`);
-        if (publishBtn) {
-            publishBtn.classList.add('published');
-            publishBtn.textContent = 'Published';
-        }
 
     } catch (err) {
         console.error('Publish failed', err);

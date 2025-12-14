@@ -33,7 +33,8 @@
                 <a href="#features">Features</a>
                 <a href="#routing-lab">Routing Lab</a>
                 <a href="#analytics">Analytics</a>
-                <a href="../index.html" class="nav-cta">Sign In <i data-lucide="arrow-right" class="nav-cta-icon"></i></a>
+                <a href="../index.html" class="nav-cta">Sign In <i data-lucide="arrow-right"
+                        class="nav-cta-icon"></i></a>
             </nav>
         </header>
 
@@ -91,8 +92,9 @@
                             <div class="badge badge-secondary">v2.0</div>
                             <div class="badge badge-accent">Local Models Soon</div>
                         </div>
-                        <h1>The Right Model,<br><span class="gradient-text">Every Time.</span></h1>
-                        <p>Every model in one place, community-powered profiles, and a powerful routing lab. Cut costs, boost performance, and take control of your AI infrastructure.</p>
+                        <h1>The Right Model,<br><span class="gradient-text typing-effect">Every Time.</span></h1>
+                        <p class="hero-subtitle">Every model in one place, community-powered profiles, and a powerful
+                            routing lab. Cut costs, boost performance, and take control of your AI infrastructure.</p>
                         <div class="cta-group">
                             <a href="../index.html" class="btn-primary">
                                 <span>Sign In</span>
@@ -160,37 +162,154 @@
             </div>
         </section>
 
+        <!-- How It Works Section -->
+        <section class="how-it-works-section" id="how-it-works">
+            <div class="section-header">
+                <div class="section-badge"><i data-lucide="workflow"></i> How It Works</div>
+                <h2>From Prompt to <span class="gradient-text">Perfect Response</span></h2>
+                <p class="section-desc">Three simple steps to optimize every AI interaction.</p>
+            </div>
+
+            <div class="steps-flow">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-icon"><i data-lucide="send"></i></div>
+                    <h3>Send Your Prompt</h3>
+                    <p>Use our OpenAI-compatible API or web interface. No code changes needed.</p>
+                </div>
+                <div class="step-connector">
+                    <svg viewBox="0 0 80 24" fill="none">
+                        <path d="M0 12H70M70 12L60 4M70 12L60 20" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-icon"><i data-lucide="brain"></i></div>
+                    <h3>Smart Analysis</h3>
+                    <p>Our ML router analyzes complexity, cost constraints, and your profile rules.</p>
+                </div>
+                <div class="step-connector">
+                    <svg viewBox="0 0 80 24" fill="none">
+                        <path d="M0 12H70M70 12L60 4M70 12L60 20" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-icon"><i data-lucide="sparkles"></i></div>
+                    <h3>Optimal Response</h3>
+                    <p>The best model handles your request. You get quality, speed, and savings.</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Routing Lab Section -->
         <section class="routing-lab-section" id="routing-lab">
             <div class="mesh-bg"></div>
             <div class="section-header">
                 <div class="section-badge"><i data-lucide="flask-conical"></i> Routing Lab</div>
                 <h2>Build Your Perfect <span class="gradient-text">Routing Strategy</span></h2>
-                <p class="section-desc">Visual profile builder with drag-and-drop rules, real-time testing, and performance simulation.</p>
+                <p class="section-desc">Visual profile builder with drag-and-drop rules, real-time testing, and
+                    performance simulation.</p>
             </div>
 
             <div class="lab-showcase">
                 <div class="lab-visual">
-                    <div class="lab-card">
-                        <div class="lab-header">
-                            <div class="lab-icon"><i data-lucide="settings"></i></div>
-                            <span>Profile Builder</span>
+                    <!-- Interactive Routing Demo -->
+                    <div class="routing-demo" id="routingDemo">
+                        <!-- Prompt Input Area -->
+                        <div class="demo-input-area">
+                            <div class="demo-label">
+                                <i data-lucide="message-square"></i>
+                                <span>Sample Prompt</span>
+                            </div>
+                            <div class="demo-prompt" id="demoPrompt">
+                                <span class="typing-cursor"></span>
+                            </div>
                         </div>
-                        <div class="lab-rules">
-                            <div class="lab-rule">
-                                <div class="rule-condition">If prompt contains <code>code</code></div>
-                                <div class="rule-arrow">→</div>
-                                <div class="rule-action">Route to <strong>Claude Opus</strong></div>
+
+                        <!-- Analysis Panel -->
+                        <div class="demo-analysis" id="demoAnalysis">
+                            <div class="analysis-header">
+                                <i data-lucide="cpu"></i>
+                                <span>Complexity Analysis</span>
+                                <div class="analysis-status" id="analysisStatus">Waiting...</div>
                             </div>
-                            <div class="lab-rule">
-                                <div class="rule-condition">If tokens &lt; 1000</div>
-                                <div class="rule-arrow">→</div>
-                                <div class="rule-action">Route to <strong>GPT-4o-mini</strong></div>
+                            <div class="analysis-scores" id="analysisScores">
+                                <div class="score-row">
+                                    <span class="score-label">Reasoning</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" data-score="reasoning"></div>
+                                    </div>
+                                    <span class="score-value" data-value="reasoning">0</span>
+                                </div>
+                                <div class="score-row">
+                                    <span class="score-label">Creativity</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" data-score="creativity"></div>
+                                    </div>
+                                    <span class="score-value" data-value="creativity">0</span>
+                                </div>
+                                <div class="score-row">
+                                    <span class="score-label">Factuality</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" data-score="factuality"></div>
+                                    </div>
+                                    <span class="score-value" data-value="factuality">0</span>
+                                </div>
+                                <div class="score-row">
+                                    <span class="score-label">Complexity</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" data-score="complexity"></div>
+                                    </div>
+                                    <span class="score-value" data-value="complexity">0</span>
+                                </div>
                             </div>
-                            <div class="lab-rule">
-                                <div class="rule-condition">Default</div>
-                                <div class="rule-arrow">→</div>
-                                <div class="rule-action">Smart routing</div>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="demo-models" id="demoModels">
+                            <div class="models-header">
+                                <i data-lucide="layers"></i>
+                                <span>Model Selection</span>
+                            </div>
+                            <div class="models-grid">
+                                <div class="model-option" data-model="gpt-4o">
+                                    <img src="../assets/chatgpt-logo.png" alt="GPT-4o">
+                                    <span>GPT-4o</span>
+                                    <div class="model-score">--</div>
+                                </div>
+                                <div class="model-option" data-model="claude-sonnet">
+                                    <img src="../assets/claude-logo.png" alt="Claude">
+                                    <span>Claude 3.5</span>
+                                    <div class="model-score">--</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-pro">
+                                    <img src="../assets/gemini-logo.png" alt="Gemini">
+                                    <span>Gemini Pro</span>
+                                    <div class="model-score">--</div>
+                                </div>
+                                <div class="model-option" data-model="gpt-4o-mini">
+                                    <img src="../assets/chatgpt-logo.png" alt="GPT-4o Mini">
+                                    <span>GPT-4o Mini</span>
+                                    <div class="model-score">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Result Banner -->
+                        <div class="demo-result" id="demoResult">
+                            <div class="result-icon">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="result-text">
+                                <span class="result-label">Routed to</span>
+                                <span class="result-model" id="resultModel">--</span>
+                            </div>
+                            <div class="result-stats">
+                                <span><i data-lucide="clock"></i> <span id="resultLatency">--</span></span>
+                                <span><i data-lucide="dollar-sign"></i> <span id="resultCost">--</span></span>
                             </div>
                         </div>
                     </div>
@@ -363,7 +482,8 @@
                         <i data-lucide="route"></i>
                     </div>
                     <h3>Smart Routing</h3>
-                    <p>ML-powered router analyzes each prompt and selects the optimal model based on complexity, cost, and latency.</p>
+                    <p>ML-powered router analyzes each prompt and selects the optimal model based on complexity, cost,
+                        and latency.</p>
                 </div>
 
                 <div class="feature-card">
@@ -405,6 +525,103 @@
                     </div>
                     <h3>Prepaid Wallet</h3>
                     <p>Simple pay-as-you-go pricing with real-time balance tracking.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Teaser Section -->
+        <section class="pricing-section" id="pricing">
+            <div class="section-header">
+                <div class="section-badge"><i data-lucide="credit-card"></i> Pricing</div>
+                <h2>Simple, <span class="gradient-text">Transparent</span> Pricing</h2>
+                <p class="section-desc">Pay only for what you use. No hidden fees, no surprises.</p>
+            </div>
+
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Pay As You Go</h3>
+                        <div class="pricing-value">
+                            <span class="pricing-currency">$</span>
+                            <span class="pricing-amount">0</span>
+                            <span class="pricing-period">/month</span>
+                        </div>
+                        <p class="pricing-subtitle">Plus usage costs</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i data-lucide="check"></i> Prepaid wallet system</li>
+                        <li><i data-lucide="check"></i> All 9+ LLM providers</li>
+                        <li><i data-lucide="check"></i> Routing Lab access</li>
+                        <li><i data-lucide="check"></i> Community profiles</li>
+                        <li><i data-lucide="check"></i> Real-time analytics</li>
+                    </ul>
+                    <a href="../index.html" class="btn-primary" style="width: 100%;">
+                        <span>Start Free</span>
+                        <i data-lucide="arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="pricing-card pricing-featured">
+                    <div class="pricing-badge">Coming Soon</div>
+                    <div class="pricing-header">
+                        <h3>Enterprise</h3>
+                        <div class="pricing-value">
+                            <span class="pricing-custom">Custom</span>
+                        </div>
+                        <p class="pricing-subtitle">For teams & organizations</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i data-lucide="check"></i> Everything in Free</li>
+                        <li><i data-lucide="check"></i> Volume discounts</li>
+                        <li><i data-lucide="check"></i> Priority support</li>
+                        <li><i data-lucide="check"></i> Custom integrations</li>
+                        <li><i data-lucide="check"></i> SLA guarantees</li>
+                    </ul>
+                    <a href="#" class="btn-secondary" style="width: 100%;">Contact Sales</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="testimonials-section">
+            <div class="section-header">
+                <div class="section-badge"><i data-lucide="heart"></i> Loved By Developers</div>
+                <h2>What Builders <span class="gradient-text">Are Saying</span></h2>
+            </div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Cut our API costs by 35% without sacrificing quality. The routing lab
+                        is a game-changer."</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">JD</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">James D.</span>
+                            <span class="testimonial-role">Lead Engineer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Finally, one API for all models. The community profiles saved us weeks
+                        of optimization."</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">SM</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Sarah M.</span>
+                            <span class="testimonial-role">Startup Founder</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The analytics alone are worth it. We can finally see exactly where our
+                        AI budget goes."</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">AK</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Alex K.</span>
+                            <span class="testimonial-role">Product Manager</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -458,7 +675,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <span>© 2024 Restruct. All rights reserved.</span>
+                <span>© <span id="currentYear">2024</span> Restruct. All rights reserved.</span>
                 <div class="footer-legal">
                     <a href="#">Privacy</a>
                     <a href="#">Terms</a>
@@ -527,6 +744,217 @@
             logoWrapper.addEventListener('mouseleave', () => {
                 heroLogo.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
             });
+        }
+
+        // Dynamic year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Typing effect for hero text
+        const typingText = document.querySelector('.typing-effect');
+        if (typingText) {
+            const words = ['Every Time.', 'Always.', 'Guaranteed.', 'Automatically.'];
+            let wordIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            const baseWord = 'Every Time.';
+
+            function typeEffect() {
+                const currentWord = words[wordIndex];
+
+                if (isDeleting) {
+                    typingText.textContent = currentWord.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    typingText.textContent = currentWord.substring(0, charIndex + 1);
+                    charIndex++;
+                }
+
+                let typingSpeed = isDeleting ? 50 : 100;
+
+                if (!isDeleting && charIndex === currentWord.length) {
+                    typingSpeed = 2000; // Pause at end
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    wordIndex = (wordIndex + 1) % words.length;
+                    typingSpeed = 500;
+                }
+
+                setTimeout(typeEffect, typingSpeed);
+            }
+
+            // Start after 2 seconds
+            setTimeout(typeEffect, 2000);
+        }
+
+        // ============================================
+        // ROUTING DEMO ANIMATION
+        // ============================================
+
+        const routingDemoData = [
+            {
+                prompt: "Write a Python function to calculate fibonacci sequence recursively with memoization",
+                scores: { reasoning: 8, creativity: 3, factuality: 7, complexity: 7 },
+                winner: "claude-sonnet",
+                winnerName: "Claude 3.5 Sonnet",
+                latency: "12ms",
+                cost: "$0.0003",
+                modelScores: { "gpt-4o": 82, "claude-sonnet": 94, "gemini-pro": 78, "gpt-4o-mini": 65 }
+            },
+            {
+                prompt: "What is the capital of France and when was the Eiffel Tower built?",
+                scores: { reasoning: 2, creativity: 1, factuality: 9, complexity: 2 },
+                winner: "gpt-4o-mini",
+                winnerName: "GPT-4o Mini",
+                latency: "8ms",
+                cost: "$0.0001",
+                modelScores: { "gpt-4o": 45, "claude-sonnet": 48, "gemini-pro": 52, "gpt-4o-mini": 95 }
+            },
+            {
+                prompt: "Write a creative short story about a robot learning to paint",
+                scores: { reasoning: 4, creativity: 9, factuality: 2, complexity: 5 },
+                winner: "gpt-4o",
+                winnerName: "GPT-4o",
+                latency: "15ms",
+                cost: "$0.0008",
+                modelScores: { "gpt-4o": 91, "claude-sonnet": 87, "gemini-pro": 72, "gpt-4o-mini": 58 }
+            },
+            {
+                prompt: "Explain quantum entanglement and its implications for computing",
+                scores: { reasoning: 9, creativity: 5, factuality: 8, complexity: 9 },
+                winner: "gemini-pro",
+                winnerName: "Gemini Pro",
+                latency: "14ms",
+                cost: "$0.0005",
+                modelScores: { "gpt-4o": 85, "claude-sonnet": 88, "gemini-pro": 92, "gpt-4o-mini": 42 }
+            }
+        ];
+
+        let currentDemoIndex = 0;
+
+        function runRoutingDemo() {
+            const data = routingDemoData[currentDemoIndex];
+            const promptEl = document.getElementById('demoPrompt');
+            const statusEl = document.getElementById('analysisStatus');
+            const resultEl = document.getElementById('demoResult');
+
+            // Reset state
+            promptEl.innerHTML = '<span class="typing-cursor"></span>';
+            statusEl.textContent = 'Waiting...';
+            statusEl.className = 'analysis-status';
+            resultEl.classList.remove('active');
+
+            document.querySelectorAll('.score-fill').forEach(el => {
+                el.style.width = '0%';
+            });
+            document.querySelectorAll('.score-value').forEach(el => {
+                el.textContent = '0';
+            });
+            document.querySelectorAll('.model-option').forEach(el => {
+                el.classList.remove('selected', 'calculating');
+                el.querySelector('.model-score').textContent = '--';
+            });
+
+            // Step 1: Type the prompt
+            let charIndex = 0;
+            const typeInterval = setInterval(() => {
+                if (charIndex <= data.prompt.length) {
+                    promptEl.innerHTML = data.prompt.substring(0, charIndex) + '<span class="typing-cursor"></span>';
+                    charIndex++;
+                } else {
+                    clearInterval(typeInterval);
+                    setTimeout(() => analyzePrompt(data), 500);
+                }
+            }, 30);
+        }
+
+        function analyzePrompt(data) {
+            const statusEl = document.getElementById('analysisStatus');
+            statusEl.textContent = 'Analyzing...';
+            statusEl.className = 'analysis-status analyzing';
+
+            const scoreKeys = ['reasoning', 'creativity', 'factuality', 'complexity'];
+            scoreKeys.forEach((key, index) => {
+                setTimeout(() => {
+                    const score = data.scores[key];
+                    const fillEl = document.querySelector(`[data-score="${key}"]`);
+                    const valueEl = document.querySelector(`[data-value="${key}"]`);
+                    if (fillEl) fillEl.style.width = (score * 10) + '%';
+                    if (valueEl) valueEl.textContent = score;
+                }, index * 200);
+            });
+
+            setTimeout(() => selectModel(data), 1200);
+        }
+
+        function selectModel(data) {
+            const statusEl = document.getElementById('analysisStatus');
+            statusEl.textContent = 'Routing...';
+            statusEl.className = 'analysis-status routing';
+
+            const models = document.querySelectorAll('.model-option');
+            models.forEach((model, index) => {
+                model.classList.add('calculating');
+                setTimeout(() => {
+                    const modelId = model.dataset.model;
+                    const score = data.modelScores[modelId];
+                    model.querySelector('.model-score').textContent = score + '%';
+                    model.classList.remove('calculating');
+
+                    if (modelId === data.winner) {
+                        setTimeout(() => {
+                            model.classList.add('selected');
+                            showResult(data);
+                        }, 300);
+                    }
+                }, index * 150 + 300);
+            });
+        }
+
+        function showResult(data) {
+            const statusEl = document.getElementById('analysisStatus');
+            const resultEl = document.getElementById('demoResult');
+
+            statusEl.textContent = 'Complete';
+            statusEl.className = 'analysis-status complete';
+
+            document.getElementById('resultModel').textContent = data.winnerName;
+            document.getElementById('resultLatency').textContent = data.latency;
+            document.getElementById('resultCost').textContent = data.cost;
+
+            resultEl.classList.add('active');
+            lucide.createIcons();
+
+            setTimeout(() => {
+                currentDemoIndex = (currentDemoIndex + 1) % routingDemoData.length;
+                runRoutingDemo();
+            }, 4000);
+        }
+
+        // Start demo when section is visible
+        const demoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const demo = document.getElementById('routingDemo');
+                    if (demo && !demo.classList.contains('demo-started')) {
+                        demo.classList.add('demo-started');
+                        setTimeout(runRoutingDemo, 500);
+                    }
+                    demoObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        const routingDemo = document.getElementById('routingDemo');
+        if (routingDemo) {
+            demoObserver.observe(routingDemo);
+            // Fallback: start after 2 seconds
+            setTimeout(() => {
+                if (!routingDemo.classList.contains('demo-started')) {
+                    routingDemo.classList.add('demo-started');
+                    runRoutingDemo();
+                }
+            }, 2000);
         }
     </script>
 </body>
