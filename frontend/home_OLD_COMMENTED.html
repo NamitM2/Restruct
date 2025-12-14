@@ -1,0 +1,1444 @@
+<!--
+========================================================
+OLD HOME PAGE - COMMENTED OUT (DO NOT DELETE)
+Replaced by new experimental landing page (Home.html)
+Date: 2025-12-13
+========================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restruct - Intelligent AI Routing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="prefetch" href="index.html">
+    <style>
+        :root {
+            --sand-50: #f6efe7;
+            --sand-100: #f1e5d7;
+            --sand-200: #e6d5c0;
+            --sand-400: #d0b190;
+            --clay-400: #c98454;
+            --clay-500: #b56747;
+            --clay-600: #8e3c2c;
+            --clay-700: #5b2a1a;
+            --ink: #2b1d14;
+            --muted: rgba(43, 29, 20, 0.7);
+            --white: #fffaf5;
+
+            --slider-bg: rgba(142, 60, 44, 0.04);
+            --slider-border: rgba(142, 60, 44, 0.15);
+            --badge-bg: rgba(201, 132, 84, 0.15);
+            --problem-icon-bg: rgba(142, 60, 44, 0.1);
+            --download-button-hover-bg: rgba(142, 60, 44, 0.05);
+            --feature-visual-inner-bg: linear-gradient(135deg, rgba(201, 132, 84, 0.2), rgba(142, 60, 44, 0.1));
+            --primary-button-hover-shadow: 0 6px 16px rgba(142, 60, 44, 0.3);
+            --mesh-line-color: 'rgba(142, 60, 44, 0.15)';
+            --profile-card-shadow: 0 4px 12px rgba(43, 29, 20, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --sand-50: #1c1816;
+            --sand-100: #2a2522;
+            --sand-200: #38322e;
+            --sand-400: #463f3a;
+            --clay-400: #f08a6b;
+            --clay-500: #e57350;
+            --clay-600: #d16a4a;
+            --clay-700: #b85e40;
+            --ink: #f5e9e2;
+            --muted: #a89990;
+            --white: #1c1816;
+
+            --slider-bg: rgba(229, 115, 80, 0.1);
+            --slider-border: rgba(229, 115, 80, 0.2);
+            --badge-bg: rgba(229, 115, 80, 0.1);
+            --problem-icon-bg: rgba(229, 115, 80, 0.1);
+            --download-button-hover-bg: rgba(229, 115, 80, 0.1);
+            --feature-visual-inner-bg: linear-gradient(135deg, rgba(229, 115, 80, 0.1), rgba(240, 138, 107, 0.15));
+            --primary-button-hover-shadow: 0 6px 16px rgba(229, 115, 80, 0.25);
+            --mesh-line-color: 'rgba(229, 115, 80, 0.4)';
+            --profile-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--sand-50);
+            color: var(--ink);
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Custom scrollbar styling */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--clay-600) var(--sand-100);
+        }
+
+        *::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: var(--sand-100);
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: var(--clay-600);
+            border-radius: 6px;
+            border: 2px solid var(--sand-100);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background: var(--clay-700);
+        }
+
+        /* Reveal animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal-scale.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
+
+        /* Model Slider */
+        .model-slider-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: var(--slider-bg);
+            border-top: 1px solid var(--slider-border);
+            border-bottom: 1px solid var(--slider-border);
+            padding: 12px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .model-slider {
+            display: flex;
+            gap: 12px;
+            animation: slide 25s linear infinite;
+            width: fit-content;
+            padding-left: 12px;
+        }
+
+        .model-badge {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--badge-bg);
+            transition: opacity 0.2s ease;
+        }
+
+        .model-badge:hover {
+            opacity: 0.7;
+        }
+
+        .model-badge img {
+            height: 40px;
+            width: 120px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .model-badge img[src*="chatgpt-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="claude-logo"] { transform: scale(2.88); }
+        .model-badge img[src*="qwen-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="mistral-logo"] { transform: scale(1.65); }
+        .model-badge img[src*="perplexity-logo"] { transform: scale(1.56); }
+        .model-badge img[src*="grok-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="deepseek-logo"] { transform: scale(1.0); }
+        .model-badge img[src*="llama-logo"] { transform: scale(1.32); }
+        .model-badge img[src*="gemini-logo"] { transform: scale(4.0); }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-120px * 9 - 12px * 9)); }
+        }
+
+        /* Mesh Container */
+        .mesh-container {
+            position: relative;
+        }
+
+        /* Mesh Edges */
+        .mesh-edge {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 120px;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .mesh-edge.left {
+            left: 0;
+        }
+
+        .mesh-edge.right {
+            right: 0;
+        }
+
+        .mesh-edge canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .logo-container img {
+            height: 64px;
+            width: 64px;
+        }
+
+        .logo-container h1 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .hero-text {
+            font-size: 24px;
+            line-height: 1.6;
+            color: var(--ink);
+            font-weight: 400;
+            margin-bottom: 50px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 60px;
+        }
+
+        .primary-button {
+            padding: 16px 40px;
+            background: var(--clay-600);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        [data-theme="dark"] .primary-button {
+            color: var(--ink);
+        }
+
+        .primary-button:hover {
+            background: var(--clay-700);
+            transform: translateY(-2px);
+            box-shadow: var(--primary-button-hover-shadow);
+        }
+
+        .download-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .download-label {
+            font-size: 16px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .download-button {
+            padding: 12px 28px;
+            background: var(--white);
+            color: var(--ink);
+            border: 2px solid var(--sand-200);
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-button:hover {
+            border-color: var(--clay-600);
+            background: var(--download-button-hover-bg);
+            transform: translateY(-1px);
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 14px;
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-hint svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 120px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: var(--muted);
+            margin-bottom: 60px;
+            max-width: 600px;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            background: var(--sand-100);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .problem-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid var(--sand-200);
+        }
+
+        .problem-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--problem-icon-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .problem-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+
+        .problem-card p {
+            font-size: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* How It Works Section */
+        .how-section {
+            text-align: center;
+            background: var(--sand-50);
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .step-card {
+            flex: 1;
+            min-width: 280px;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .step-number {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--clay-400), var(--clay-600));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        [data-theme="dark"] .step-number {
+            color: var(--ink);
+        }
+
+        .step-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+
+        .step-card p {
+            font-size: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .step-connector {
+            display: none;
+        }
+
+        @media (min-width: 900px) {
+            .step-connector {
+                display: flex;
+                align-items: center;
+                color: var(--sand-400);
+                font-size: 32px;
+            }
+        }
+
+        /* Features Section */
+        .features-section {
+            background: var(--sand-100);
+        }
+
+        .feature-row {
+            display: flex;
+            align-items: center;
+            gap: 80px;
+            margin-bottom: 100px;
+        }
+
+        .feature-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-row.reverse {
+            flex-direction: row-reverse;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-visual {
+            flex: 1;
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid var(--sand-200);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-visual-inner {
+            width: 100%;
+            height: 200px;
+            background: var(--feature-visual-inner-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Routing Lab Animation */
+        .routing-mockup {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .routing-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        [data-theme="dark"] .routing-node {
+            color: var(--ink);
+        }
+
+        .routing-node.input { background: var(--clay-600); left: 15%; top: 50%; transform: translateY(-50%); }
+        .routing-node.router { background: linear-gradient(135deg, var(--clay-400), var(--clay-600)); left: 50%; top: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; border-radius: 50%; }
+        .routing-node.output1 { background: var(--clay-500); right: 15%; top: 20%; }
+        .routing-node.output2 { background: var(--clay-500); right: 15%; top: 50%; transform: translateY(-50%); }
+        .routing-node.output3 { background: var(--clay-500); right: 15%; bottom: 20%; }
+
+        .routing-line {
+            position: absolute;
+            height: 2px;
+            background: var(--clay-400);
+            transform-origin: left center;
+        }
+
+        .routing-line::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--clay-600);
+            border-radius: 50%;
+            top: -3px;
+            animation: flowDot 2s ease-in-out infinite;
+        }
+
+        .routing-line.line1 { left: calc(15% + 50px); top: 50%; width: calc(35% - 30px); }
+        .routing-line.line2 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); transform: rotate(-25deg); animation-delay: 0.3s; }
+        .routing-line.line3 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); }
+        .routing-line.line4 { left: calc(50% + 30px); top: 50%; width: calc(35% - 55px); transform: rotate(25deg); }
+
+        .routing-line.line2::after { animation-delay: 0.3s; }
+        .routing-line.line3::after { animation-delay: 0.6s; }
+        .routing-line.line4::after { animation-delay: 0.9s; }
+
+        @keyframes flowDot {
+            0% { left: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: calc(100% - 8px); opacity: 0; }
+        }
+
+        /* Analytics Animation */
+        .analytics-mockup {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            height: 100%;
+            padding: 20px;
+        }
+
+        .analytics-bar {
+            width: 40px;
+            background: linear-gradient(to top, var(--clay-600), var(--clay-400));
+            border-radius: 6px 6px 0 0;
+            animation: barGrow 2s ease-out infinite;
+        }
+
+        .analytics-bar:nth-child(1) { animation-delay: 0s; }
+        .analytics-bar:nth-child(2) { animation-delay: 0.2s; }
+        .analytics-bar:nth-child(3) { animation-delay: 0.4s; }
+        .analytics-bar:nth-child(4) { animation-delay: 0.6s; }
+        .analytics-bar:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes barGrow {
+            0%, 100% { height: 20%; }
+            50% { height: var(--bar-height, 60%); }
+        }
+
+        /* Profiles Animation */
+        .profiles-mockup {
+            position: relative;
+            width: 200px;
+            height: 140px;
+        }
+
+        .profile-card {
+            position: absolute;
+            width: 180px;
+            height: 80px;
+            background: var(--white);
+            border: 2px solid var(--sand-200);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--profile-card-shadow);
+            transition: all 0.5s ease;
+        }
+
+        .profile-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+
+        .profile-card-bar {
+            height: 8px;
+            background: var(--sand-200);
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .profile-card-bar.filled {
+            background: linear-gradient(90deg, var(--clay-400), var(--clay-600));
+            width: 70%;
+        }
+
+        .profile-card:nth-child(1) { top: 0; left: 10px; z-index: 3; animation: cardFloat 3s ease-in-out infinite; }
+        .profile-card:nth-child(2) { top: 20px; left: 0; z-index: 2; opacity: 0.7; animation: cardFloat 3s ease-in-out infinite 0.5s; }
+        .profile-card:nth-child(3) { top: 40px; left: 20px; z-index: 1; opacity: 0.4; animation: cardFloat 3s ease-in-out infinite 1s; }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Code Block Animation */
+        .code-mockup {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .code-line {
+            opacity: 0;
+            animation: typeIn 0.5s ease forwards;
+        }
+
+        .code-line:nth-child(1) { animation-delay: 0.2s; }
+        .code-line:nth-child(2) { animation-delay: 0.5s; }
+        .code-line:nth-child(3) { animation-delay: 0.8s; }
+        .code-line:nth-child(4) { animation-delay: 1.1s; }
+        .code-line:nth-child(5) { animation-delay: 1.4s; }
+        .code-line:nth-child(6) { animation-delay: 1.7s; }
+        .code-line:nth-child(7) { animation-delay: 2.0s; }
+        .code-line:nth-child(8) { animation-delay: 2.3s; }
+
+        @keyframes typeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .code-keyword { color: #c586c0; }
+        .code-string { color: #ce9178; }
+        .code-function { color: #dcdcaa; }
+        .code-variable { color: #9cdcfe; }
+        .code-comment { color: #6a9955; }
+        .code-bracket { color: #ffd700; }
+
+        .feature-content h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--ink);
+        }
+
+        .feature-content p {
+            font-size: 18px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            color: var(--ink);
+            margin-bottom: 12px;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: var(--clay-600);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .feature-row, .feature-row.reverse {
+                flex-direction: column;
+                gap: 40px;
+            }
+        }
+
+        /* Stats Section */
+        .stats-section {
+            text-align: center;
+            background: linear-gradient(135deg, var(--clay-600), var(--clay-700));
+            color: var(--white);
+            padding: 100px 40px;
+        }
+
+        [data-theme="dark"] .stats-section {
+            color: var(--ink);
+        }
+
+        .stats-section .section-title {
+            color: var(--white);
+        }
+
+        [data-theme="dark"] .stats-section .section-title {
+            color: var(--ink);
+        }
+
+        .stats-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] .stats-section .section-subtitle {
+            color: var(--muted);
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        [data-theme="dark"] .stat-number {
+            color: var(--ink);
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] .stat-label {
+            color: var(--muted);
+        }
+
+        /* Final CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 140px 40px;
+            background: var(--sand-50);
+        }
+
+        .cta-section .section-title {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        .cta-section .section-subtitle {
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 40px;
+        }
+
+        .cta-section .primary-button {
+            padding: 20px 60px;
+            font-size: 20px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            background: var(--sand-100);
+            border-top: 1px solid var(--sand-200);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Model Slider -->
+<div class="model-slider-container">
+    <div class="model-slider">
+        <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+        <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+        <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+        <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+        <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false">
+        </div>
+        <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+        <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+        <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+        <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+
+        <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+        <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+        <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+        <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+        <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false">
+        </div>
+        <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+        <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+        <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+        <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+
+        <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+        <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+        <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+        <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+        <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false">
+        </div>
+        <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+        <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+        <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+        <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+
+        <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+        <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
+        <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
+        <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
+        <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false">
+        </div>
+        <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
+        <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+        <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
+        <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
+    </div>
+</div>
+
+<!-- Mesh Container (wraps sections with mesh edges) -->
+<div class="mesh-container" id="meshContainer">
+    <!-- Mesh Edges -->
+    <div class="mesh-edge left" id="meshLeft">
+        <canvas id="meshCanvasLeft"></canvas>
+    </div>
+    <div class="mesh-edge right" id="meshRight">
+        <canvas id="meshCanvasRight"></canvas>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="heroSection">
+        <div class="hero-content">
+            <div class="logo-container reveal">
+                <img src="assets/logo.png" alt="Restruct logo" draggable="false">
+                <h1>Restruct</h1>
+            </div>
+
+            <p class="hero-text reveal delay-1">
+                The right model, every time. Intelligent routing out of the box, fully customizable when you need it.
+            </p>
+
+            <div class="cta-buttons reveal delay-2">
+                <a href="index.html" class="primary-button">Try Restruct</a>
+                <button id="themeToggleBtn" class="primary-button"
+                    style="background: var(--sand-200); color: var(--ink);">Toggle Theme</button>
+            </div>
+
+            <div class="download-section reveal delay-3">
+                <p class="download-label">Download for:</p>
+                <div class="download-buttons">
+                    <a href="#" class="download-button">Windows</a>
+                    <a href="#" class="download-button">macOS</a>
+                    <a href="#" class="download-button">Linux</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="scroll-hint">
+            <span>Scroll to explore</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+            </svg>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="section problem-section">
+        <h2 class="section-title reveal">The LLM Management Problem</h2>
+        <p class="section-subtitle reveal delay-1">Managing multiple AI providers shouldn't be this hard.</p>
+
+        <div class="problem-grid">
+            <div class="problem-card reveal delay-1">
+                <div class="problem-icon">$</div>
+                <h3>Cost Sprawl</h3>
+                <p>Different models, different pricing, different billing cycles. Costs spiral out of control without
+                    visibility.</p>
+            </div>
+            <div class="problem-card reveal delay-2">
+                <div class="problem-icon">~</div>
+                <h3>Inconsistent Results</h3>
+                <p>Not every prompt needs GPT-4. Using premium models for simple tasks wastes money and slows responses.
+                </p>
+            </div>
+            <div class="problem-card reveal delay-3">
+                <div class="problem-icon">{}</div>
+                <h3>API Juggling</h3>
+                <p>Multiple API keys, different SDKs, varying rate limits. Integration complexity grows with each
+                    provider.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section how-section">
+        <h2 class="section-title reveal">How Restruct Works</h2>
+        <p class="section-subtitle reveal delay-1" style="margin-left: auto; margin-right: auto;">Three steps to smarter
+            AI routing.</p>
+
+        <div class="steps-container">
+            <div class="step-card reveal delay-1">
+                <div class="step-number">1</div>
+                <h3>Connect Once</h3>
+                <p>Add your API keys for any provider. Restruct handles authentication and rate limiting automatically.
+                </p>
+            </div>
+
+            <div class="step-connector reveal delay-2">→</div>
+
+            <div class="step-card reveal delay-2">
+                <div class="step-number">2</div>
+                <h3>Define Rules</h3>
+                <p>Create routing profiles that match prompts to optimal models based on complexity, cost, or speed.</p>
+            </div>
+
+            <div class="step-connector reveal delay-3">→</div>
+
+            <div class="step-card reveal delay-3">
+                <div class="step-number">3</div>
+                <h3>Send Requests</h3>
+                <p>Use one unified API endpoint. Restruct analyzes each prompt and routes it to the best model.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section features-section">
+        <div class="feature-row">
+            <div class="feature-content reveal-left">
+                <h3>Routing Lab</h3>
+                <p>Visually design routing logic with an intuitive node-based interface. Test prompts in real-time and
+                    see exactly how they'll be routed.</p>
+                <ul class="feature-list">
+                    <li>Drag-and-drop rule builder</li>
+                    <li>Real-time routing preview</li>
+                    <li>A/B testing built-in</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-right">
+                <div class="feature-visual-inner">
+                    <div class="routing-mockup">
+                        <div class="routing-node input">IN</div>
+                        <div class="routing-line line1"></div>
+                        <div class="routing-node router">R</div>
+                        <div class="routing-line line2"></div>
+                        <div class="routing-line line3"></div>
+                        <div class="routing-line line4"></div>
+                        <div class="routing-node output1">GPT</div>
+                        <div class="routing-node output2">C</div>
+                        <div class="routing-node output3">G</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-content reveal-right">
+                <h3>Cost Analytics</h3>
+                <p>Track spending across all providers in one dashboard. Set budgets, get alerts, and identify
+                    optimization opportunities.</p>
+                <ul class="feature-list">
+                    <li>Unified billing view</li>
+                    <li>Cost-per-request breakdown</li>
+                    <li>Budget alerts</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-left">
+                <div class="feature-visual-inner">
+                    <div class="analytics-mockup">
+                        <div class="analytics-bar" style="--bar-height: 45%"></div>
+                        <div class="analytics-bar" style="--bar-height: 70%"></div>
+                        <div class="analytics-bar" style="--bar-height: 55%"></div>
+                        <div class="analytics-bar" style="--bar-height: 85%"></div>
+                        <div class="analytics-bar" style="--bar-height: 60%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-content reveal-left">
+                <h3>Profile Builder</h3>
+                <p>Create reusable routing profiles for different use cases. Share configurations across teams and
+                    projects.</p>
+                <ul class="feature-list">
+                    <li>Shareable configurations</li>
+                    <li>Version control</li>
+                    <li>Team collaboration</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-right">
+                <div class="feature-visual-inner">
+                    <div class="profiles-mockup">
+                        <div class="profile-card">
+                            <div class="profile-card-title">Fast & Cheap</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                        <div class="profile-card">
+                            <div class="profile-card-title">Balanced</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                        <div class="profile-card">
+                            <div class="profile-card-title">Quality</div>
+                            <div class="profile-card-bar filled"></div>
+                            <div class="profile-card-bar" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-content reveal-right">
+                <h3>Simple API</h3>
+                <p>Integrate Restruct with just a few lines of code. Use your routing profiles directly from any Python
+                    environment.</p>
+                <ul class="feature-list">
+                    <li>One import, one function call</li>
+                    <li>Profile-based routing</li>
+                    <li>Works anywhere Python runs</li>
+                </ul>
+            </div>
+            <div class="feature-visual reveal-left">
+                <div class="feature-visual-inner">
+                    <div class="code-mockup">
+                        <div class="code-line"><span class="code-keyword">from</span> <span
+                                class="code-variable">restruct</span> <span class="code-keyword">import</span> <span
+                                class="code-function">route</span></div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="code-comment"># Route with your profile</span></div>
+                        <div class="code-line"><span class="code-variable">response</span> = <span
+                                class="code-function">route</span><span class="code-bracket">(</span></div>
+                        <div class="code-line"> <span class="code-variable">prompt</span>=<span
+                                class="code-string">"Explain quantum computing"</span>,</div>
+                        <div class="code-line"> <span class="code-variable">profile</span>=<span
+                                class="code-string">"fast-cheap"</span></div>
+                        <div class="code-line"><span class="code-bracket">)</span></div>
+                        <div class="code-line"><span class="code-keyword">print</span><span
+                                class="code-bracket">(</span><span class="code-variable">response</span><span
+                                class="code-bracket">)</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div><!-- End Mesh Container -->
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <h2 class="section-title reveal">Built for Performance</h2>
+    <p class="section-subtitle reveal delay-1" style="margin-left: auto; margin-right: auto;">Real results from
+        intelligent routing.</p>
+
+    <div class="stats-grid">
+        <div class="stat-item reveal delay-1">
+            <div class="stat-number" data-target="40">0%</div>
+            <div class="stat-label">Average Cost Reduction</div>
+        </div>
+        <div class="stat-item reveal delay-2">
+            <div class="stat-number" data-target="99.9">0%</div>
+            <div class="stat-label">Uptime SLA</div>
+        </div>
+        <div class="stat-item reveal delay-3">
+            <div class="stat-number" data-target="50">&lt;0ms</div>
+            <div class="stat-label">Routing Latency</div>
+        </div>
+    </div>
+</section>
+
+<!-- Final CTA Section -->
+<section class="cta-section">
+    <h2 class="section-title reveal">Ready to Optimize Your AI Stack?</h2>
+    <p class="section-subtitle reveal delay-1">Start routing smarter today. No credit card required.</p>
+    <a href="index.html" class="primary-button reveal delay-2">Get Started Free</a>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>© 2024 Restruct. Intelligent AI Routing.</p>
+</footer>
+
+<script>
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+
+                // Animate stat counters
+                if (entry.target.classList.contains('stat-item')) {
+                    const numberEl = entry.target.querySelector('.stat-number');
+                    const target = parseFloat(numberEl.dataset.target);
+                    animateCounter(numberEl, target);
+                }
+            } else {
+                // Remove visible class when element leaves viewport (allows re-animation)
+                entry.target.classList.remove('visible');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all reveal elements
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .stat-item').forEach(el => {
+        observer.observe(el);
+    });
+
+    // Counter animation
+    function animateCounter(element, target) {
+        const duration = 2000;
+        const start = 0;
+        const startTime = performance.now();
+        const isPercentage = element.textContent.includes('%');
+        const isLatency = element.textContent.includes('ms');
+
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = start + (target - start) * easeOut;
+
+            if (isLatency) {
+                element.textContent = `<${Math.round(current)}ms`;
+            } else if (target === 99.9) {
+                element.textContent = `${current.toFixed(1)}%`;
+            } else {
+                element.textContent = `${Math.round(current)}%`;
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    // Trigger hero animations on load
+    window.addEventListener('load', () => {
+        document.querySelectorAll('.hero-section .reveal').forEach(el => {
+            el.classList.add('visible');
+        });
+    });
+
+    // Mesh Animation
+    function initMesh(canvasId, containerId) {
+        const canvas = document.getElementById(canvasId);
+        const container = document.getElementById(containerId);
+        if (!canvas || !container) return;
+
+        const ctx = canvas.getContext('2d');
+        const config = {
+            gridSize: 35,
+            gravityStrength: 18,
+            influenceRadius: 100,
+            dampening: 0.95,
+            returnSpeed: 0.05,
+            lineColor: 'rgba(92, 49, 30, 0.15)',
+            maxDisplacement: 20
+        };
+
+        let points = [];
+        let originalPoints = [];
+        let gridDimensions = { cols: 0, rows: 0 };
+        let mouse = { x: -1000, y: -1000, isActive: false };
+
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            initializeGrid();
+        }
+
+        function initializeGrid() {
+            points = [];
+            originalPoints = [];
+            const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+            const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+            gridDimensions = { cols, rows };
+
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const x = i * config.gridSize;
+                    const y = j * config.gridSize;
+                    points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
+                    originalPoints.push({ x, y });
+                }
+            }
+        }
+
+        function updatePoints() {
+            points.forEach((point, index) => {
+                const original = originalPoints[index];
+                const dx = mouse.x - point.x;
+                const dy = mouse.y - point.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (mouse.isActive && distance < config.influenceRadius) {
+                    const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                    const angle = Math.atan2(dy, dx);
+                    point.vx += Math.cos(angle) * force * 0.01;
+                    point.vy += Math.sin(angle) * force * 0.01;
+                } else {
+                    point.vx += (original.x - point.x) * config.returnSpeed;
+                    point.vy += (original.y - point.y) * config.returnSpeed;
+                }
+
+                point.vx *= config.dampening;
+                point.vy *= config.dampening;
+                point.x += point.vx;
+                point.y += point.vy;
+
+                const dispX = point.x - original.x;
+                const dispY = point.y - original.y;
+                const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+
+                if (displacement > config.maxDisplacement) {
+                    const scale = config.maxDisplacement / displacement;
+                    point.x = original.x + dispX * scale;
+                    point.y = original.y + dispY * scale;
+                }
+            });
+        }
+
+        function drawMesh() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const { cols, rows } = gridDimensions;
+            if (!cols || !rows || points.length === 0) return;
+
+            ctx.strokeStyle = config.lineColor;
+            ctx.lineWidth = 1;
+
+            for (let j = 0; j < rows; j++) {
+                ctx.beginPath();
+                for (let i = 0; i < cols; i++) {
+                    const index = i * rows + j;
+                    const point = points[index];
+                    if (!point) continue;
+                    if (i === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                }
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < cols; i++) {
+                ctx.beginPath();
+                for (let j = 0; j < rows; j++) {
+                    const index = i * rows + j;
+                    const point = points[index];
+                    if (!point) continue;
+                    if (j === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function animate() {
+            updatePoints();
+            drawMesh();
+            requestAnimationFrame(animate);
+        }
+
+        const meshContainer = document.getElementById('meshContainer');
+
+        window.addEventListener('resize', resizeCanvas);
+        if (meshContainer) {
+            meshContainer.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
+            });
+            meshContainer.addEventListener('mouseleave', () => {
+                mouse.isActive = false;
+            });
+        }
+
+        setTimeout(() => {
+            resizeCanvas();
+            requestAnimationFrame(animate);
+        }, 50);
+    }
+
+    // Initialize both mesh edges
+    initMesh('meshCanvasLeft', 'meshLeft');
+    initMesh('meshCanvasRight', 'meshRight');
+</script>
+<script>
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const body = document.body;
+
+    themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            body.removeAttribute('data-theme');
+            localStorage.removeItem('theme');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
+    // Apply theme from local storage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        body.setAttribute('data-theme', savedTheme);
+    }
+</script>
+</body>
+
+</html>
+
+========================================================
+END OF OLD HOME PAGE
+========================================================
+-->
