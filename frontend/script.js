@@ -4054,7 +4054,13 @@ async function loadApiKeys() {
             createdDate: new Date(key.created_at),
             lastUsed: key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : null,
             requestCount: 0,
-            is_active: key.is_active
+            is_active: key.is_active,
+            rate_limit_rpm: key.rate_limit_rpm,
+            rate_limit_rph: key.rate_limit_rph,
+            rate_limit_rpd: key.rate_limit_rpd,
+            environment: key.environment,
+            application: key.application,
+            notes: key.notes
         }));
 
         renderActiveKeys();
@@ -4064,15 +4070,32 @@ async function loadApiKeys() {
 }
 
 // Create API key in database
-async function createApiKeyInDB(keyName) {
+async function createApiKeyInDB(keyName, rateLimits = {}) {
     try {
-        const response = await fetch(`${API_URL}/v1/keys?name=${encodeURIComponent(keyName)}`, {
+        const body = {
+            name: keyName
+        };
+
+        // Add rate limits if provided
+        if (rateLimits.rpm) body.rate_limit_rpm = parseInt(rateLimits.rpm);
+        if (rateLimits.rph) body.rate_limit_rph = parseInt(rateLimits.rph);
+        if (rateLimits.rpd) body.rate_limit_rpd = parseInt(rateLimits.rpd);
+        if (rateLimits.environment) body.environment = rateLimits.environment;
+        if (rateLimits.application) body.application = rateLimits.application;
+        if (rateLimits.notes) body.notes = rateLimits.notes;
+
+        const response = await fetch(`${API_URL}/v1/keys`, {
             method: 'POST',
-            headers: getAuthHeaders()
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to create API key');
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create API key');
         }
 
         const data = await response.json();
@@ -4234,9 +4257,121 @@ function renderActiveKeys() {
                     <div class="active-key-stat-value">${keyData.requestCount || 0}</div>
                 </div>
             </div>
+            ${keyData.rate_limit_rpm || keyData.rate_limit_rph || keyData.rate_limit_rpd ? `
+            <div class="active-key-limits" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: var(--text-secondary); font-size: 13px; font-weight: 500;">Rate Limits</span>
+                    <button class="edit-limits-btn" data-index="${index}" style="padding: 4px 12px; background: var(--bg-elevated); border: 1px solid var(--border-accent-light); border-radius: 6px; color: var(--accent-primary); font-size: 12px; cursor: pointer; transition: all 0.2s;">Edit</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px;">
+                    ${keyData.rate_limit_rpm ? `<div style="color: var(--text-muted);">RPM: <span style="color: var(--accent-primary); font-weight: 600;">${keyData.rate_limit_rpm}</span></div>` : ''}
+                    ${keyData.rate_limit_rph ? `<div style="color: var(--text-muted);">RPH: <span style="color: var(--accent-primary); font-weight: 600;">${keyData.rate_limit_rph}</span></div>` : ''}
+                    ${keyData.rate_limit_rpd ? `<div style="color: var(--text-muted);">RPD: <span style="color: var(--accent-primary); font-weight: 600;">${keyData.rate_limit_rpd}</span></div>` : ''}
+                </div>
+            </div>
+            ` : `
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                <button class="edit-limits-btn" data-index="${index}" style="padding: 6px 12px; background: rgba(163, 71, 52, 0.1); border: 1px solid var(--border-accent-light); border-radius: 6px; color: var(--accent-primary); font-size: 12px; cursor: pointer; transition: all 0.2s;">Set Rate Limits</button>
+            </div>
+            `}
         `;
 
         activeKeysList.appendChild(keyItem);
+    });
+}
+
+// Edit limits modal
+function showEditLimitsModal(keyData, index) {
+    const modal = document.createElement('div');
+    modal.id = 'editLimitsModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+
+    modal.innerHTML = `
+        <div style="background: var(--bg-primary); border-radius: 12px; padding: 24px; width: 500px; max-width: 90vw; border: 1px solid var(--border-subtle); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            <h3 style="margin: 0 0 20px 0; color: var(--accent-primary); font-size: 18px; font-weight: 600;">Edit Rate Limits: ${keyData.name}</h3>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px; font-weight: 500;">Requests Per Minute (RPM)</label>
+                <input type="number" id="editRpm" value="${keyData.rate_limit_rpm || ''}" min="1" placeholder="No limit"
+                    style="width: 100%; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border-accent-light); border-radius: 8px; color: var(--text-primary); font-size: 14px; outline: none; transition: border-color 0.2s;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px; font-weight: 500;">Requests Per Hour (RPH)</label>
+                <input type="number" id="editRph" value="${keyData.rate_limit_rph || ''}" min="1" placeholder="No limit"
+                    style="width: 100%; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border-accent-light); border-radius: 8px; color: var(--text-primary); font-size: 14px; outline: none; transition: border-color 0.2s;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px; font-weight: 500;">Requests Per Day (RPD)</label>
+                <input type="number" id="editRpd" value="${keyData.rate_limit_rpd || ''}" min="1" placeholder="No limit"
+                    style="width: 100%; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border-accent-light); border-radius: 8px; color: var(--text-primary); font-size: 14px; outline: none; transition: border-color 0.2s;">
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="cancelEditLimits" style="padding: 10px 20px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Cancel</button>
+                <button id="saveEditLimits" style="padding: 10px 20px; background: var(--accent-primary); border: none; border-radius: 8px; color: var(--text-on-dark); cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(142, 60, 44, 0.25);">Save Changes</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Cancel button
+    modal.querySelector('#cancelEditLimits').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+
+    // Save button
+    modal.querySelector('#saveEditLimits').addEventListener('click', async () => {
+        const rpm = document.getElementById('editRpm').value;
+        const rph = document.getElementById('editRph').value;
+        const rpd = document.getElementById('editRpd').value;
+
+        try {
+            const updateBody = {};
+            if (rpm) updateBody.rate_limit_rpm = parseInt(rpm);
+            if (rph) updateBody.rate_limit_rph = parseInt(rph);
+            if (rpd) updateBody.rate_limit_rpd = parseInt(rpd);
+
+            // If all fields are empty, set to null to remove limits
+            if (!rpm && !rph && !rpd) {
+                updateBody.rate_limit_rpm = null;
+                updateBody.rate_limit_rph = null;
+                updateBody.rate_limit_rpd = null;
+            }
+
+            const response = await fetch(`${API_URL}/v1/keys/${keyData.id}`, {
+                method: 'PATCH',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateBody)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update rate limits');
+            }
+
+            // Update local data
+            activeApiKeys[index].rate_limit_rpm = rpm ? parseInt(rpm) : null;
+            activeApiKeys[index].rate_limit_rph = rph ? parseInt(rph) : null;
+            activeApiKeys[index].rate_limit_rpd = rpd ? parseInt(rpd) : null;
+
+            renderActiveKeys();
+            document.body.removeChild(modal);
+        } catch (error) {
+            alert('Failed to update rate limits. Please try again.');
+            console.error('Error updating rate limits:', error);
+        }
+    });
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
     });
 }
 
@@ -4293,6 +4428,15 @@ if (activeKeysList) {
             } catch (err) {
                 console.error('Failed to copy:', err);
             }
+            return;
+        }
+
+        // Handle edit limits button clicks
+        const editLimitsBtn = e.target.closest('.edit-limits-btn');
+        if (editLimitsBtn) {
+            const index = parseInt(editLimitsBtn.dataset.index);
+            const keyData = activeApiKeys[index];
+            showEditLimitsModal(keyData, index);
             return;
         }
 
@@ -4373,8 +4517,24 @@ if (generateKeyBtn) {
             // Get the name from input field, or use 'Unnamed Key' as default
             const keyName = apiKeyName?.value.trim() || 'Unnamed Key';
 
+            // Collect rate limits and metadata
+            const rateLimits = {};
+            const rpmInput = document.getElementById('rateLimitRpm');
+            const rphInput = document.getElementById('rateLimitRph');
+            const rpdInput = document.getElementById('rateLimitRpd');
+            const envInput = document.getElementById('keyEnvironment');
+            const appInput = document.getElementById('keyApplication');
+            const notesInput = document.getElementById('keyNotes');
+
+            if (rpmInput?.value) rateLimits.rpm = rpmInput.value;
+            if (rphInput?.value) rateLimits.rph = rphInput.value;
+            if (rpdInput?.value) rateLimits.rpd = rpdInput.value;
+            if (envInput?.value) rateLimits.environment = envInput.value;
+            if (appInput?.value.trim()) rateLimits.application = appInput.value.trim();
+            if (notesInput?.value.trim()) rateLimits.notes = notesInput.value.trim();
+
             // Generate key via backend API (creates it in DB immediately)
-            const result = await createApiKeyInDB(keyName);
+            const result = await createApiKeyInDB(keyName, rateLimits);
 
             // Show the full key (only time user will see it)
             currentPendingKey = result.key;
