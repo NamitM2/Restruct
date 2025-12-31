@@ -82,7 +82,7 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
     Validate an API key and return user info if valid.
 
     Returns:
-        User dict if valid, None if invalid or expired
+        User dict with id, email, api_key_id, and rate limits if valid, None if invalid or expired
     """
     import asyncio
 
@@ -90,7 +90,7 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
 
     def _query():
         return supabase.table("api_keys").select(
-            "user_id, is_active, expires_at"
+            "id, user_id, is_active, expires_at, rate_limit_rpm, rate_limit_rph, rate_limit_rpd"
         ).eq("key_hash", key_hash).eq("is_active", True).execute()
 
     result = await asyncio.to_thread(_query)
@@ -108,6 +108,7 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
             return None  # Key is expired
 
     user_id = api_key_record["user_id"]
+    key_id = api_key_record["id"]
 
     # Update last_used_at (fire and forget)
     try:
@@ -120,10 +121,14 @@ async def validate_api_key(supabase, api_key: str) -> Optional[dict]:
     except:
         pass  # Don't fail auth if update fails
 
-    # Return user info
+    # Return user info with API key ID and rate limits
     return {
         "id": user_id,
-        "email": None  # Email not needed for API key auth
+        "email": None,  # Email not needed for API key auth
+        "api_key_id": key_id,
+        "rate_limit_rpm": api_key_record.get("rate_limit_rpm"),
+        "rate_limit_rph": api_key_record.get("rate_limit_rph"),
+        "rate_limit_rpd": api_key_record.get("rate_limit_rpd")
     }
 
 

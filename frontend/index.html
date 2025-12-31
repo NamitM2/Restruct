@@ -1195,6 +1195,48 @@
                                                 <input type="text" id="apiKeyName"
                                                     placeholder="e.g., Production API Key" class="key-name-input">
                                             </div>
+
+                                            <div class="key-info" style="margin-top: 16px;">
+                                                <label>Rate Limits (Optional)</label>
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                                    <div>
+                                                        <input type="number" id="rateLimitRpm" placeholder="RPM" min="1"
+                                                            style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
+                                                            title="Requests per minute">
+                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Minute</small>
+                                                    </div>
+                                                    <div>
+                                                        <input type="number" id="rateLimitRph" placeholder="RPH" min="1"
+                                                            style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
+                                                            title="Requests per hour">
+                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Hour</small>
+                                                    </div>
+                                                    <div>
+                                                        <input type="number" id="rateLimitRpd" placeholder="RPD" min="1"
+                                                            style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
+                                                            title="Requests per day">
+                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Day</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="key-info" style="margin-top: 16px;">
+                                                <label>Environment & Notes (Optional)</label>
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                                    <select id="keyEnvironment" style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;">
+                                                        <option value="">Select environment...</option>
+                                                        <option value="production">Production</option>
+                                                        <option value="staging">Staging</option>
+                                                        <option value="development">Development</option>
+                                                        <option value="testing">Testing</option>
+                                                    </select>
+                                                    <input type="text" id="keyApplication" placeholder="Application name"
+                                                        style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;">
+                                                </div>
+                                                <textarea id="keyNotes" placeholder="Notes about this key..." rows="2"
+                                                    style="width: 100%; margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px; resize: vertical;"></textarea>
+                                            </div>
+
                                             <div class="key-info">
                                                 <label>Your API Key</label>
                                                 <div class="key-input-group">

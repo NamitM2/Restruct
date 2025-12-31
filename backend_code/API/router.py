@@ -160,9 +160,25 @@ async def chat_completions(
     routing_time = (time.time() - routing_start) * 1000  # ms
 
     # ========================================================================
-    # 4. RATE LIMITING (if using profile)
+    # 4. RATE LIMITING
     # ========================================================================
 
+    # Check per-key rate limits (if using API key)
+    if user.get("api_key_id"):
+        from .key_rate_limiter import check_key_rate_limit
+
+        key_rate_allowed, key_rate_error = await check_key_rate_limit(
+            supabase,
+            user["api_key_id"],
+            user.get("rate_limit_rpm"),
+            user.get("rate_limit_rph"),
+            user.get("rate_limit_rpd")
+        )
+
+        if not key_rate_allowed:
+            raise HTTPException(status_code=429, detail=key_rate_error)
+
+    # Check profile-based rate limits (if using profile)
     if profile_slug:
         # Get profile's rate limit settings
         profile_result = supabase.table("routing_profiles").select(
@@ -258,6 +274,11 @@ async def chat_completions(
                             None,
                             request_duration
                         )
+
+                        # Increment per-key rate limit counters
+                        if user.get("api_key_id"):
+                            from .key_rate_limiter import increment_key_rate_limit
+                            await increment_key_rate_limit(supabase, user["api_key_id"])
 
                         # Final chunk with usage
                         sse_chunk = create_streaming_chunk(
@@ -383,6 +404,11 @@ async def chat_completions(
         int(inference_time)
     )
 
+    # Increment per-key rate limit counters
+    if user.get("api_key_id"):
+        from .key_rate_limiter import increment_key_rate_limit
+        await increment_key_rate_limit(supabase, user["api_key_id"])
+
     # ========================================================================
     # 9. FORMAT RESPONSE
     # ========================================================================
@@ -431,16 +457,22 @@ async def list_models():
 
 @router.post("/keys")
 async def create_key(
-    authorization: str = Header(None),
-    name: Optional[str] = Query(None),
-    expires_at: Optional[str] = Query(None)
+    body: dict,
+    authorization: str = Header(None)
 ):
     """
-    Create a new API key.
+    Create a new API key with optional rate limits and metadata.
 
-    Args:
+    Body params:
         name: Optional name for the key
-        expires_at: Optional expiration timestamp in ISO format (e.g., "2024-12-31T23:59:59Z")
+        expires_at: Optional expiration timestamp (ISO format)
+        rate_limit_rpm: Requests per minute limit
+        rate_limit_rph: Requests per hour limit
+        rate_limit_rpd: Requests per day limit
+        environment: Environment tag (e.g., production, staging)
+        application: Application name
+        tags: Array of tags
+        notes: Notes about this key
 
     The key is only shown once - save it securely.
     """
@@ -449,7 +481,30 @@ async def create_key(
 
     user = await authenticate_request(authorization)
 
+    name = body.get("name")
+    expires_at = body.get("expires_at")
+
     result = await create_api_key(supabase, user["id"], name, expires_at)
+
+    # Update with additional metadata if provided
+    update_fields = {}
+    if body.get("rate_limit_rpm"):
+        update_fields["rate_limit_rpm"] = body["rate_limit_rpm"]
+    if body.get("rate_limit_rph"):
+        update_fields["rate_limit_rph"] = body["rate_limit_rph"]
+    if body.get("rate_limit_rpd"):
+        update_fields["rate_limit_rpd"] = body["rate_limit_rpd"]
+    if body.get("environment"):
+        update_fields["environment"] = body["environment"]
+    if body.get("application"):
+        update_fields["application"] = body["application"]
+    if body.get("tags"):
+        update_fields["tags"] = body["tags"]
+    if body.get("notes"):
+        update_fields["notes"] = body["notes"]
+
+    if update_fields:
+        supabase.table("api_keys").update(update_fields).eq("id", result["id"]).execute()
 
     return {
         "id": result["id"],
@@ -458,6 +513,17 @@ async def create_key(
         "name": result["name"],
         "expires_at": result.get("expires_at"),
         "created_at": result["created_at"],
+        "rate_limits": {
+            "rpm": update_fields.get("rate_limit_rpm"),
+            "rph": update_fields.get("rate_limit_rph"),
+            "rpd": update_fields.get("rate_limit_rpd")
+        } if any(k.startswith("rate_limit") for k in update_fields) else None,
+        "metadata": {
+            "environment": update_fields.get("environment"),
+            "application": update_fields.get("application"),
+            "tags": update_fields.get("tags"),
+            "notes": update_fields.get("notes")
+        } if any(k in ["environment", "application", "tags", "notes"] for k in update_fields) else None,
         "warning": "Save this key securely - it will not be shown again"
     }
 
@@ -485,23 +551,64 @@ async def list_keys(authorization: str = Header(None)):
 @router.patch("/keys/{key_id}")
 async def update_key(
     key_id: str,
-    authorization: str = Header(None),
-    name: Optional[str] = Query(None)
+    body: dict,
+    authorization: str = Header(None)
 ):
     """
-    Update an API key's name.
+    Update an API key's metadata and rate limits.
+
+    Body params:
+        name: Key name
+        rate_limit_rpm: Requests per minute limit
+        rate_limit_rph: Requests per hour limit
+        rate_limit_rpd: Requests per day limit
+        environment: Environment tag
+        application: Application name
+        tags: Array of tags
+        notes: Notes
     """
     from backend_code.app import supabase
-    from .api_keys_update import update_api_key
+    import asyncio
 
     user = await authenticate_request(authorization)
 
-    success = await update_api_key(supabase, user["id"], key_id, name)
+    # Verify key belongs to user
+    def _verify():
+        return supabase.table("api_keys").select("id").eq("id", key_id).eq("user_id", user["id"]).execute()
 
-    if not success:
+    result = await asyncio.to_thread(_verify)
+    if not result.data:
         raise HTTPException(status_code=404, detail="API key not found")
 
-    return {"updated": True, "id": key_id, "name": name}
+    # Build update payload
+    update_fields = {}
+    if "name" in body:
+        update_fields["name"] = body["name"]
+    if "rate_limit_rpm" in body:
+        update_fields["rate_limit_rpm"] = body["rate_limit_rpm"]
+    if "rate_limit_rph" in body:
+        update_fields["rate_limit_rph"] = body["rate_limit_rph"]
+    if "rate_limit_rpd" in body:
+        update_fields["rate_limit_rpd"] = body["rate_limit_rpd"]
+    if "environment" in body:
+        update_fields["environment"] = body["environment"]
+    if "application" in body:
+        update_fields["application"] = body["application"]
+    if "tags" in body:
+        update_fields["tags"] = body["tags"]
+    if "notes" in body:
+        update_fields["notes"] = body["notes"]
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    # Update key
+    def _update():
+        return supabase.table("api_keys").update(update_fields).eq("id", key_id).execute()
+
+    await asyncio.to_thread(_update)
+
+    return {"updated": True, "id": key_id, "fields": list(update_fields.keys())}
 
 
 @router.delete("/keys/{key_id}")
@@ -665,4 +772,132 @@ async def get_statistics_timeline(
     return {
         "object": "usage_timeline",
         "data": timeline
+    }
+
+
+@router.get("/keys/{key_id}/usage")
+async def get_key_usage(
+    key_id: str,
+    time_range: str = Query(default="7d"),
+    authorization: str = Header(None)
+):
+    """
+    Get usage statistics for a specific API key.
+
+    Query params:
+        - time_range: 24h, 7d, 30d, all (default: 7d)
+
+    Returns comprehensive usage stats including:
+        - Summary (requests, cost, tokens, success rate, latency)
+        - Top models used
+        - Top profiles used
+        - Recent requests
+    """
+    from backend_code.app import supabase
+    from .key_analytics import get_key_usage_stats
+
+    user = await authenticate_request(authorization)
+    stats = await get_key_usage_stats(supabase, user["id"], key_id, time_range)
+
+    if stats is None:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    return {
+        "object": "key_usage_stats",
+        "data": stats
+    }
+
+
+@router.get("/keys/{key_id}/timeline")
+async def get_key_timeline(
+    key_id: str,
+    days: int = Query(default=30, le=365),
+    authorization: str = Header(None)
+):
+    """
+    Get daily usage timeline for a specific API key.
+
+    Query params:
+        - days: Number of days to include (default 30, max 365)
+
+    Returns daily aggregates for charting.
+    """
+    from backend_code.app import supabase
+    from .key_analytics import get_key_usage_timeline
+
+    user = await authenticate_request(authorization)
+    timeline = await get_key_usage_timeline(supabase, user["id"], key_id, days)
+
+    if timeline is None:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    return {
+        "object": "key_timeline",
+        "data": timeline
+    }
+
+
+@router.get("/keys/compare")
+async def compare_keys(
+    time_range: str = Query(default="7d"),
+    authorization: str = Header(None)
+):
+    """
+    Compare usage across all API keys.
+
+    Query params:
+        - time_range: 24h, 7d, 30d, all (default: 7d)
+
+    Returns usage comparison sorted by cost.
+    """
+    from backend_code.app import supabase
+    from .key_analytics import compare_keys_usage
+
+    user = await authenticate_request(authorization)
+    comparison = await compare_keys_usage(supabase, user["id"], time_range)
+
+    return {
+        "object": "keys_comparison",
+        "data": comparison
+    }
+
+
+@router.get("/keys/{key_id}/rate-limits")
+async def get_key_rate_limits(
+    key_id: str,
+    authorization: str = Header(None)
+):
+    """
+    Get current rate limit status for an API key.
+
+    Returns current usage vs limits for minute/hour/day windows.
+    """
+    from backend_code.app import supabase
+    from .key_rate_limiter import get_key_rate_limit_status
+    import asyncio
+
+    user = await authenticate_request(authorization)
+
+    # Get key's rate limit configuration
+    def _get_limits():
+        return supabase.table("api_keys").select(
+            "rate_limit_rpm, rate_limit_rph, rate_limit_rpd"
+        ).eq("id", key_id).eq("user_id", user["id"]).execute()
+
+    result = await asyncio.to_thread(_get_limits)
+    if not result.data:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    limits = result.data[0]
+    status = await get_key_rate_limit_status(
+        supabase,
+        key_id,
+        limits.get("rate_limit_rpm"),
+        limits.get("rate_limit_rph"),
+        limits.get("rate_limit_rpd")
+    )
+
+    return {
+        "object": "rate_limit_status",
+        "data": status
     }
