@@ -5268,3 +5268,54 @@ function init() {
 }
 
 init();
+
+// =============================================================================
+// REAL-TIME COLLABORATION INTEGRATION
+// =============================================================================
+
+const shareConversationBtn = document.getElementById('shareConversationBtn');
+
+if (shareConversationBtn) {
+    shareConversationBtn.addEventListener('click', () => {
+        const convId = currentConversation?.conversationId || null;
+        showShareModal(convId);
+    });
+}
+
+const originalLoadConversation = loadConversation;
+window.loadConversation = async function(conversationId) {
+    await originalLoadConversation(conversationId);
+
+    if (currentConversation?.conversationId) {
+        if (typeof subscribeToConversation === 'function') {
+            subscribeToConversation(currentConversation.conversationId);
+        }
+    }
+};
+
+const promptInputCollaboration = document.getElementById('promptInput');
+if (promptInputCollaboration) {
+    let typingTimeout = null;
+
+    promptInputCollaboration.addEventListener('input', () => {
+        if (!currentConversation?.conversationId) return;
+
+        clearTimeout(typingTimeout);
+
+        if (typeof updatePresence === 'function') {
+            updatePresence(currentConversation.conversationId, true);
+        }
+
+        typingTimeout = setTimeout(() => {
+            if (typeof updatePresence === 'function') {
+                updatePresence(currentConversation.conversationId, false);
+            }
+        }, 1000);
+    });
+}
+
+window.addEventListener('beforeunload', () => {
+    if (typeof unsubscribeAll === 'function') {
+        unsubscribeAll();
+    }
+});
