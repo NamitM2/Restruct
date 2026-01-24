@@ -99,7 +99,100 @@ async def chat_completions(
     user = await authenticate_request(authorization)
 
     # ========================================================================
-    # 2. VALIDATE REQUEST
+    # 2. SHARED CONVERSATION SECURITY CHECKS
+    # ========================================================================
+
+    conversation_id = request.restruct.conversation_id if request.restruct else None
+    participant_info = None
+    billing_user_id = user["id"]  # Default to requesting user
+
+    if conversation_id:
+        from .shared_conversation_rate_limiter import (
+            get_participant_info,
+            check_participant_rate_limit,
+            check_conversation_rate_limit
+        )
+        from .shared_conversation_billing import (
+            determine_billing_user,
+            validate_participant_can_pay
+        )
+
+        # Get participant information
+        participant_info = await get_participant_info(supabase, conversation_id, user["id"])
+
+        if not participant_info:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have access to this conversation"
+            )
+
+        # Check if participant is active
+        if not participant_info["is_active"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Your access to this conversation has been suspended"
+            )
+
+        # Check if blocked for abuse
+        if participant_info.get("blocked_for_abuse"):
+            raise HTTPException(
+                status_code=403,
+                detail="You have been blocked from this conversation due to abusive behavior"
+            )
+
+        # Check if participant access has expired
+        if participant_info.get("access_expired"):
+            expires_at = participant_info.get("access_expires_at")
+            raise HTTPException(
+                status_code=403,
+                detail=f"Your chat access to this conversation has expired. Access ended at: {expires_at}"
+            )
+
+        # View-only participants cannot send messages
+        if participant_info["permission"] == "view":
+            raise HTTPException(
+                status_code=403,
+                detail="You have view-only access to this conversation. Upgrade to 'chat' permission to send messages."
+            )
+
+        # Check participant rate limits
+        is_allowed, rate_error = await check_participant_rate_limit(
+            supabase,
+            conversation_id,
+            user["id"],
+            participant_info["is_owner"]
+        )
+
+        if not is_allowed:
+            raise HTTPException(status_code=429, detail=rate_error)
+
+        # Check conversation-wide rate limits
+        is_allowed, conv_rate_error = await check_conversation_rate_limit(
+            supabase,
+            conversation_id
+        )
+
+        if not is_allowed:
+            raise HTTPException(status_code=429, detail=conv_rate_error)
+
+        # Determine billing user
+        billing_info = await determine_billing_user(supabase, conversation_id, user["id"])
+        billing_user_id = billing_info["billing_user_id"]
+
+        # For individual billing, verify participant has funds
+        if billing_info["billing_mode"] == "individual" and not billing_info["is_owner"]:
+            estimated_cost = Decimal("0.01")  # Rough estimate
+            can_pay = await validate_participant_can_pay(supabase, user["id"], estimated_cost)
+
+            if not can_pay:
+                current_balance = await get_wallet_balance(supabase, user["id"])
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Insufficient funds. This conversation uses individual billing. Current balance: ${float(current_balance):.4f}. Please add funds to continue."
+                )
+
+    # ========================================================================
+    # 3. VALIDATE REQUEST
     # ========================================================================
 
     if not request.messages:
@@ -214,14 +307,21 @@ async def chat_completions(
         estimated_output_tokens
     )
 
-    # Check if user has sufficient balance
-    has_balance = await check_sufficient_balance(supabase, user["id"], estimated_cost)
+    # Check if billing user has sufficient balance
+    has_balance = await check_sufficient_balance(supabase, billing_user_id, estimated_cost)
     if not has_balance:
-        current_balance = await get_wallet_balance(supabase, user["id"])
-        raise HTTPException(
-            status_code=402,
-            detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
-        )
+        current_balance = await get_wallet_balance(supabase, billing_user_id)
+        if billing_user_id != user["id"]:
+            # Owner is paying but has insufficient funds
+            raise HTTPException(
+                status_code=402,
+                detail=f"Conversation owner has insufficient balance to process this message. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
+            )
+        else:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
+            )
 
     # ========================================================================
     # 6. STREAMING vs NON-STREAMING
@@ -253,14 +353,14 @@ async def chat_completions(
                             total_output_tokens
                         )
 
-                        # Deduct from wallet
-                        await deduct_from_wallet(supabase, user["id"], actual_cost)
+                        # Deduct from wallet (billing user)
+                        await deduct_from_wallet(supabase, billing_user_id, actual_cost)
 
                         # Log usage
                         request_duration = int((time.time() - request_start) * 1000)
                         await log_api_usage(
                             supabase,
-                            user["id"],
+                            billing_user_id,  # Billing user
                             user.get("api_key_id"),
                             "/v1/chat/completions",
                             "POST",
@@ -272,7 +372,8 @@ async def chat_completions(
                             actual_cost,
                             200,
                             None,
-                            request_duration
+                            request_duration,
+                            conversation_id=conversation_id  # Track shared conversation
                         )
 
                         # Increment per-key rate limit counters
@@ -308,7 +409,7 @@ async def chat_completions(
                 request_duration = int((time.time() - request_start) * 1000)
                 await log_api_usage(
                     supabase,
-                    user["id"],
+                    billing_user_id,  # Billing user
                     user.get("api_key_id"),
                     "/v1/chat/completions",
                     "POST",
@@ -320,7 +421,8 @@ async def chat_completions(
                     Decimal("0"),
                     500,
                     str(e),
-                    request_duration
+                    request_duration,
+                    conversation_id=conversation_id  # Track shared conversation
                 )
 
                 # Send error as SSE comment
@@ -349,7 +451,7 @@ async def chat_completions(
         request_duration = int((time.time() - inference_start) * 1000)
         await log_api_usage(
             supabase,
-            user["id"],
+            billing_user_id,  # Billing user
             user.get("api_key_id"),
             "/v1/chat/completions",
             "POST",
@@ -361,7 +463,8 @@ async def chat_completions(
             Decimal("0"),
             500,
             str(e),
-            request_duration
+            request_duration,
+            conversation_id=conversation_id  # Track shared conversation
         )
 
         raise HTTPException(
@@ -383,13 +486,13 @@ async def chat_completions(
         output_tokens
     )
 
-    # Deduct from wallet
-    await deduct_from_wallet(supabase, user["id"], actual_cost)
+    # Deduct from wallet (billing user)
+    await deduct_from_wallet(supabase, billing_user_id, actual_cost)
 
     # Log usage
     await log_api_usage(
         supabase,
-        user["id"],
+        billing_user_id,  # Billing user
         user.get("api_key_id"),
         "/v1/chat/completions",
         "POST",
@@ -401,7 +504,8 @@ async def chat_completions(
         actual_cost,
         200,
         None,
-        int(inference_time)
+        int(inference_time),
+        conversation_id=conversation_id  # Track shared conversation
     )
 
     # Increment per-key rate limit counters
@@ -900,4 +1004,227 @@ async def get_key_rate_limits(
     return {
         "object": "rate_limit_status",
         "data": status
+    }
+
+
+@router.post("/conversations/{conversation_id}/share")
+async def share_conversation(conversation_id: str, body: dict, authorization: str = Header(None)):
+    """
+    Enable sharing for a conversation.
+
+    Body:
+        permission: view or chat (default: view)
+        billing: owner or individual (default: owner)
+        expires_in: 1h, 24h, 7d, 30d, or null for never (default: 7d)
+        max_participants: Maximum number of participants (default: 10)
+        participant_access_duration: How long participants can chat - 1h, 24h, 7d, forever, custom (default: forever)
+        participant_access_custom_hours: For custom duration, number of hours (required if participant_access_duration is custom)
+
+    Returns share token and URL.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import share_conversation as share_conv
+
+    user = await authenticate_request(authorization)
+
+    permission = body.get("permission", "view")
+    if permission not in ["view", "chat"]:
+        raise HTTPException(status_code=400, detail="Invalid permission. Must be: view or chat")
+
+    billing = body.get("billing", "owner")
+    if billing not in ["owner", "individual"]:
+        raise HTTPException(status_code=400, detail="Invalid billing. Must be: owner or individual")
+
+    expires_in = body.get("expires_in", "7d")
+    if expires_in and expires_in not in ["1h", "24h", "7d", "30d"]:
+        raise HTTPException(status_code=400, detail="Invalid expires_in. Must be: 1h, 24h, 7d, 30d, or null")
+
+    max_participants = body.get("max_participants", 10)
+    if not isinstance(max_participants, int) or max_participants < 1 or max_participants > 100:
+        raise HTTPException(status_code=400, detail="Invalid max_participants. Must be between 1 and 100")
+
+    participant_access_duration = body.get("participant_access_duration", "forever")
+    if participant_access_duration not in ["1h", "24h", "7d", "forever", "custom"]:
+        raise HTTPException(status_code=400, detail="Invalid participant_access_duration. Must be: 1h, 24h, 7d, forever, or custom")
+
+    participant_access_custom_hours = body.get("participant_access_custom_hours")
+    if participant_access_duration == "custom":
+        if not participant_access_custom_hours or not isinstance(participant_access_custom_hours, int):
+            raise HTTPException(status_code=400, detail="participant_access_custom_hours required for custom duration")
+        if participant_access_custom_hours < 1 or participant_access_custom_hours > 8760:  # Max 1 year
+            raise HTTPException(status_code=400, detail="participant_access_custom_hours must be between 1 and 8760 (1 year)")
+
+    result = await share_conv(
+        supabase, user["id"], conversation_id,
+        permission, billing, expires_in, max_participants,
+        participant_access_duration, participant_access_custom_hours
+    )
+
+    return {
+        "object": "conversation_share",
+        "data": result
+    }
+
+
+@router.delete("/conversations/{conversation_id}/share")
+async def unshare_conversation(conversation_id: str, authorization: str = Header(None)):
+    """
+    Disable sharing for a conversation.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import unshare_conversation as unshare_conv
+
+    user = await authenticate_request(authorization)
+
+    success = await unshare_conv(supabase, user["id"], conversation_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Conversation not found or access denied")
+
+    return {"unshared": True}
+
+
+@router.post("/conversations/join/{share_token}")
+async def join_conversation(share_token: str, authorization: str = Header(None)):
+    """
+    Join a shared conversation using share token.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import join_shared_conversation
+
+    user = await authenticate_request(authorization)
+
+    conversation = await join_shared_conversation(supabase, user["id"], share_token)
+
+    return {
+        "object": "conversation",
+        "data": conversation
+    }
+
+
+@router.delete("/conversations/{conversation_id}/leave")
+async def leave_conversation(conversation_id: str, authorization: str = Header(None)):
+    """
+    Leave a shared conversation.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import leave_shared_conversation
+
+    user = await authenticate_request(authorization)
+
+    success = await leave_shared_conversation(supabase, user["id"], conversation_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Not a participant of this conversation")
+
+    return {"left": True}
+
+
+@router.get("/conversations/{conversation_id}/participants")
+async def get_participants(conversation_id: str, authorization: str = Header(None)):
+    """
+    Get list of participants in a conversation.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import get_conversation_participants
+
+    user = await authenticate_request(authorization)
+
+    participants = await get_conversation_participants(supabase, conversation_id, user["id"])
+
+    return {
+        "object": "list",
+        "data": participants
+    }
+
+
+@router.patch("/conversations/{conversation_id}/participants/{participant_id}")
+async def update_participant(
+    conversation_id: str,
+    participant_id: str,
+    body: dict,
+    authorization: str = Header(None)
+):
+    """
+    Update participant permission (owner only).
+
+    Body:
+        permission: view or chat
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import update_participant_permission
+
+    user = await authenticate_request(authorization)
+
+    permission = body.get("permission")
+    if not permission or permission not in ["view", "chat"]:
+        raise HTTPException(status_code=400, detail="Invalid permission")
+
+    success = await update_participant_permission(
+        supabase, conversation_id, user["id"], participant_id, permission
+    )
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Participant not found or access denied")
+
+    return {"updated": True}
+
+
+@router.delete("/conversations/{conversation_id}/participants/{participant_id}")
+async def remove_participant(
+    conversation_id: str,
+    participant_id: str,
+    authorization: str = Header(None)
+):
+    """
+    Remove a participant from conversation (owner only).
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import remove_participant as remove_part
+
+    user = await authenticate_request(authorization)
+
+    success = await remove_part(supabase, conversation_id, user["id"], participant_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Participant not found or access denied")
+
+    return {"removed": True}
+
+
+@router.post("/conversations/{conversation_id}/presence")
+async def update_presence(conversation_id: str, body: dict, authorization: str = Header(None)):
+    """
+    Update user presence in a conversation.
+
+    Body:
+        is_typing: boolean
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import update_presence as update_pres
+
+    user = await authenticate_request(authorization)
+
+    is_typing = body.get("is_typing", False)
+
+    await update_pres(supabase, conversation_id, user["id"], is_typing)
+
+    return {"updated": True}
+
+
+@router.get("/conversations/{conversation_id}/presence")
+async def get_presence(conversation_id: str, authorization: str = Header(None)):
+    """
+    Get list of users currently active in conversation.
+    """
+    from backend_code.app import supabase
+    from .conversation_sharing import get_active_presence
+
+    user = await authenticate_request(authorization)
+
+    presence = await get_active_presence(supabase, conversation_id)
+
+    return {
+        "object": "list",
+        "data": presence
     }

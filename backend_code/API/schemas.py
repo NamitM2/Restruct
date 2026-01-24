@@ -21,6 +21,7 @@ class RestructParams(BaseModel):
     """Optional Restruct-specific parameters."""
     profile: Optional[str] = None  # Profile slug for routing
     router_mode: Literal["auto", "manual"] = "auto"
+    conversation_id: Optional[str] = None  # For shared conversation billing and rate limiting
 
 
 class ChatCompletionRequest(BaseModel):
