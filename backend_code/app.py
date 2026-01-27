@@ -26,7 +26,8 @@ from backend_code.API.wallet import (
     check_sufficient_balance,
     deduct_from_wallet,
     log_api_usage,
-    get_wallet_balance
+    get_wallet_balance,
+    DEMO_MODE
 )
 from decimal import Decimal
 
@@ -464,7 +465,8 @@ app.include_router(api_router)
 
 DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
-# CORS for local testing
+# CORS configuration
+# In production, replace ["*"] with your Vercel URL, e.g., ["https://your-app.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -496,6 +498,34 @@ async def get_user_from_token(authorization: str) -> dict:
     return None
 
 
+async def check_demo_rate_limit(user_id: str):
+    """Enforce strict rate limits for demo mode."""
+    if not DEMO_MODE:
+        return
+
+    # Limit: 20 requests per day per user
+    LIMIT = 20
+    since = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+
+    def _count():
+        return (
+            supabase.table("api_usage")
+            .select("id", count="exact")
+            .eq("user_id", user_id)
+            .gte("created_at", since)
+            .execute()
+        )
+
+    result = await asyncio.to_thread(_count)
+    count = result.count if result.count is not None else len(result.data)
+
+    if count >= LIMIT:
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Demo limit exceeded. You have used {count}/{LIMIT} requests in the last 24 hours."
+        )
+
+
 @app.get("/")
 def root():
     """Health check."""
@@ -524,6 +554,9 @@ async def chat(body: dict, authorization: str = Header(None)):
 
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
+
+    # Enforce demo limits
+    await check_demo_rate_limit(user_id)
 
     # Add user message to conversation
     await add_message(
@@ -671,6 +704,9 @@ async def chat_batch(body: dict, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail="conversation_id is required")
     if not model_overrides or not isinstance(model_overrides, list):
         raise HTTPException(status_code=400, detail="model_overrides must be a non-empty list")
+
+    # Enforce demo limits
+    await check_demo_rate_limit(user_id)
 
     # Save user message once
     await add_message(

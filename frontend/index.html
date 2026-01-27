@@ -117,6 +117,12 @@
                             <h1>Restruct</h1>
                         </div>
                         <p>Sign in to your account</p>
+                        <div
+                            style="background: rgba(255, 211, 79, 0.15); border: 1px solid rgba(255, 211, 79, 0.4); border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 13px; color: var(--text-secondary); text-align: left;">
+                            <strong>🚧 Functional Demo Version</strong><br>
+                            This is a showcase of the Restruct platform. Payments are disabled. You can generate API
+                            keys and use the platform for free with strict daily rate limits (20 requests/day).
+                        </div>
                     </div>
 
                     <div class="error-banner" id="signinErrorBanner"></div>
@@ -1075,7 +1081,12 @@
                         <div class="wallet-section">
                             <div class="wallet-card">
                                 <div class="wallet-header">
-                                    <h3>Current Balance</h3>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h3>Current Balance</h3>
+                                        <span
+                                            style="background: rgba(255, 83, 165, 0.15); color: #FF53A5; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255, 83, 165, 0.3); text-transform: uppercase;">In
+                                            Development</span>
+                                    </div>
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path
@@ -1086,10 +1097,12 @@
                                     </svg>
                                 </div>
                                 <div class="wallet-balance">
-                                    <span class="balance-amount" id="billingWalletBalance">$0.00</span>
+                                    <span class="balance-amount" id="billingWalletBalance">Free Demo</span>
+                                    <p style="font-size: 12px; opacity: 0.7; margin-top: 4px;">Allocated: 20 req/day</p>
                                 </div>
                                 <div class="wallet-actions">
-                                    <button class="wallet-button primary" id="billingAddFundsBtn">
+                                    <button class="wallet-button primary" id="billingAddFundsBtn" disabled
+                                        style="opacity: 0.5; cursor: not-allowed;" title="Disabled in Demo">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                             stroke-linejoin="round">
@@ -1213,39 +1226,49 @@
 
                                             <div class="key-info" style="margin-top: 16px;">
                                                 <label>Rate Limits (Optional)</label>
-                                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                                <div
+                                                    style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px;">
                                                     <div>
                                                         <input type="number" id="rateLimitRpm" placeholder="RPM" min="1"
                                                             style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
                                                             title="Requests per minute">
-                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Minute</small>
+                                                        <small
+                                                            style="color: rgba(255,255,255,0.5); font-size: 11px;">Per
+                                                            Minute</small>
                                                     </div>
                                                     <div>
                                                         <input type="number" id="rateLimitRph" placeholder="RPH" min="1"
                                                             style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
                                                             title="Requests per hour">
-                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Hour</small>
+                                                        <small
+                                                            style="color: rgba(255,255,255,0.5); font-size: 11px;">Per
+                                                            Hour</small>
                                                     </div>
                                                     <div>
                                                         <input type="number" id="rateLimitRpd" placeholder="RPD" min="1"
                                                             style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;"
                                                             title="Requests per day">
-                                                        <small style="color: rgba(255,255,255,0.5); font-size: 11px;">Per Day</small>
+                                                        <small
+                                                            style="color: rgba(255,255,255,0.5); font-size: 11px;">Per
+                                                            Day</small>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div class="key-info" style="margin-top: 16px;">
                                                 <label>Environment & Notes (Optional)</label>
-                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
-                                                    <select id="keyEnvironment" style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;">
+                                                <div
+                                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                                    <select id="keyEnvironment"
+                                                        style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;">
                                                         <option value="">Select environment...</option>
                                                         <option value="production">Production</option>
                                                         <option value="staging">Staging</option>
                                                         <option value="development">Development</option>
                                                         <option value="testing">Testing</option>
                                                     </select>
-                                                    <input type="text" id="keyApplication" placeholder="Application name"
+                                                    <input type="text" id="keyApplication"
+                                                        placeholder="Application name"
                                                         style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 13px;">
                                                 </div>
                                                 <textarea id="keyNotes" placeholder="Notes about this key..." rows="2"
@@ -1552,6 +1575,7 @@
     </div>
 
     <!-- Scripts at end of body so all HTML is loaded first -->
+    <script src="config.js"></script>
     <script src="collaboration.js"></script>
     <script src="script.js"></script>
     <script src="wallet.js"></script>
