@@ -78,9 +78,9 @@ MODELS = {
     "google": {
         "api_key": os.getenv("GOOGLE_API_KEY", "your-google-key"),
         "models": {
-            "gemini-2.5-pro": {
+            "gemini-1.5-pro": {
                 "input_token_cost": 1.25 / 1_000_000,
-                "output_token_cost": 10.0 / 1_000_000,
+                "output_token_cost": 5.00 / 1_000_000,
                 "max_tokens": 1_000_000,
                 "capability_attributes": {
                     "overall_complexity": 9.6,
@@ -90,9 +90,9 @@ MODELS = {
                     "chain_of_thought_depth": 9.4
                 }
             },
-            "gemini-2.5-flash": {
-                "input_token_cost": 0.30 / 1_000_000,
-                "output_token_cost": 2.50 / 1_000_000,
+            "gemini-1.5-flash": {
+                "input_token_cost": 0.075 / 1_000_000,
+                "output_token_cost": 0.30 / 1_000_000,
                 "max_tokens": 1_000_000,
                 "capability_attributes": {
                     "overall_complexity": 6.9,
@@ -102,40 +102,16 @@ MODELS = {
                     "chain_of_thought_depth": 6.1
                 }
             },
-            "gemini-2.5-flash-lite": {
-                "input_token_cost": 0.10 / 1_000_000,
-                "output_token_cost": 0.40 / 1_000_000,
+            "gemini-1.5-flash-8b": {
+                "input_token_cost": 0.0375 / 1_000_000,
+                "output_token_cost": 0.15 / 1_000_000,
                 "max_tokens": 1_000_000,
-                "capability_attributes": {
-                    "overall_complexity": 2.6,
-                    "mathematical_and_logical_reasoning": 2.1,
-                    "linguistic_and_creative_reasoning": 2.9,
-                    "factuality": 2.4,
-                    "chain_of_thought_depth": 1.6
-                }
-            },
-            "gemini-2.0-flash": {
-                "input_token_cost": 0.15 / 1_000_000,
-                "output_token_cost": 0.60 / 1_000_000,
-                "max_tokens": 512_000,
                 "capability_attributes": {
                     "overall_complexity": 4.1,
                     "mathematical_and_logical_reasoning": 3.6,
                     "linguistic_and_creative_reasoning": 4.2,
                     "factuality": 4.0,
                     "chain_of_thought_depth": 3.6
-                }
-            },
-            "gemini-2.0-flash-lite": {
-                "input_token_cost": 0.05 / 1_000_000,
-                "output_token_cost": 0.20 / 1_000_000,
-                "max_tokens": 512_000,
-                "capability_attributes": {
-                    "overall_complexity": 1.0,
-                    "mathematical_and_logical_reasoning": 1.0,
-                    "linguistic_and_creative_reasoning": 1.0,
-                    "factuality": 1.0,
-                    "chain_of_thought_depth": 1.0
                 }
             }
         }
