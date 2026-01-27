@@ -156,6 +156,7 @@ const WAVE_EXIT_DELAY_MS = 1350;
 const WAVE_EXIT_CLEANUP_MS = 1200;
 let waveTransitionTimeouts = [];
 let isThemeToggling = false;
+let activeApiKeys = []; // Initialize to avoid TDZ errors
 
 function initTheme() {
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -696,6 +697,7 @@ const modelSelect = document.getElementById('modelSelect');
 const profilesGrid = document.getElementById('profilesGrid');
 const communityProfilesGrid = document.getElementById('communityProfilesGrid');
 const communityProfilesSearch = document.getElementById('communityProfilesSearch');
+const codeFlowProfilesGrid = document.getElementById('codeFlowProfilesGrid');
 
 const profileStatsModal = document.getElementById('profileStatsModal');
 const closeProfileStats = document.getElementById('closeProfileStats');
@@ -4017,7 +4019,7 @@ if (profileSelectorModal) {
 }
 
 // API Key Management
-let activeApiKeys = [];
+
 let currentPendingKey = null;
 let currentPendingKeyDate = null;
 let currentPendingKeyId = null;
