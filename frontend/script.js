@@ -2763,7 +2763,7 @@ if (chatForm) {
         } catch (error) {
             console.error('Chat error:', error);
             removeLoading(loadingId);
-            addMessage('assistant', `Error: ${error.message}. Make sure the backend is running and API keys are configured.`, {
+            addMessage('assistant', "Something went wrong. Please try again or check your connection.", {
                 model: 'error',
                 provider: 'system'
             });
@@ -3028,7 +3028,7 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata) {
                         console.error(`Error with model ${modelName}:`, event.error);
                         removeLoadingFromMultiModelPane(loadingIds[modelName]);
 
-                        addResponseToMultiModelPane(multiModelGroupContainer, modelName, `Error: ${event.error}`, {
+                        addResponseToMultiModelPane(multiModelGroupContainer, modelName, "Something went wrong.", {
                             model: 'error',
                             provider: 'system'
                         });
@@ -3047,7 +3047,7 @@ async function handleMultiModelSubmission(prompt, attachmentMetadata) {
         // Remove all loading indicators and show errors
         selectedOverrideModels.forEach(modelName => {
             removeLoadingFromMultiModelPane(loadingIds[modelName]);
-            addResponseToMultiModelPane(multiModelGroupContainer, modelName, `Error: ${error.message}`, {
+            addResponseToMultiModelPane(multiModelGroupContainer, modelName, "Something went wrong. Please try again.", {
                 model: 'error',
                 provider: 'system'
             });
