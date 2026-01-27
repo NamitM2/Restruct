@@ -632,13 +632,22 @@ async def chat(body: dict, authorization: str = Header(None)):
         estimated_output_tokens
     )
 
-    has_balance = await check_sufficient_balance(supabase, user_id, estimated_cost)
-    if not has_balance:
-        current_balance = await get_wallet_balance(supabase, user_id)
-        raise HTTPException(
-            status_code=402,
-            detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
-        )
+    try:
+        has_balance = await check_sufficient_balance(supabase, user_id, estimated_cost)
+        if not has_balance:
+            current_balance = await get_wallet_balance(supabase, user_id)
+            # In fail-open mode, even if check fails, we might just log and proceed
+            # But here we explicitly raise 402 if balance is definitely insufficient
+            raise HTTPException(
+                status_code=402,
+                detail=f"Insufficient balance. Current balance: ${float(current_balance):.4f}, Estimated cost: ${float(estimated_cost):.4f}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Warning: Wallet balance check failed: {e}")
+        # Fail open: Allow request if wallet check errors out
+        pass
 
     # PHASE 2: INFERENCE
     inference_start = time.time()
@@ -666,49 +675,61 @@ async def chat(body: dict, authorization: str = Header(None)):
     total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token)
 
     # Deduct from wallet
-    await deduct_from_wallet(supabase, user_id, actual_cost)
+    try:
+        await deduct_from_wallet(supabase, user_id, actual_cost)
+    except Exception as e:
+        print(f"Warning: Wallet deduction failed: {e}")
 
     # Log API usage
-    await log_api_usage(
-        supabase,
-        user_id,
-        None,  # No API key for web app
-        "/chat",
-        "POST",
-        model_choice["vendor"],
-        model_choice["model_name"],
-        profile,
-        input_tokens,
-        output_tokens,
-        actual_cost,
-        200,
-        None,
-        int((inference_time + routing_time) * 1000)
-    )
+    try:
+        await log_api_usage(
+            supabase,
+            user_id,
+            None,  # No API key for web app
+            "/chat",
+            "POST",
+            model_choice["vendor"],
+            model_choice["model_name"],
+            profile,
+            input_tokens,
+            output_tokens,
+            actual_cost,
+            200,
+            None,
+            int((inference_time + routing_time) * 1000)
+        )
+    except Exception as e:
+        print(f"Warning: API usage logging failed: {e}")
 
-    await enforce_usage_limits(profile, user_id, {
-        "cost": total_cost,
-        "output_tokens": output_tokens
-    })
+    try:
+        await enforce_usage_limits(profile, user_id, {
+            "cost": total_cost,
+            "output_tokens": output_tokens
+        })
+    except Exception as e:
+        print(f"Warning: Usage limit enforcement failed: {e}")
 
     # Save assistant message to database with full stats
-    await add_message(
-        conversation_id=conversation_id,
-        role="assistant",
-        content=response_text,
-        model=model_choice["model_name"],
-        provider=model_choice["vendor"],
-        profile_name=profile,
-        metadata={
-            "score": model_choice.get("score", 0),
-            "router_mode": router_mode,
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost": total_cost,
-            "routing_time_ms": round(routing_time * 1000, 2),
-            "inference_time_ms": round(inference_time * 1000, 2)
-        }
-    )
+    try:
+        await add_message(
+            conversation_id=conversation_id,
+            role="assistant",
+            content=response_text,
+            model=model_choice["model_name"],
+            provider=model_choice["vendor"],
+            profile_name=profile,
+            metadata={
+                "score": model_choice.get("score", 0),
+                "router_mode": router_mode,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost": total_cost,
+                "routing_time_ms": round(routing_time * 1000, 2),
+                "inference_time_ms": round(inference_time * 1000, 2)
+            }
+        )
+    except Exception as e:
+        print(f"Warning: Failed to save assistant message: {e}")
 
     # Build response
     return {
