@@ -466,10 +466,15 @@ app.include_router(api_router)
 DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
 # CORS configuration
-# In production, replace ["*"] with your Vercel URL, e.g., ["https://your-app.vercel.app"]
+# Using specific origins is required when allow_credentials=True
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://restruct-two.vercel.app",
+        "https://restruct-4oeq.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

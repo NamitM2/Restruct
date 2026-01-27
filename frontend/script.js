@@ -134,8 +134,9 @@ const ModalA11yManager = (() => {
         }
 
         if (previousFocus && typeof previousFocus.focus === 'function') {
+            const elementToFocus = previousFocus;
             requestAnimationFrame(() => {
-                previousFocus.focus();
+                elementToFocus.focus();
             });
         }
 
