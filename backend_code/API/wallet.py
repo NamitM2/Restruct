@@ -1,8 +1,6 @@
-"""
-Wallet management and cost calculation for API usage.
-"""
-
 import os
+from decimal import Decimal
+from typing import Dict, Any, Optional
 
 # Development mode flag - set to True to bypass wallet checks
 # Development mode flag
