@@ -652,7 +652,11 @@ async def chat(body: dict, authorization: str = Header(None)):
 
     # PHASE 2: INFERENCE
     inference_start = time.time()
-    response_data = await inference.inference(model_choice, conversation)
+    try:
+        response_data = await inference.inference(model_choice, conversation)
+    except Exception as e:
+        print(f"Inference failed for {model_choice['model_name']}: {e}")
+        raise HTTPException(status_code=502, detail=f"Inference failed for model {model_choice['model_name']}. Please try another model.")
     inference_time = time.time() - inference_start
 
     response_text = response_data.get("text") or ""
