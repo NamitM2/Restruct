@@ -2,12 +2,14 @@
 Wallet management and cost calculation for API usage.
 """
 
-from typing import Dict, Any, Optional
-from decimal import Decimal
-
+import os
 
 # Development mode flag - set to True to bypass wallet checks
-DEVELOPMENT_MODE = True
+# Development mode flag
+DEVELOPMENT_MODE = False
+# Demo mode: Free usage with strict limits
+# Reads from env var 'DEMO_MODE', defaults to True
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 
 
 # Cost per 1M tokens (in USD) for each provider/model
@@ -102,7 +104,7 @@ async def check_sufficient_balance(
     Returns:
         True if sufficient balance or DEVELOPMENT_MODE is enabled
     """
-    if DEVELOPMENT_MODE:
+    if DEVELOPMENT_MODE or DEMO_MODE:
         return True
 
     balance = await get_wallet_balance(supabase, user_id)
@@ -213,6 +215,9 @@ async def add_funds(
     Returns:
         Updated wallet info
     """
+    if DEMO_MODE:
+        raise ValueError("Adding funds is disabled in Demo Mode.")
+
     # Get current balance
     balance = await get_wallet_balance(supabase, user_id)
     new_balance = balance + amount
