@@ -473,6 +473,7 @@ app.add_middleware(
         "http://localhost:8000",
         "http://127.0.0.1:8000",
         "https://restruct-two.vercel.app",
+        "https://restruct-two.vercel.app/",
         "https://restruct-4oeq.onrender.com"
     ],
     allow_credentials=True,
@@ -486,6 +487,32 @@ app.add_middleware(
 async def auth_error_handler(request, exc: AuthApiError):
     from fastapi.responses import JSONResponse
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+    
+    status_code = 500
+    detail = "Internal Server Error"
+    
+    if isinstance(exc, StarletteHTTPException):
+        status_code = exc.status_code
+        detail = exc.detail
+    else:
+        print(f"Global error: {exc}")
+        
+    return JSONResponse(
+        status_code=status_code,
+        content={"detail": detail},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin") or "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 
 async def get_user_from_token(authorization: str) -> dict:
