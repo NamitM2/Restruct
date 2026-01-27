@@ -502,6 +502,7 @@ async def global_exception_handler(request, exc):
         detail = exc.detail
     else:
         print(f"Global error: {exc}")
+        detail = f"Internal Server Error: {str(exc)}"
         
     return JSONResponse(
         status_code=status_code,
@@ -1312,8 +1313,13 @@ async def resolve_model_choice(router_mode: str, model_override: Optional[str], 
         except Exception as e:
             print(f"[profile-router] fallback to legacy routing due to: {e}")
 
-    model, model_scores = await router.route_with_llm(conversation)
-    return model
+    try:
+        model, model_scores = await router.route_with_llm(conversation)
+        return model
+    except Exception as e:
+        print(f"[router] fallback to default routing due to: {e}")
+        # Ultimate fallback to GPT-5 if routing completely fails
+        return router.route_specific("openai", "gpt-5")
 
 
 @app.get("/models/info")
