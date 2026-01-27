@@ -564,6 +564,8 @@ body {
     justify-content: center;
     padding: 40px 20px;
     position: relative;
+    overflow-y: auto;
+    height: 100%;
 }
 
 .mesh-background {
