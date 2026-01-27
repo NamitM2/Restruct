@@ -3,7 +3,7 @@
  * Handles wallet balance display and fund management
  */
 
-const API_BASE_URL = 'http://localhost:8000/v1';
+// API_BASE_URL is defined in config.js
 
 // Fetch and display wallet balance
 async function loadWalletBalance() {

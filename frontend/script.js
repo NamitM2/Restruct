@@ -1,5 +1,4 @@
-const API_URL = 'http://localhost:8000';
-window.API_URL = API_URL;
+// API_URL is defined in config.js
 
 // =============================================================================
 // AUTHENTICATION HANDLING
@@ -5283,7 +5282,7 @@ if (shareConversationBtn) {
 }
 
 const originalLoadConversation = loadConversation;
-window.loadConversation = async function(conversationId) {
+window.loadConversation = async function (conversationId) {
     await originalLoadConversation(conversationId);
 
     if (currentConversation?.conversationId) {

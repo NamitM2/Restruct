@@ -20,7 +20,7 @@ google-genai>=1.50.0
 anthropic>=0.25.0
 
 # Local LLM for routing
-llama-cpp-python>=0.2.0
+# llama-cpp-python>=0.2.0
 
 # Optional: GPU detection (install PyTorch for automatic GPU detection)
 # torch>=2.0.0  # Uncomment if you want GPU detection without manual configuration

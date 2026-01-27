@@ -3,7 +3,7 @@
  * Loads live data from api_usage table
  */
 
-const STATS_API_BASE = 'http://localhost:8000/v1';
+// STATS_API_BASE is defined in config.js
 let dashboardChart = null;
 let modelUsageChart = null;
 let tokenUsageChart = null;
@@ -377,17 +377,17 @@ function createModelUsageChart(breakdown) {
                 },
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             return context[0].label + ' Models';
                         },
-                        label: function(context) {
+                        label: function (context) {
                             const family = context.label;
                             const value = context.parsed || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = ((value / total) * 100).toFixed(1);
                             return `Total: $${value.toFixed(2)} (${percentage}%)`;
                         },
-                        afterLabel: function(context) {
+                        afterLabel: function (context) {
                             const family = context.label;
                             const models = familyModels[family] || [];
                             const lines = models.map(m => `  ${m.model}: $${m.cost.toFixed(2)}`);
@@ -532,17 +532,17 @@ function createTokenUsageChart(breakdown) {
                 },
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
+                        title: function (context) {
                             return context[0].label + ' Models';
                         },
-                        label: function(context) {
+                        label: function (context) {
                             const family = context.label;
                             const value = context.parsed || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = ((value / total) * 100).toFixed(1);
                             return `Total: ${value.toLocaleString()} tokens (${percentage}%)`;
                         },
-                        afterLabel: function(context) {
+                        afterLabel: function (context) {
                             const family = context.label;
                             const models = familyModels[family] || [];
                             const lines = models.map(m =>
