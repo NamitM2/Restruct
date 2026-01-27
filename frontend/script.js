@@ -696,7 +696,7 @@ const modelSelect = document.getElementById('modelSelect');
 const profilesGrid = document.getElementById('profilesGrid');
 const communityProfilesGrid = document.getElementById('communityProfilesGrid');
 const communityProfilesSearch = document.getElementById('communityProfilesSearch');
-const codeFlowProfilesGrid = document.getElementById('codeFlowProfilesGrid');
+
 const profileStatsModal = document.getElementById('profileStatsModal');
 const closeProfileStats = document.getElementById('closeProfileStats');
 const statsProfileName = document.getElementById('statsProfileName');

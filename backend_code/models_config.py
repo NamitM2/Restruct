@@ -78,7 +78,7 @@ MODELS = {
     "google": {
         "api_key": os.getenv("GOOGLE_API_KEY", "your-google-key"),
         "models": {
-            "gemini-1.5-pro": {
+            "gemini-2.5-pro": {
                 "input_token_cost": 1.25 / 1_000_000,
                 "output_token_cost": 5.00 / 1_000_000,
                 "max_tokens": 1_000_000,
@@ -90,7 +90,7 @@ MODELS = {
                     "chain_of_thought_depth": 9.4
                 }
             },
-            "gemini-1.5-flash": {
+            "gemini-2.5-flash": {
                 "input_token_cost": 0.075 / 1_000_000,
                 "output_token_cost": 0.30 / 1_000_000,
                 "max_tokens": 1_000_000,
@@ -102,7 +102,7 @@ MODELS = {
                     "chain_of_thought_depth": 6.1
                 }
             },
-            "gemini-1.5-flash-8b": {
+            "gemini-2.0-flash": {
                 "input_token_cost": 0.0375 / 1_000_000,
                 "output_token_cost": 0.15 / 1_000_000,
                 "max_tokens": 1_000_000,
