@@ -539,23 +539,31 @@ async def check_demo_rate_limit(user_id: str):
     LIMIT = 20
     since = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
 
-    def _count():
-        return (
-            supabase.table("api_usage")
-            .select("id", count="exact")
-            .eq("user_id", user_id)
-            .gte("created_at", since)
-            .execute()
-        )
+    try:
+        def _count():
+            return (
+                supabase.table("api_usage")
+                .select("id", count="exact")
+                .eq("user_id", user_id)
+                .gte("created_at", since)
+                .execute()
+            )
 
-    result = await asyncio.to_thread(_count)
-    count = result.count if result.count is not None else len(result.data)
+        result = await asyncio.to_thread(_count)
+        count = result.count if result.count is not None else len(result.data)
 
-    if count >= LIMIT:
-        raise HTTPException(
-            status_code=429, 
-            detail=f"Demo limit exceeded. You have used {count}/{LIMIT} requests in the last 24 hours."
-        )
+        if count >= LIMIT:
+            raise HTTPException(
+                status_code=429, 
+                detail=f"Demo limit exceeded. You have used {count}/{LIMIT} requests in the last 24 hours."
+            )
+    except HTTPException:
+        # Re-raise actual rate limits
+        raise
+    except Exception as e:
+        # Fail open if DB check fails
+        print(f"Warning: Demo rate limit check failed: {e}")
+        pass
 
 
 @app.get("/")
@@ -591,12 +599,22 @@ async def chat(body: dict, authorization: str = Header(None)):
     await check_demo_rate_limit(user_id)
 
     # Add user message to conversation
-    await add_message(
-        conversation_id=conversation_id,
-        role="user",
-        content=prompt
-    )
-    conversation = await get_conversation_messages(conversation_id)
+    # Add user message to conversation (Optional - Fail open)
+    try:
+        await add_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=prompt
+        )
+    except Exception as e:
+        print(f"Warning: Failed to save user message: {e}")
+
+    try:
+        conversation = await get_conversation_messages(conversation_id)
+    except Exception as e:
+        print(f"Warning: Failed to retrieve conversation: {e}")
+        # Fallback to just current prompt if history unavailable
+        conversation = [{"role": "user", "content": prompt}]
 
     # PHASE 1: ROUTING
     routing_start = time.time()
