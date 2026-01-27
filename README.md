@@ -16,7 +16,7 @@ Restruct allows you to generate and manage custom API keys for secure access.
 ### 🛠️ Custom Routing Profiles
 Tailor the routing logic to your needs. You can create profiles that prioritize:
 - **Cost**: Route to the cheapest model that can handle the task.
-- **Performance**: Route to the most capable model (e.g., GPT-5, Claude Opus) regardless of cost.
+- **Performance**: Route to the most capable model (e.g., GPT-5, Claude Opus 4.1) regardless of cost.
 - **Speed**: Prioritize low-latency models for quick responses.
 
 **To create a profile:**
@@ -26,13 +26,13 @@ Tailor the routing logic to your needs. You can create profiles that prioritize:
 
 ### 🎛️ Model Override
 Want to force a specific model? You can bypass the router manually.
-- In the chat interface, use the **Model Dropdown** to select a specific provider and model (e.g., `openai:gpt-5`, `google:gemini-1.5-pro`).
+- In the chat interface, use the **Model Dropdown** to select a specific provider and model (e.g., `openai:gpt-5`, `google:gemini-2.5-pro`).
 - This disables automatic routing for the current session.
 
 ### ⚡ Use Multiple Models at Once
 Compare results or get diverse perspectives by querying multiple models simultaneously.
 - Enable **Multi-Model Mode** in the chat settings.
-- Select the models you want to query (e.g., GPT-5 vs. Claude 3.5 Sonnet).
+- Select the models you want to query (e.g., GPT-5 vs. Claude 4.5 Sonnet).
 - Your prompt will be sent to all selected models in parallel, and results will be displayed side-by-side.
 
 ## Getting Started
