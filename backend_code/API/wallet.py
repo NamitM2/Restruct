@@ -179,22 +179,26 @@ async def log_api_usage(
         error_message: Error message (if any)
         request_duration_ms: Request duration in milliseconds
     """
-    supabase.table("api_usage").insert({
-        "user_id": user_id,
-        "api_key_id": api_key_id,
-        "endpoint": endpoint,
-        "method": method,
-        "provider": provider,
-        "model": model,
-        "profile_name": profile_name,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "total_tokens": input_tokens + output_tokens,
-        "estimated_cost": float(estimated_cost),
-        "status_code": status_code,
-        "error_message": error_message,
-        "request_duration_ms": request_duration_ms
-    }).execute()
+    try:
+        supabase.table("api_usage").insert({
+            "user_id": user_id,
+            "api_key_id": api_key_id,
+            "endpoint": endpoint,
+            "method": method,
+            "provider": provider,
+            "model": model,
+            "profile_name": profile_name,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+            "estimated_cost": float(estimated_cost),
+            "status_code": status_code,
+            "error_message": error_message,
+            "request_duration_ms": request_duration_ms
+        }).execute()
+    except Exception as e:
+        # Prevent analytics errors from breaking the request
+        print(f"Failed to log API usage: {e}")
 
 
 async def add_funds(
