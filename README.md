@@ -1,96 +1,41 @@
-# Restruct: Intelligent Multi-Model LLM Router
+# Restruct
 
-Restruct is a high-performance, intelligent model routing system designed to optimize LLM usage by dynamically selecting the most suitable model for a given prompt. It combines a sophisticated backend router with a modern React frontend and a comprehensive wallet/billing system.
+**Live App:** [https://restruct-two.vercel.app](https://restruct-two.vercel.app)
 
-## 🚀 Key Features
+Restruct is an intelligent, multi-model chat interface designed to optimize your interaction with Large Language Models (LLMs). It acts as a smart router, dynamically selecting the best model (OpenAI, Google Gemini, Anthropic Claude) for your specific query to balance cost, performance, and speed.
 
-*   **Smart Routing**: Analyzes prompt complexity (using Gemini 2.0 or local models) to route requests to the most cost-efficient model that can handle the task.
-*   **Multi-Provider Support**: Seamlessly integrates with OpenAI, Anthropic, Google Gemini, and local LLMs.
-*   **Wallet & Billing**: Built-in system for tracking token usage, costs, and managing user balances with Supabase.
-*   **Routing Profiles**: customizable routing logic allowing users to define "Cost Optimized" vs "Performance First" strategies.
-*   **Batch Processing**: Parallel execution of prompts across multiple models with SSE streaming.
-*   **Community Profiles**: Share and discover optimized routing configurations.
+## Key Features
 
-## 🛠️ Technology Stack
+### 🔑 Generate API Keys
+Restruct allows you to generate and manage custom API keys for secure access.
+1. Navigate to the **Settings** or **API Keys** section in the sidebar.
+2. Click **Generate New Key**.
+3. Set rate limits and expiration if needed.
+4. Use this key to authenticate requests against the Restruct API programmatically.
 
-*   **Backend**: Python, FastAPI, Uvicorn
-*   **Database**: Supabase (PostgreSQL + Auth)
-*   **Frontend**: React, Vite/Esbuild (Custom build script), Framer Motion
-*   **AI/ML**: `google-genai`, `openai`, `anthropic` SDKs, `llama-cpp-python` (for local routing)
+### 🛠️ Custom Routing Profiles
+Tailor the routing logic to your needs. You can create profiles that prioritize:
+- **Cost**: Route to the cheapest model that can handle the task.
+- **Performance**: Route to the most capable model (e.g., GPT-5, Claude Opus) regardless of cost.
+- **Speed**: Prioritize low-latency models for quick responses.
 
-## 📂 Project Structure
+**To create a profile:**
+1. Go to the **Routing Profiles** tab.
+2. Define your criteria (e.g., "Max cost per query: $0.01").
+3. Save the profile and select it from the chat interface.
 
-*   `backend_code/`: Core application logic
-    *   `app.py`: Main FastAPI application entry point.
-    *   `router.py`: Logic for scoring prompts and selecting models.
-    *   `inference.py`: Unified interface for calling different LLM providers.
-    *   `API/`: Routes for wallet, batch processing, and other features.
-*   `frontend/`: React-based web interface.
-*   `scripts/`: Utility scripts for development and maintenance (e.g., `dev.py`, `check_env.py`).
-*   `tests/`: Test suite (API tests, performance benchmarks).
-*   `mesh_experiments/`: Experimental visualizations and JavaScript prototypes.
-*   `logs/`: Application logs and experiment results.
-*   `database/`: Database schemas, migration SQL files, and documentation.
+### 🎛️ Model Override
+Want to force a specific model? You can bypass the router manually.
+- In the chat interface, use the **Model Dropdown** to select a specific provider and model (e.g., `openai:gpt-5`, `google:gemini-1.5-pro`).
+- This disables automatic routing for the current session.
 
-## ⚡ Quick Start
+### ⚡ Use Multiple Models at Once
+Compare results or get diverse perspectives by querying multiple models simultaneously.
+- Enable **Multi-Model Mode** in the chat settings.
+- Select the models you want to query (e.g., GPT-5 vs. Claude 3.5 Sonnet).
+- Your prompt will be sent to all selected models in parallel, and results will be displayed side-by-side.
 
-### Prerequisites
-*   Python 3.10+
-*   Node.js & npm
-*   Supabase account & project
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/NamitM2/Restruct.git
-    cd Restruct
-    ```
-
-2.  **Install Backend Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Install Frontend Dependencies:**
-    ```bash
-    npm install
-    ```
-
-4.  **Environment Setup:**
-    Create a `.env` file in the root directory (see `.env.example`) and add your API keys:
-    ```env
-    SUPABASE_URL=your_supabase_url
-    SUPABASE_KEY=your_supabase_key
-    OPENAI_API_KEY=sk-...
-    ANTHROPIC_API_KEY=sk-...
-    GOOGLE_API_KEY=REDACTED...
-    ```
-
-### Running the Application
-
-Use the development launcher to start both the backend API and the frontend:
-
-```bash
-python scripts/dev.py
-```
-
-This will:
-*   Start the FastAPI server on `http://localhost:8000`
-*   Open the frontend in your default browser
-
-## 🧪 Testing
-
-Run the test suite to verify functionality:
-
-```bash
-# Run python tests
-pytest tests/
-
-# Run frontend tests
-npm test
-```
-
-## 📜 License
-
-ISC
+## Getting Started
+1. **Sign Up/Login**: Create an account to sync your conversations and preferences.
+2. **Configure API Keys**: Ensure you have valid API keys for the underlying providers (OpenAI, Google, Anthropic) if running your own instance, or use the provided community keys.
+3. **Start Chatting**: Type your prompt and let Restruct handle the rest!
