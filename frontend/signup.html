@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Restruct</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="config.js"></script>
     <style>
         :root {
             --sand-50: #f6efe7;
@@ -222,6 +222,7 @@
             0% {
                 transform: translateX(0);
             }
+
             100% {
                 transform: translateX(calc(-120px * 9 - 12px * 9));
             }
@@ -403,9 +404,17 @@
         }
 
         @keyframes popIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .popup-icon svg {
@@ -509,48 +518,65 @@
         }
     </style>
 </head>
+
 <body>
     <div class="page-wrapper">
         <!-- Model Slider -->
         <div class="model-slider-container">
             <div class="model-slider">
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false">
+                </div>
                 <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
                 <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false">
+                </div>
+                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"
+                        draggable="false"></div>
                 <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false">
+                </div>
                 <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
                 <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false">
+                </div>
                 <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
                 <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false">
+                </div>
+                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"
+                        draggable="false"></div>
                 <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false">
+                </div>
                 <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
                 <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false">
+                </div>
                 <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
                 <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false">
+                </div>
+                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"
+                        draggable="false"></div>
                 <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false">
+                </div>
                 <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
                 <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
 
-                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false"></div>
+                <div class="model-badge chatgpt"><img src="assets/chatgpt-logo.png" alt="ChatGPT" draggable="false">
+                </div>
                 <div class="model-badge claude"><img src="assets/claude-logo.png" alt="Claude" draggable="false"></div>
                 <div class="model-badge qwen"><img src="assets/qwen-logo.png" alt="Qwen" draggable="false"></div>
-                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false"></div>
-                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity" draggable="false"></div>
+                <div class="model-badge mistral"><img src="assets/mistral-logo.png" alt="Mistral" draggable="false">
+                </div>
+                <div class="model-badge perplexity"><img src="assets/perplexity-logo.png" alt="Perplexity"
+                        draggable="false"></div>
                 <div class="model-badge grok"><img src="assets/grok-logo.png" alt="Grok" draggable="false"></div>
-                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false"></div>
+                <div class="model-badge deepseek"><img src="assets/deepseek-logo.png" alt="Deepseek" draggable="false">
+                </div>
                 <div class="model-badge llama"><img src="assets/llama-logo.png" alt="Llama" draggable="false"></div>
                 <div class="model-badge gemini"><img src="assets/gemini-logo.png" alt="Gemini" draggable="false"></div>
             </div>
@@ -583,26 +609,15 @@
 
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                        <input type="password" id="confirmPassword" name="confirmPassword"
+                            placeholder="Confirm your password" required>
                         <p class="error-message" id="passwordError">Passwords do not match</p>
                     </div>
 
                     <button type="submit" class="signup-button">Sign Up</button>
                 </form>
 
-                <div class="divider"><span>or</span></div>
 
-                <button id="themeToggleBtn" class="primary-button" style="background: var(--sand-200); color: var(--ink); margin-bottom: 24px; width: 100%;">Toggle Theme</button>
-
-                <button type="button" class="google-button" id="googleSignUp">
-                    <svg viewBox="0 0 24 24" fill="white">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                </button>
 
                 <div class="form-footer">
                     Already have an account? <a href="signin.html">Sign in</a>
@@ -616,301 +631,64 @@
         <div class="popup-card">
             <div class="popup-icon">
                 <svg viewBox="0 0 24 24">
-                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </div>
             <h2 class="popup-title">Check Your Email</h2>
-            <p class="popup-message">Account created successfully! Please check your email to confirm your account, then sign in.</p>
+            <p class="popup-message">Account created successfully! Please check your email to confirm your account, then
+                sign in.</p>
             <button class="popup-button" onclick="window.location.href='signin.html'">Go to Sign In</button>
         </div>
-                lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim() || 'rgba(142, 60, 44, 0.15)',
-                maxDisplacement: 20
-            };
+        lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim() || 'rgba(142,
+        60, 44, 0.15)',
+        maxDisplacement: 20
+        };
 
-            let points = [];
-            let originalPoints = [];
-            let gridDimensions = { cols: 0, rows: 0 };
-            let mouse = { x: -1000, y: -1000, isActive: false };
+        let points = [];
+        let originalPoints = [];
+        let gridDimensions = { cols: 0, rows: 0 };
+        let mouse = { x: -1000, y: -1000, isActive: false };
 
-            function resizeCanvas() {
-                const rect = container.getBoundingClientRect();
-                if (rect.width === 0 || rect.height === 0) return;
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-                initializeGrid();
-            }
-
-            function initializeGrid() {
-                points = [];
-                originalPoints = [];
-                const cols = Math.ceil(canvas.width / config.gridSize) + 1;
-                const rows = Math.ceil(canvas.height / config.gridSize) + 1;
-                gridDimensions = { cols, rows };
-
-                for (let i = 0; i < cols; i++) {
-                    for (let j = 0; j < rows; j++) {
-                        const x = i * config.gridSize;
-                        const y = j * config.gridSize;
-                        points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
-                        originalPoints.push({ x, y });
-                    }
-                }
-            }
-
-            function updatePoints() {
-                points.forEach((point, index) => {
-                    const original = originalPoints[index];
-                    const dx = mouse.x - point.x;
-                    const dy = mouse.y - point.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (mouse.isActive && distance < config.influenceRadius) {
-                        const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
-                        const angle = Math.atan2(dy, dx);
-                        point.vx += Math.cos(angle) * force * 0.01;
-                        point.vy += Math.sin(angle) * force * 0.01;
-                    } else {
-                        point.vx += (original.x - point.x) * config.returnSpeed;
-                        point.vy += (original.y - point.y) * config.returnSpeed;
-                    }
-
-                    point.vx *= config.dampening;
-                    point.vy *= config.dampening;
-                    point.x += point.vx;
-                    point.y += point.vy;
-
-                    const dispX = point.x - original.x;
-                    const dispY = point.y - original.y;
-                    const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
-
-                    if (displacement > config.maxDisplacement) {
-                        const scale = config.maxDisplacement / displacement;
-                        point.x = original.x + dispX * scale;
-                        point.y = original.y + dispY * scale;
-                    }
-                });
-            }
-
-            function drawMesh() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const { cols, rows } = gridDimensions;
-                if (!cols || !rows || points.length === 0) return;
-
-                ctx.strokeStyle = config.lineColor;
-                ctx.lineWidth = 1;
-
-                for (let j = 0; j < rows; j++) {
-                    ctx.beginPath();
-                    for (let i = 0; i < cols; i++) {
-                        const index = i * rows + j;
-                        const point = points[index];
-                        if (!point) continue;
-                        if (i === 0) ctx.moveTo(point.x, point.y);
-                        else ctx.lineTo(point.x, point.y);
-                    }
-                    ctx.stroke();
-                }
-
-                for (let i = 0; i < cols; i++) {
-                    ctx.beginPath();
-                    for (let j = 0; j < rows; j++) {
-                        const index = i * rows + j;
-                        const point = points[index];
-                        if (!point) continue;
-                        if (j === 0) ctx.moveTo(point.x, point.y);
-                        else ctx.lineTo(point.x, point.y);
-                    }
-                    ctx.stroke();
-                }
-            }
-
-            function animate() {
-                updatePoints();
-                drawMesh();
-                requestAnimationFrame(animate);
-            }
-
-            const parentElement = container.parentElement;
-
-            window.addEventListener('resize', resizeCanvas);
-            if (parentElement) {
-                parentElement.addEventListener('mousemove', (e) => {
-                    const rect = container.getBoundingClientRect();
-                    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
-                });
-                parentElement.addEventListener('mouseleave', () => {
-                    mouse.isActive = false;
-                });
-            }
-
-            setTimeout(() => {
-                resizeCanvas();
-                requestAnimationFrame(animate);
-            }, 50);
-        })();
-
-        // Form submit handler
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const passwordError = document.getElementById('passwordError');
-            const confirmInput = document.getElementById('confirmPassword');
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-
-            // Reset error state
-            passwordError.style.display = 'none';
-            confirmInput.classList.remove('error');
-
-            // Check password match
-            if (password !== confirmPassword) {
-                passwordError.style.display = 'block';
-                confirmInput.classList.add('error');
-                return;
-            }
-
-            // Check password length
-            if (password.length < 6) {
-                passwordError.textContent = 'Password must be at least 6 characters';
-                passwordError.style.display = 'block';
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating account...';
-
-            const response = await fetch('/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                if (data.session && data.session.access_token) {
-                    localStorage.setItem('access_token', data.session.access_token);
-                    localStorage.setItem('refresh_token', data.session.refresh_token);
-                    localStorage.setItem('user_id', data.user.id);
-                    localStorage.setItem('user_email', data.user.email);
-                    window.location.href = 'index.html';
-                } else {
-                    document.getElementById('emailPopup').classList.add('active');
-                }
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-                alert(data.detail || 'Sign up failed. Email may already be registered.');
-            }
-        });
-    </script>
-    <script>
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const body = document.body;
-
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = body.getAttribute('data-theme');
-            if (currentTheme === 'dark') {
-                body.removeAttribute('data-theme');
-                localStorage.removeItem('theme');
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-
-        // Apply theme from local storage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            body.setAttribute('data-theme', savedTheme);
+        function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        initializeGrid();
         }
-    </script>
-    <script>
-        // Mesh Animation
-        (function() {
-            const canvas = document.getElementById('meshCanvas');
-            const container = document.getElementById('meshBackground');
-            if (!canvas || !container) return;
 
-            const ctx = canvas.getContext('2d');
-            const config = {
-                gridSize: 35,
-                gravityStrength: 18,
-                influenceRadius: 100,
-                dampening: 0.95,
-                returnSpeed: 0.05,
-                lineColor: 'rgba(92, 49, 30, 0.15)',
-                maxDisplacement: 20
-            };
+        function initializeGrid() {
+        points = [];
+        originalPoints = [];
+        const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+        const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+        gridDimensions = { cols, rows };
 
-            let points = [];
-            let originalPoints = [];
-            let gridDimensions = { cols: 0, rows: 0 };
-            let mouse = { x: -1000, y: -1000, isActive: false };
+        for (let i = 0; i < cols; i++) { for (let j=0; j < rows; j++) { const x=i * config.gridSize; const y=j *
+            config.gridSize; points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y }); originalPoints.push({ x, y
+            }); } } } function updatePoints() { points.forEach((point, index)=> {
+            const original = originalPoints[index];
+            const dx = mouse.x - point.x;
+            const dy = mouse.y - point.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-            function resizeCanvas() {
-                const rect = container.getBoundingClientRect();
-                if (rect.width === 0 || rect.height === 0) return;
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-                initializeGrid();
-            }
-
-            function initializeGrid() {
-                points = [];
-                originalPoints = [];
-                const cols = Math.ceil(canvas.width / config.gridSize) + 1;
-                const rows = Math.ceil(canvas.height / config.gridSize) + 1;
-                gridDimensions = { cols, rows };
-
-                for (let i = 0; i < cols; i++) {
-                    for (let j = 0; j < rows; j++) {
-                        const x = i * config.gridSize;
-                        const y = j * config.gridSize;
-                        points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
-                        originalPoints.push({ x, y });
-                    }
+            if (mouse.isActive && distance < config.influenceRadius) { const force=(1 - distance /
+                config.influenceRadius) * config.gravityStrength; const angle=Math.atan2(dy, dx); point.vx
+                +=Math.cos(angle) * force * 0.01; point.vy +=Math.sin(angle) * force * 0.01; } else { point.vx
+                +=(original.x - point.x) * config.returnSpeed; point.vy +=(original.y - point.y) * config.returnSpeed; }
+                point.vx *=config.dampening; point.vy *=config.dampening; point.x +=point.vx; point.y +=point.vy; const
+                dispX=point.x - original.x; const dispY=point.y - original.y; const displacement=Math.sqrt(dispX * dispX
+                + dispY * dispY); if (displacement> config.maxDisplacement) {
+                const scale = config.maxDisplacement / displacement;
+                point.x = original.x + dispX * scale;
+                point.y = original.y + dispY * scale;
                 }
-            }
-
-            function updatePoints() {
-                points.forEach((point, index) => {
-                    const original = originalPoints[index];
-                    const dx = mouse.x - point.x;
-                    const dy = mouse.y - point.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (mouse.isActive && distance < config.influenceRadius) {
-                        const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
-                        const angle = Math.atan2(dy, dx);
-                        point.vx += Math.cos(angle) * force * 0.01;
-                        point.vy += Math.sin(angle) * force * 0.01;
-                    } else {
-                        point.vx += (original.x - point.x) * config.returnSpeed;
-                        point.vy += (original.y - point.y) * config.returnSpeed;
-                    }
-
-                    point.vx *= config.dampening;
-                    point.vy *= config.dampening;
-                    point.x += point.vx;
-                    point.y += point.vy;
-
-                    const dispX = point.x - original.x;
-                    const dispY = point.y - original.y;
-                    const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
-
-                    if (displacement > config.maxDisplacement) {
-                        const scale = config.maxDisplacement / displacement;
-                        point.x = original.x + dispX * scale;
-                        point.y = original.y + dispY * scale;
-                    }
                 });
-            }
+                }
 
-            function drawMesh() {
+                function drawMesh() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 const { cols, rows } = gridDimensions;
                 if (!cols || !rows || points.length === 0) return;
@@ -918,113 +696,284 @@
                 ctx.strokeStyle = config.lineColor;
                 ctx.lineWidth = 1;
 
-                for (let j = 0; j < rows; j++) {
-                    ctx.beginPath();
-                    for (let i = 0; i < cols; i++) {
-                        const index = i * rows + j;
-                        const point = points[index];
-                        if (!point) continue;
-                        if (i === 0) ctx.moveTo(point.x, point.y);
-                        else ctx.lineTo(point.x, point.y);
-                    }
-                    ctx.stroke();
-                }
-
-                for (let i = 0; i < cols; i++) {
-                    ctx.beginPath();
-                    for (let j = 0; j < rows; j++) {
-                        const index = i * rows + j;
-                        const point = points[index];
-                        if (!point) continue;
-                        if (j === 0) ctx.moveTo(point.x, point.y);
-                        else ctx.lineTo(point.x, point.y);
-                    }
-                    ctx.stroke();
-                }
-            }
-
-            function animate() {
-                updatePoints();
-                drawMesh();
-                requestAnimationFrame(animate);
-            }
-
-            const parentElement = container.parentElement;
-
-            window.addEventListener('resize', resizeCanvas);
-            if (parentElement) {
-                parentElement.addEventListener('mousemove', (e) => {
+                for (let j = 0; j < rows; j++) { ctx.beginPath(); for (let i=0; i < cols; i++) { const index=i * rows +
+                    j; const point=points[index]; if (!point) continue; if (i===0) ctx.moveTo(point.x, point.y); else
+                    ctx.lineTo(point.x, point.y); } ctx.stroke(); } for (let i=0; i < cols; i++) { ctx.beginPath(); for
+                    (let j=0; j < rows; j++) { const index=i * rows + j; const point=points[index]; if (!point)
+                    continue; if (j===0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y); }
+                    ctx.stroke(); } } function animate() { updatePoints(); drawMesh(); requestAnimationFrame(animate); }
+                    const parentElement=container.parentElement; window.addEventListener('resize', resizeCanvas); if
+                    (parentElement) { parentElement.addEventListener('mousemove', (e)=> {
                     const rect = container.getBoundingClientRect();
                     mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
-                });
-                parentElement.addEventListener('mouseleave', () => {
+                    });
+                    parentElement.addEventListener('mouseleave', () => {
                     mouse.isActive = false;
-                });
-            }
+                    });
+                    }
 
-            setTimeout(() => {
-                resizeCanvas();
-                requestAnimationFrame(animate);
-            }, 50);
-        })();
+                    setTimeout(() => {
+                    resizeCanvas();
+                    requestAnimationFrame(animate);
+                    }, 50);
+                    })();
 
-        // Form submit handler
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+                    // Form submit handler
+                    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const passwordError = document.getElementById('passwordError');
-            const confirmInput = document.getElementById('confirmPassword');
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    const passwordError = document.getElementById('passwordError');
+                    const confirmInput = document.getElementById('confirmPassword');
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.textContent;
 
-            // Reset error state
-            passwordError.style.display = 'none';
-            confirmInput.classList.remove('error');
+                    // Reset error state
+                    passwordError.style.display = 'none';
+                    confirmInput.classList.remove('error');
 
-            // Check password match
-            if (password !== confirmPassword) {
-                passwordError.style.display = 'block';
-                confirmInput.classList.add('error');
-                return;
-            }
+                    // Check password match
+                    if (password !== confirmPassword) {
+                    passwordError.style.display = 'block';
+                    confirmInput.classList.add('error');
+                    return;
+                    }
 
-            // Check password length
-            if (password.length < 6) {
-                passwordError.textContent = 'Password must be at least 6 characters';
-                passwordError.style.display = 'block';
-                return;
-            }
+                    // Check password length
+                    if (password.length < 6) { passwordError.textContent='Password must be at least 6 characters' ;
+                        passwordError.style.display='block' ; return; } submitBtn.disabled=true;
+                        submitBtn.textContent='Creating account...' ; const response=await
+                        fetch(`${API_URL}/auth/signup`, { method: 'POST' , headers: { 'Content-Type'
+                        : 'application/json' }, body: JSON.stringify({ email, password }) }); const data=await
+                        response.json(); if (response.ok && data.success) { if (data.session &&
+                        data.session.access_token) { localStorage.setItem('access_token', data.session.access_token);
+                        localStorage.setItem('refresh_token', data.session.refresh_token);
+                        localStorage.setItem('user_id', data.user.id); localStorage.setItem('user_email',
+                        data.user.email); window.location.href='index.html' ; } else {
+                        document.getElementById('emailPopup').classList.add('active'); } } else {
+                        submitBtn.disabled=false; submitBtn.textContent=originalText; alert(data.detail
+                        || 'Sign up failed. Email may already be registered.' ); } }); </script>
+                        <script>
+                            const themeToggleBtn = document.getElementById('themeToggleBtn');
+                            const body = document.body;
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating account...';
+                            themeToggleBtn.addEventListener('click', () => {
+                                const currentTheme = body.getAttribute('data-theme');
+                                if (currentTheme === 'dark') {
+                                    body.removeAttribute('data-theme');
+                                    localStorage.removeItem('theme');
+                                } else {
+                                    body.setAttribute('data-theme', 'dark');
+                                    localStorage.setItem('theme', 'dark');
+                                }
+                            });
 
-            const response = await fetch('/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+                            // Apply theme from local storage
+                            const savedTheme = localStorage.getItem('theme');
+                            if (savedTheme) {
+                                body.setAttribute('data-theme', savedTheme);
+                            }
+                        </script>
+                        <script>
+                            // Mesh Animation
+                            (function () {
+                                const canvas = document.getElementById('meshCanvas');
+                                const container = document.getElementById('meshBackground');
+                                if (!canvas || !container) return;
 
-            const data = await response.json();
+                                const ctx = canvas.getContext('2d');
+                                const config = {
+                                    gridSize: 35,
+                                    gravityStrength: 18,
+                                    influenceRadius: 100,
+                                    dampening: 0.95,
+                                    returnSpeed: 0.05,
+                                    lineColor: 'rgba(92, 49, 30, 0.15)',
+                                    maxDisplacement: 20
+                                };
 
-            if (response.ok && data.success) {
-                if (data.session && data.session.access_token) {
-                    localStorage.setItem('access_token', data.session.access_token);
-                    localStorage.setItem('refresh_token', data.session.refresh_token);
-                    localStorage.setItem('user_id', data.user.id);
-                    localStorage.setItem('user_email', data.user.email);
-                    window.location.href = 'index.html';
-                } else {
-                    document.getElementById('emailPopup').classList.add('active');
-                }
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-                alert(data.detail || 'Sign up failed. Email may already be registered.');
-            }
-        });
-    </script>
+                                let points = [];
+                                let originalPoints = [];
+                                let gridDimensions = { cols: 0, rows: 0 };
+                                let mouse = { x: -1000, y: -1000, isActive: false };
+
+                                function resizeCanvas() {
+                                    const rect = container.getBoundingClientRect();
+                                    if (rect.width === 0 || rect.height === 0) return;
+                                    canvas.width = rect.width;
+                                    canvas.height = rect.height;
+                                    initializeGrid();
+                                }
+
+                                function initializeGrid() {
+                                    points = [];
+                                    originalPoints = [];
+                                    const cols = Math.ceil(canvas.width / config.gridSize) + 1;
+                                    const rows = Math.ceil(canvas.height / config.gridSize) + 1;
+                                    gridDimensions = { cols, rows };
+
+                                    for (let i = 0; i < cols; i++) {
+                                        for (let j = 0; j < rows; j++) {
+                                            const x = i * config.gridSize;
+                                            const y = j * config.gridSize;
+                                            points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y });
+                                            originalPoints.push({ x, y });
+                                        }
+                                    }
+                                }
+
+                                function updatePoints() {
+                                    points.forEach((point, index) => {
+                                        const original = originalPoints[index];
+                                        const dx = mouse.x - point.x;
+                                        const dy = mouse.y - point.y;
+                                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                                        if (mouse.isActive && distance < config.influenceRadius) {
+                                            const force = (1 - distance / config.influenceRadius) * config.gravityStrength;
+                                            const angle = Math.atan2(dy, dx);
+                                            point.vx += Math.cos(angle) * force * 0.01;
+                                            point.vy += Math.sin(angle) * force * 0.01;
+                                        } else {
+                                            point.vx += (original.x - point.x) * config.returnSpeed;
+                                            point.vy += (original.y - point.y) * config.returnSpeed;
+                                        }
+
+                                        point.vx *= config.dampening;
+                                        point.vy *= config.dampening;
+                                        point.x += point.vx;
+                                        point.y += point.vy;
+
+                                        const dispX = point.x - original.x;
+                                        const dispY = point.y - original.y;
+                                        const displacement = Math.sqrt(dispX * dispX + dispY * dispY);
+
+                                        if (displacement > config.maxDisplacement) {
+                                            const scale = config.maxDisplacement / displacement;
+                                            point.x = original.x + dispX * scale;
+                                            point.y = original.y + dispY * scale;
+                                        }
+                                    });
+                                }
+
+                                function drawMesh() {
+                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                    const { cols, rows } = gridDimensions;
+                                    if (!cols || !rows || points.length === 0) return;
+
+                                    ctx.strokeStyle = config.lineColor;
+                                    ctx.lineWidth = 1;
+
+                                    for (let j = 0; j < rows; j++) {
+                                        ctx.beginPath();
+                                        for (let i = 0; i < cols; i++) {
+                                            const index = i * rows + j;
+                                            const point = points[index];
+                                            if (!point) continue;
+                                            if (i === 0) ctx.moveTo(point.x, point.y);
+                                            else ctx.lineTo(point.x, point.y);
+                                        }
+                                        ctx.stroke();
+                                    }
+
+                                    for (let i = 0; i < cols; i++) {
+                                        ctx.beginPath();
+                                        for (let j = 0; j < rows; j++) {
+                                            const index = i * rows + j;
+                                            const point = points[index];
+                                            if (!point) continue;
+                                            if (j === 0) ctx.moveTo(point.x, point.y);
+                                            else ctx.lineTo(point.x, point.y);
+                                        }
+                                        ctx.stroke();
+                                    }
+                                }
+
+                                function animate() {
+                                    updatePoints();
+                                    drawMesh();
+                                    requestAnimationFrame(animate);
+                                }
+
+                                const parentElement = container.parentElement;
+
+                                window.addEventListener('resize', resizeCanvas);
+                                if (parentElement) {
+                                    parentElement.addEventListener('mousemove', (e) => {
+                                        const rect = container.getBoundingClientRect();
+                                        mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
+                                    });
+                                    parentElement.addEventListener('mouseleave', () => {
+                                        mouse.isActive = false;
+                                    });
+                                }
+
+                                setTimeout(() => {
+                                    resizeCanvas();
+                                    requestAnimationFrame(animate);
+                                }, 50);
+                            })();
+
+                            // Form submit handler
+                            document.getElementById('signupForm').addEventListener('submit', async function (e) {
+                                e.preventDefault();
+
+                                const email = document.getElementById('email').value;
+                                const password = document.getElementById('password').value;
+                                const confirmPassword = document.getElementById('confirmPassword').value;
+                                const passwordError = document.getElementById('passwordError');
+                                const confirmInput = document.getElementById('confirmPassword');
+                                const submitBtn = this.querySelector('button[type="submit"]');
+                                const originalText = submitBtn.textContent;
+
+                                // Reset error state
+                                passwordError.style.display = 'none';
+                                confirmInput.classList.remove('error');
+
+                                // Check password match
+                                if (password !== confirmPassword) {
+                                    passwordError.style.display = 'block';
+                                    confirmInput.classList.add('error');
+                                    return;
+                                }
+
+                                // Check password length
+                                if (password.length < 6) {
+                                    passwordError.textContent = 'Password must be at least 6 characters';
+                                    passwordError.style.display = 'block';
+                                    return;
+                                }
+
+                                submitBtn.disabled = true;
+                                submitBtn.textContent = 'Creating account...';
+
+                                const response = await fetch('/auth/signup', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email, password })
+                                });
+
+                                const data = await response.json();
+
+                                if (response.ok && data.success) {
+                                    if (data.session && data.session.access_token) {
+                                        localStorage.setItem('access_token', data.session.access_token);
+                                        localStorage.setItem('refresh_token', data.session.refresh_token);
+                                        localStorage.setItem('user_id', data.user.id);
+                                        localStorage.setItem('user_email', data.user.email);
+                                        window.location.href = 'index.html';
+                                    } else {
+                                        document.getElementById('emailPopup').classList.add('active');
+                                    }
+                                } else {
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = originalText;
+                                    alert(data.detail || 'Sign up failed. Email may already be registered.');
+                                }
+                            });
+                        </script>
 </body>
+
 </html>

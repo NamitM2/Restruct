@@ -461,7 +461,9 @@ app = FastAPI(title="Restruct API", version="0.1.0", lifespan=lifespan)
 
 # Include OpenAI-compatible API router
 from backend_code.API.router import router as api_router
+from backend_code.API.auth import router as auth_router
 app.include_router(api_router)
+app.include_router(auth_router)
 
 DEFAULT_USER_ID = "6785c292-273b-4001-9c1f-a6ff9e63979e"
 
