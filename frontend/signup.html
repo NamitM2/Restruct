@@ -760,25 +760,9 @@
                         submitBtn.textContent=originalText; alert('An error occurred during sign
                         up: ' + (error.message || ' Unknown error')); } }); </script>
                         <script>
-                            const themeToggleBtn = document.getElementById('themeToggleBtn');
                             const body = document.body;
 
-                            themeToggleBtn.addEventListener('click', () => {
-                                const currentTheme = body.getAttribute('data-theme');
-                                if (currentTheme === 'dark') {
-                                    body.removeAttribute('data-theme');
-                                    localStorage.removeItem('theme');
-                                } else {
-                                    body.setAttribute('data-theme', 'dark');
-                                    localStorage.setItem('theme', 'dark');
-                                }
-                            });
 
-                            // Apply theme from local storage
-                            const savedTheme = localStorage.getItem('theme');
-                            if (savedTheme) {
-                                body.setAttribute('data-theme', savedTheme);
-                            }
                         </script>
                         <script>
                             // Mesh Animation
