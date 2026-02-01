@@ -746,15 +746,19 @@
                         passwordError.style.display='block' ; return; } submitBtn.disabled=true;
                         submitBtn.textContent='Creating account...' ; const response=await
                         fetch(`${API_URL}/auth/signup`, { method: 'POST' , headers: { 'Content-Type'
-                        : 'application/json' }, body: JSON.stringify({ email, password }) }); const data=await
-                        response.json(); if (response.ok && data.success) { if (data.session &&
+                        : 'application/json' }, body: JSON.stringify({ email, password }) }); let data; try { data=await
+                        response.json(); } catch (e) { console.error('JSON parse error:', e); throw new Error('Invalid
+                        server response'); } if (response.ok && data.success) { if (data.session &&
                         data.session.access_token) { localStorage.setItem('access_token', data.session.access_token);
                         localStorage.setItem('refresh_token', data.session.refresh_token);
                         localStorage.setItem('user_id', data.user.id); localStorage.setItem('user_email',
                         data.user.email); window.location.href='index.html' ; } else {
                         document.getElementById('emailPopup').classList.add('active'); } } else {
                         submitBtn.disabled=false; submitBtn.textContent=originalText; alert(data.detail
-                        || 'Sign up failed. Email may already be registered.' ); } }); </script>
+                        || 'Sign up failed. Email may already be registered.' ); } } catch (error) {
+                        console.error('Signup error:', error); submitBtn.disabled=false;
+                        submitBtn.textContent=originalText; alert('An error occurred during sign
+                        up: ' + (error.message || ' Unknown error')); } }); </script>
                         <script>
                             const themeToggleBtn = document.getElementById('themeToggleBtn');
                             const body = document.body;
