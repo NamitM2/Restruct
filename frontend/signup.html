@@ -641,124 +641,6 @@
                 sign in.</p>
             <button class="popup-button" onclick="window.location.href='signin.html'">Go to Sign In</button>
         </div>
-        lineColor: getComputedStyle(document.documentElement).getPropertyValue('--mesh-line-color').trim() || 'rgba(142,
-        60, 44, 0.15)',
-        maxDisplacement: 20
-        };
-
-        let points = [];
-        let originalPoints = [];
-        let gridDimensions = { cols: 0, rows: 0 };
-        let mouse = { x: -1000, y: -1000, isActive: false };
-
-        function resizeCanvas() {
-        const rect = container.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        initializeGrid();
-        }
-
-        function initializeGrid() {
-        points = [];
-        originalPoints = [];
-        const cols = Math.ceil(canvas.width / config.gridSize) + 1;
-        const rows = Math.ceil(canvas.height / config.gridSize) + 1;
-        gridDimensions = { cols, rows };
-
-        for (let i = 0; i < cols; i++) { for (let j=0; j < rows; j++) { const x=i * config.gridSize; const y=j *
-            config.gridSize; points.push({ x, y, vx: 0, vy: 0, originalX: x, originalY: y }); originalPoints.push({ x, y
-            }); } } } function updatePoints() { points.forEach((point, index)=> {
-            const original = originalPoints[index];
-            const dx = mouse.x - point.x;
-            const dy = mouse.y - point.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (mouse.isActive && distance < config.influenceRadius) { const force=(1 - distance /
-                config.influenceRadius) * config.gravityStrength; const angle=Math.atan2(dy, dx); point.vx
-                +=Math.cos(angle) * force * 0.01; point.vy +=Math.sin(angle) * force * 0.01; } else { point.vx
-                +=(original.x - point.x) * config.returnSpeed; point.vy +=(original.y - point.y) * config.returnSpeed; }
-                point.vx *=config.dampening; point.vy *=config.dampening; point.x +=point.vx; point.y +=point.vy; const
-                dispX=point.x - original.x; const dispY=point.y - original.y; const displacement=Math.sqrt(dispX * dispX
-                + dispY * dispY); if (displacement> config.maxDisplacement) {
-                const scale = config.maxDisplacement / displacement;
-                point.x = original.x + dispX * scale;
-                point.y = original.y + dispY * scale;
-                }
-                });
-                }
-
-                function drawMesh() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const { cols, rows } = gridDimensions;
-                if (!cols || !rows || points.length === 0) return;
-
-                ctx.strokeStyle = config.lineColor;
-                ctx.lineWidth = 1;
-
-                for (let j = 0; j < rows; j++) { ctx.beginPath(); for (let i=0; i < cols; i++) { const index=i * rows +
-                    j; const point=points[index]; if (!point) continue; if (i===0) ctx.moveTo(point.x, point.y); else
-                    ctx.lineTo(point.x, point.y); } ctx.stroke(); } for (let i=0; i < cols; i++) { ctx.beginPath(); for
-                    (let j=0; j < rows; j++) { const index=i * rows + j; const point=points[index]; if (!point)
-                    continue; if (j===0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y); }
-                    ctx.stroke(); } } function animate() { updatePoints(); drawMesh(); requestAnimationFrame(animate); }
-                    const parentElement=container.parentElement; window.addEventListener('resize', resizeCanvas); if
-                    (parentElement) { parentElement.addEventListener('mousemove', (e)=> {
-                    const rect = container.getBoundingClientRect();
-                    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, isActive: true };
-                    });
-                    parentElement.addEventListener('mouseleave', () => {
-                    mouse.isActive = false;
-                    });
-                    }
-
-                    setTimeout(() => {
-                    resizeCanvas();
-                    requestAnimationFrame(animate);
-                    }, 50);
-                    })();
-
-                    // Form submit handler
-                    document.getElementById('signupForm').addEventListener('submit', async function(e) {
-                    e.preventDefault();
-
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    const confirmPassword = document.getElementById('confirmPassword').value;
-                    const passwordError = document.getElementById('passwordError');
-                    const confirmInput = document.getElementById('confirmPassword');
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const originalText = submitBtn.textContent;
-
-                    // Reset error state
-                    passwordError.style.display = 'none';
-                    confirmInput.classList.remove('error');
-
-                    // Check password match
-                    if (password !== confirmPassword) {
-                    passwordError.style.display = 'block';
-                    confirmInput.classList.add('error');
-                    return;
-                    }
-
-                    // Check password length
-                    if (password.length < 6) { passwordError.textContent='Password must be at least 6 characters' ;
-                        passwordError.style.display='block' ; return; } submitBtn.disabled=true;
-                        submitBtn.textContent='Creating account...' ; const response=await
-                        fetch(`${API_URL}/auth/signup`, { method: 'POST' , headers: { 'Content-Type'
-                        : 'application/json' }, body: JSON.stringify({ email, password }) }); let data; try { data=await
-                        response.json(); } catch (e) { console.error('JSON parse error:', e); throw new Error('Invalid
-                        server response'); } if (response.ok && data.success) { if (data.session &&
-                        data.session.access_token) { localStorage.setItem('access_token', data.session.access_token);
-                        localStorage.setItem('refresh_token', data.session.refresh_token);
-                        localStorage.setItem('user_id', data.user.id); localStorage.setItem('user_email',
-                        data.user.email); window.location.href='index.html' ; } else {
-                        document.getElementById('emailPopup').classList.add('active'); } } else {
-                        submitBtn.disabled=false; submitBtn.textContent=originalText; alert(data.detail
-                        || 'Sign up failed. Email may already be registered.' ); } } catch (error) {
-                        console.error('Signup error:', error); submitBtn.disabled=false;
-                        submitBtn.textContent=originalText; alert('An error occurred during sign
-                        up: ' + (error.message || ' Unknown error')); } }); </script>
                         <script>
                             const body = document.body;
 
@@ -937,7 +819,7 @@
                                 submitBtn.disabled = true;
                                 submitBtn.textContent = 'Creating account...';
 
-                                const response = await fetch('/auth/signup', {
+                                const response = await fetch(`${API_URL}/auth/signup`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ email, password })
