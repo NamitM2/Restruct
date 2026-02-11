@@ -50,8 +50,11 @@ async def signin(request: AuthRequest):
             "password": request.password
         })
         
-        if not response.user or not response.session:
+        if not response.user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        if not response.session:
+            raise HTTPException(status_code=401, detail="Email not confirmed")
             
         return {
             "success": True,
