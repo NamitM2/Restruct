@@ -358,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set up sign-in form handler
     setupSigninForm();
+    setupGuestLogin();
 });
 
 // Mesh animation for sign-in page
@@ -579,6 +580,69 @@ function setupSigninForm() {
                 submitBtn.textContent = originalText;
                 showError('Could not connect to server. Is the backend running?');
             });
+    });
+}
+
+// Guest login handler
+function setupGuestLogin() {
+    const guestBtn = document.getElementById('guestLoginBtn');
+    if (!guestBtn) return;
+
+    guestBtn.addEventListener('click', async function () {
+        const originalText = this.textContent;
+        this.disabled = true;
+        this.textContent = 'Creating guest session...';
+
+        const errorBanner = document.getElementById('signinErrorBanner');
+        function showError(msg) {
+            if (errorBanner) {
+                errorBanner.textContent = msg;
+                errorBanner.classList.add('show');
+            }
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/auth/guest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                localStorage.setItem('access_token', data.session.access_token);
+                localStorage.setItem('refresh_token', data.session.refresh_token);
+                localStorage.setItem('user_id', data.user.id);
+                localStorage.setItem('user_email', data.user.email);
+
+                // Show app section with animation
+                const applySignedInState = () => {
+                    showAppSection();
+                    loadConversationsFromBackend();
+                    loadProfilesFromBackend();
+                    loadApiKeys();
+
+                    const userEmailDisplay = document.getElementById('userEmailDisplay');
+                    const userEmailIndicator = document.getElementById('userEmail');
+                    const navSignInBtn = document.getElementById('navSignInBtn');
+                    const navSignOutBtn = document.getElementById('navSignOutBtn');
+
+                    if (userEmailDisplay) userEmailDisplay.textContent = `Guest Session`;
+                    if (userEmailIndicator) userEmailIndicator.textContent = 'Guest User';
+                    if (navSignInBtn) navSignInBtn.style.display = 'none';
+                    if (navSignOutBtn) navSignOutBtn.style.display = 'block';
+                };
+
+                playWaveTransition(applySignedInState);
+            } else {
+                throw new Error(data.detail || 'Guest login failed');
+            }
+        } catch (err) {
+            console.error('Guest login error:', err);
+            this.disabled = false;
+            this.textContent = originalText;
+            showError(err.message || 'Could not create guest session. Please try again.');
+        }
     });
 }
 

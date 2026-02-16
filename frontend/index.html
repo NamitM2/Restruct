@@ -110,50 +110,60 @@
                 <div class="mesh-background" id="meshBackground">
                     <canvas id="meshCanvas"></canvas>
                 </div>
-                <div class="signin-card">
-                    <div class="signin-header">
-                        <div class="logo-container">
-                            <img src="assets/logo.png" alt="Restruct logo" draggable="false">
-                            <h1>Restruct</h1>
-                        </div>
-                        <p>Sign in to your account</p>
-                        <div
-                            style="background: rgba(255, 211, 79, 0.15); border: 1px solid rgba(255, 211, 79, 0.4); border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 13px; color: var(--text-secondary); text-align: left;">
-                            <strong>🚧 Functional Demo Version</strong><br>
-                            This is a showcase of the Restruct platform. Payments are disabled. You can generate API
-                            keys and use the platform for free with strict daily rate limits (20 requests/day).
+                <div class="signin-card landscape-layout">
+                    <div class="signin-left-column">
+                        <div class="signin-header">
+                            <div class="logo-container">
+                                <img src="assets/logo.png" alt="Restruct logo" draggable="false">
+                                <h1>Restruct</h1>
+                            </div>
+                            <p>Sign in to your account</p>
+                            <div
+                                style="background: rgba(255, 211, 79, 0.15); border: 1px solid rgba(255, 211, 79, 0.4); border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 13px; color: var(--text-secondary); text-align: left;">
+                                <strong>🚧 Functional Demo Version</strong><br>
+                                This is a showcase of the Restruct platform. Payments are disabled. You can generate API
+                                keys and use the platform for free with strict daily rate limits (20 requests/day).
+                            </div>
                         </div>
                     </div>
 
-                    <div class="error-banner" id="signinErrorBanner"></div>
+                    <div class="signin-right-column">
+                        <div class="error-banner" id="signinErrorBanner"></div>
 
-                    <form id="signinForm">
-                        <div class="form-group">
-                            <label for="signinEmail">Email</label>
-                            <input type="email" id="signinEmail" name="email" placeholder="Enter your email" required>
+                        <form id="signinForm">
+                            <button type="button" class="signin-button" id="guestLoginBtn"
+                                style="background: transparent; border: 1px solid var(--clay-600); color: var(--clay-600); margin-bottom: 24px;">Continue
+                                as Guest</button>
+
+                            <div class="divider">
+                                <span>or sign in with email</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="signinEmail">Email</label>
+                                <input type="email" id="signinEmail" name="email" placeholder="Enter your email"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="signinPassword">Password</label>
+                                <input type="password" id="signinPassword" name="password"
+                                    placeholder="Enter your password" required>
+                            </div>
+
+                            <div class="remember-forgot">
+                                <label>
+                                    <input type="checkbox" name="remember" id="signinRemember">
+                                    Remember me
+                                </label>
+                                <a href="#">Forgot password?</a>
+                            </div>
+
+                            <button type="submit" class="signin-button">Sign In</button>
+                        </form>
+
+                        <div class="form-footer">
+                            Don't have an account? <a href="signup.html">Sign up</a>
                         </div>
-
-                        <div class="form-group">
-                            <label for="signinPassword">Password</label>
-                            <input type="password" id="signinPassword" name="password" placeholder="Enter your password"
-                                required>
-                        </div>
-
-                        <div class="remember-forgot">
-                            <label>
-                                <input type="checkbox" name="remember" id="signinRemember">
-                                Remember me
-                            </label>
-                            <a href="#">Forgot password?</a>
-                        </div>
-
-                        <button type="submit" class="signin-button">Sign In</button>
-                    </form>
-
-
-
-                    <div class="form-footer">
-                        Don't have an account? <a href="signup.html">Sign up</a>
                     </div>
                 </div>
             </div>

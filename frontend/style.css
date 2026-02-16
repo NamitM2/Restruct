@@ -618,6 +618,62 @@ body {
     width: 100%;
 }
 
+/* Landscape Layout Modifier */
+.signin-card.landscape-layout {
+    max-width: 1000px;
+    display: flex;
+    flex-direction: row;
+    gap: 60px;
+    align-items: center;
+}
+
+.signin-left-column {
+    flex: 1;
+    border-right: 1px solid var(--border-subtle);
+    padding-right: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.signin-right-column {
+    flex: 1;
+}
+
+/* Adjustments for left column content */
+.signin-card.landscape-layout .signin-header {
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.signin-card.landscape-layout .signin-header .logo-container {
+    justify-content: flex-start;
+}
+
+/* Responsive: Stack on smaller screens */
+@media (max-width: 900px) {
+    .signin-card.landscape-layout {
+        flex-direction: column;
+        max-width: 500px;
+        gap: 40px;
+    }
+
+    .signin-left-column {
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-right: 0;
+        padding-bottom: 40px;
+    }
+
+    .signin-card.landscape-layout .signin-header {
+        text-align: center;
+    }
+
+    .signin-card.landscape-layout .signin-header .logo-container {
+        justify-content: center;
+    }
+}
+
 .signin-header {
     text-align: center;
     margin-bottom: 40px;
