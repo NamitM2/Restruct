@@ -127,12 +127,22 @@ async def guest_login():
             }
             
     except Exception as e:
-        # If sign in fails, try to create the user
-        print(f"Guest login failed, trying to create guest user: {e}")
-        pass
+        # If sign in fails, check why
+        signin_error = str(e)  # Capture for debugging
+        error_msg = signin_error.lower()
+        print(f"DEBUG: Guest sign-in failed with error: '{signin_error}'")
+        
+        # If credentials are wrong, don't try to sign up
+        if "invalid login credentials" in error_msg:
+             raise HTTPException(status_code=401, detail=f"Guest login failed: Invalid credentials. Verification check: Password='{GUEST_PASSWORD}'")
+        
+        if "email not confirmed" in error_msg:
+             raise HTTPException(status_code=400, detail="Guest login failed: Email not confirmed.")
+
+        print(f"DEBUG: Falling back to signup due to unexpected error: {signin_error}")
 
     try:
-        # Create user if not exists or sign in failed
+        # Create user
         response = supabase.auth.sign_up({
             "email": GUEST_EMAIL,
             "password": GUEST_PASSWORD,
@@ -144,15 +154,9 @@ async def guest_login():
             }
         })
         
-        # If signup worked (or returned existing user but triggered email confirmation), 
-        # check for session.
         session = response.session
-        
-        # If no session, it might be because the user already exists but we failed to sign in above?
-        # Or email confirmation is required.
-        
         if not session and response.user:
-             # Try signing in again just in case
+             # Try signing in again
              auth_response = supabase.auth.sign_in_with_password({
                 "email": GUEST_EMAIL,
                 "password": GUEST_PASSWORD
@@ -160,7 +164,7 @@ async def guest_login():
              session = auth_response.session
              
         if not session:
-             raise HTTPException(status_code=400, detail="Could not establish guest session. Check Supabase 'Confirm Email' settings.")
+             raise HTTPException(status_code=400, detail="Guest session could not be established.")
 
         return {
             "success": True,
@@ -177,4 +181,5 @@ async def guest_login():
 
     except Exception as e:
         print(f"Guest creation error: {e}")
-        raise HTTPException(status_code=400, detail=f"Guest login failed: {str(e)}")
+        # Return BOTH errors for debugging
+        raise HTTPException(status_code=400, detail=f"Guest login failed. Sign-in error: [{signin_error}]. Sign-up error: [{str(e)}]")

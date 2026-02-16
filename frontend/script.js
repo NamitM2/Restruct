@@ -266,6 +266,11 @@ function showSigninSection() {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
     }
+    const guestBtn = document.getElementById('guestLoginBtn');
+    if (guestBtn) {
+        guestBtn.disabled = false;
+        guestBtn.textContent = 'Continue as Guest';
+    }
     if (errorBanner) errorBanner.classList.remove('show');
 
     initMeshAnimation();
